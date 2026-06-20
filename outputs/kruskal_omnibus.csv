@@ -1,0 +1,4 @@
+"Variable",".y.","n","statistic","df","p","method"
+"Ave_GIUR","Value",297,119.031238847712,2,1.42e-26,"Kruskal-Wallis"
+"N_Scar","Value",297,79.798086875565,2,4.7e-18,"Kruskal-Wallis"
+"Ave_RG","Value",297,116.163378820699,2,5.96e-26,"Kruskal-Wallis"

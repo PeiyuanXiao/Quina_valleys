@@ -1,0 +1,206 @@
+---
+title: "The Middle Paleolithic Quina valleys in southeastern margin of the Tibetan Plateau"
+author:
+  - Peiyuan Xiao:
+      correspondence: "no"
+      orcid: 0009-0000-9733-5875
+      institute:
+        - ALPHA
+        - UCAS
+        - UW
+  - Qijun Ruan:
+      correspondence: "yes"
+      orcid: 0009-0000-2143-5335
+      institute:
+        - YPICRA
+   - Zhenxiu Jia:
+      correspondence: "no"
+      orcid: 0000-0002-7514-4514
+      institute:
+        - ALPHA
+   - Marco Peresani:
+      correspondence: "no"
+      orcid: 0000-0001-6562-6336
+      institute:
+        - FERRARA
+        - IGAG
+   - Davide Delpiano:
+      correspondence: "yes"
+      institute:
+        - FERRARA
+  - Ben Marwick:
+      correspondence: "yes"
+      email: bmarwick@uw.edu
+      orcid: 0000-0001-7879-4531
+      institute:
+        - UW
+# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
+institute:
+  - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
+  - UCAS: University of Chinese Academy of Sciences, Beijing, China
+  - UW: Department of Anthropology, University of Washington, Seattle, WA, USA
+  - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, China
+  - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
+  - IGAG: Consiglio Nazionale delle Ricerche-Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
+title-block-published: "Last updated"
+date: now
+date-format: long
+format:
+  docx:
+    reference-doc: "../templates/template.docx"
+crossref:
+  fig-title: "Fig."
+  fig-prefix: "Fig."
+  tbl-title: "Table"
+  tbl-prefix: "Table"
+number-sections: true
+execute:
+  echo: false
+  warning: false
+  message: false
+  comment: "#>"
+  fig-dpi: 600
+filters:
+  - ../templates/scholarly-metadata.lua
+  - ../templates/author-info-blocks.lua
+  - ../templates/pagebreak.lua
+bibliography: references.bib
+csl: "../templates/elsevier-harvard.csl"
+keywords:
+  - Middle Paleolithic
+  - Southeastern Tibetan Plateau
+  - Quina technology
+  - Quina valleys
+abstract: |
+  The Middle Paleolithic (~300–40 ka) was a pivotal period in human evolution, characterized by diverse lithic technologies. Conventional views have held that East Asia experienced slow technological development and lacked remarkable Middle Paleolithic innovations. Recent discoveries, however, demonstrate a more complex scenario, with distinctive Middle Paleolithic technologies identified, such as discoidal technology, Levallois technology and Quina technology. Here we present stone artifacts surface-collected from the Caifeng river and Sangyuan river in northwestern Yunnan province, geographically located in southeastern margin of the Tibetan Plateau. These artifacts mainly collected on the second and third river terraces. Diagnostic Quina technological elements have been identified, including plan-secant core reduction pattern, scalariform tool retouching, and branched reduction strategy. Our results demonstrate the existence of “Quina valleys” and expand the spatial range of Quina technological behavior in southwestern China. In addition, our study reinforces the technological diversity and complexity of the Chinese Middle Paleolithic.
+editor_options:
+  chunk_output_type: console
+---
+
+<!-- This is the format for text comments that will be ignored during rendering. Do not put R code in these comments because it will not be ignored. -->
+
+Keywords: `r rmarkdown::metadata$keywords`
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(here)
+
+```
+
+```{=html}
+<!-- Highlights: Elsevier requires 3–5 bullet points, each ≤ 85 characters (incl. spaces).
+     These are submitted as a separate file at submission; kept here for drafting. -->
+```
+
+# Highlights {.unnumbered}
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+# Introduction
+
+# 区域地质与古环境背景
+
+研究区位于青藏高原东南缘、横断山脉南段、金沙江（长江上游）流域。受近南北向断裂系统的控制，玉龙雪山、点苍山等山体相对抬升，其间则形成丽江、鹤庆、大理、宾川等一系列南北向展布的山间断陷盆地（An et al., 2011；Li and Rioual, 2015）。本文所讨论的 Quina 遗址群即集中分布于其中两个盆地——鹤庆黄坪盆地（财丰河谷）与宾川盆地。两盆地均属金沙江水系干热河谷：受印度季风与西南暖湿气流影响，干湿季分明、光照充沛，现代植被以旱生稀树灌丛为主（何永彬等，2000；杨济达等，2016），其气候、地貌与动植物组合，与中国境内同期盘状技术、勒瓦娄哇技术遗址所处的环境存在明显差异。
+
+遗址多分布于河流第二至第四级阶地前缘，少量位于视域开阔的山顶。承载遗址的河流均为金沙江支流：鹤庆侧为财丰河，发育龙潭、天华洞两处经测年的遗址；宾川侧为桑园河及其支流炼洞河，沿岸分布大量地表地点（肖培源等，2024）。石制品原料以河漫滩中的火山岩砾石（trachyte，粗面岩）为主，该类原料在景观中丰度高、且力学性质适合长期再修理（详见第 4 节）。就宾川盆地而言，其内部活动断裂体系已有专门研究（罗睿洁等，2015），为该盆地地貌格局提供了局地构造背景。
+
+鹤庆盆地保存有亚洲季风区最长、最连续的陆相沉积序列之一。盆地中心钻取的 Heqing-2002 岩芯长达 665.83 m，记录了过去约 2.78 Ma 的植被与季风演化（Xiao et al., 2010；An et al., 2011）。由于研究区恰处印度季风与东亚季风的过渡地带，这套湖相序列对**印度夏季风（ISM）**的强弱变化高度敏感，是重建区域古气候的关键档案。需要明确指出的是，上述湖相岩芯（Pengtun/草海一带的 PT2、Heqing-2002 等）取自鹤庆盆地北部沉积中心（约 26°33′–26°35′N、100°10′–100°11′E、海拔约 2190 m；Yang et al., 2025；Li and Rioual, 2015），与本文地表遗址所在的财丰河谷及宾川盆地（约 26°00′–26°02′N、海拔约 1540–1810 m）相距约 60 km、高差约 650 m，分属同一断陷系统内的不同次级单元。因此，本文将鹤庆湖相记录作为区域 ISM 信号加以引用，用以约束遗址占据所处的气候背景，而非作为某一遗址的局地记录。
+
+在轨道尺度上，基于 PT2 岩芯地球化学与环境磁学代用指标重建的 ISM 序列可划分为四个阶段（Yang et al., 2025）：阶段 I（184–131 ka）ISM 偏弱、气候偏干；阶段 II（131–69 ka）ISM 增强、降水增多；阶段 III（69–57 ka，对应 MIS 4）重新转干；阶段 IV（57–25 ka，对应 MIS 3）整体偏湿，但被频繁的强干旱事件打断。轨道尺度上的 ISM 变化主要受北半球夏季日照（NHSI）驱动，并与大西洋经向翻转环流（AMOC）在岁差频率上耦合；这一耦合关系在小白龙石笋记录与多支海洋 SST 记录中得到独立验证（Xu et al., 2025）。
+
+在千年尺度上，鹤庆 PT2 岩芯的高/低矫顽力磁组分比值（C/A）揭示出六次弱 ISM 事件（44–43、37–36.5、30–29、23–22、16–14.5、13–11.9 ka），分别对应北大西洋的 Heinrich 冷期 HS5–HS1 与新仙女木事件（YD）（Hou et al., 2026）。其中数次事件落在遗址占据窗口之内。鹤庆记录与小白龙石笋（Cai et al., 2006, 2015）及低纬海洋 SST 记录的一致性，表明这是一个亚大陆尺度的季风信号，而非局地异常。综合而言，遗址占据的时段正落在 MIS 4 向 MIS 3 的过渡期——一个 ISM 总体回升、但被频繁千年尺度干旱事件强烈扰动的不稳定、季节性强化的气候背景之中。
+
+鹤庆湖相档案与遗址所在的河流阶地，实为同一构造过程的两个侧面。在断裂系统作用下，玉龙雪山持续抬升、盆地相对沉降（Li and Rioual, 2015）；古鹤庆湖约在 129.8 ka 由封闭体系转为开放体系（An et al., 2011；Li and Rioual, 2015）。此后，源自玉龙雪山（5596 m）冰川的漾弓河切入盆地、汇入金沙江（Kong et al., 2009）；玉龙雪山一带的冰碛年代显示 MIS 3 前后存在显著冰进（约 47 ka；Kong et al., 2009），冰川融水由此影响湖泊的水量与水质。至约 35 ka，硅藻因数量过少而无法计数，指示古湖此时已显著变浅乃至趋于排干（Li and Rioual, 2015）。古湖的排干与河流的下切是同一抬升-切割过程的产物：正是这一过程塑造了财丰河、桑园河、炼洞河等沿岸的多级河流阶地——也就是本文 Quina 遗址所赖以保存的地貌载体。这一构造-地貌链条，把鹤庆的古气候档案与古人类实际占据的景观在物理上连接了起来。
+
+在两盆地诸遗址中，龙潭是唯一兼具测年与遗址内古环境代用记录者，可为整个遗址群提供局地参照。龙潭文化层（第 3 层）的光释光年代为 55.0 ± 2.5 ka，其下第 4 层为 57.9 ± 1.8 ka，落在 MIS 4 向 MIS 3 的过渡阶段（Ruan et al., 2025）。遗址孢粉分析（赵克良，见 Ruan et al., 2025 及其补充材料）显示出由相对干旱/开阔，经针叶林（松-铁杉）扩张，再到草本增多、林地退缩的开阔化序列；含 Quina 组合的第 3 层恰跨越针叶林向开阔环境的转变，表明古人类占据于一个开阔、镶嵌且趋于开阔化的景观之中（具体孢粉带划分以原文为准）。这与 2.2 由区域湖相记录得出的"MIS 4–3 过渡、不稳定、季节性强化"背景相互吻合。 地表遗址本身缺乏直接测年。相邻的天华洞遗址提供了一个阶地年代锚：单颗粒石英 OSL 测年显示其堆积年代为 90–40 ka（对应 MIS 5–4；Hu et al., 2020），证明财丰河谷的相应阶地在该时段已被古人类占据。但需说明，天华洞石制品同时含勒瓦娄哇与 Quina 要素，其中 Quina 成分较薄（仅少量基纳式刮器），故天华洞主要约束的是阶地的年代框架，而非"Quina 技术的年代"；后者目前仍以龙潭为可靠锚点。
+
+# Materials and methods
+
+## 遗址调查与筛选标准
+
+## Raw material composition and electivity
+
+Raw-material selection was quantified with Jacobs' electivity index *D* [@jacobs1974], a modification of Ivlev's index that is independent of the relative abundance of the resources:
+
+$$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$
+
+where $r$ is the proportion of a raw material among the *used* tools and $p$ is its proportion in the *available* basin survey. *D* ranges from $-1$ (complete avoidance) to $+1$ (complete selection), with $0$ indicating use in proportion to availability. *D* was computed for each raw material in each Quina scraper assemblage (SC_Quina, LT_Quina) against the basin availability. Materials present in the tools but absent from the basin survey (e.g., andesite, hornfels) take $D = +1$ and are interpreted as evidence of non-local procurement; materials present in the basin but absent from the tools take $D = -1$.
+
+## Scraper morphometric comparison
+
+## Quina修理产品的技术类型分析
+
+## Reproducibility and open materials
+
+# Results
+
+## Quina遗址的景观分布格局
+
+## 原料经济及物理性质
+
+本文研究的石制品普遍采用火成岩和沉积岩作为原料。在火成岩原料中，以具有斑状结构的粗面岩（n=216, 97.7%）为主，仅1件为花岗岩；沉积岩原料较少使用，包括2件燧石和2件砂岩。从粗面岩的砾石面特征来看，古人类应从遗址附近的河道中采集这类原料，这也与现代河道的调查结果相呼应（见上文）。 为进一步确定粗面岩在景观中的丰富程度，我们分别沿宾川、鹤庆盆地内的主河道进行沿岸调查，随机布设了5处采样记录点和11处拍摄记录点，调查路线和记录点位的详细信息如图和表所示。从砾石岩性来看，采样点整体以石英砂岩（n=310, 66.1%）和粗面岩（n=129, 27.5%）为主，其余岩性的占比较低（表）；随机拍摄记录点也说明了两处盆地内粗面岩砾石的广泛分布，沿河栖居的古人类易于获取这类原料。需要注意的是，虽然河道中石英砂岩的占比更高，但从石制品组合中却以粗面岩为主要原料。因此，为进一步认识古人类的原料选择策略，我们需要了解粗面岩的物理性质。 为探讨粗面岩砾石的尺寸，我们计算了每件取样砾石长度、宽度和厚度的几何均值，该指标对测量形态变异较大的物体具有稳健性（Jungers et al., 1995; Eren et al., 2014）。结果表明，粗面岩的平均尺寸显著高于石英砂岩（U=16356.00, df=437, P=0.003），且粗面岩的变异范围更大（CVTR=65.8; CVQS =41.6），显著高于石英砂岩（RM=26.13, P\<0.001）（图）。从形态来看，板状（n=34, 26.4%）和不规则形态（n=39, 30.2%）的粗面岩占比较高（图），相较于尺寸较小、形态规则的石英砂岩，粗面岩更易于进行打制。 为了分析粗面岩的质地，我们对5块河道采集的砾石开展了磨片镜检和矿物能谱分析（图）。定性观察表明，粗面岩均呈斑状结构，其内部结构可分为斑晶和基质两大部分。斑晶以自形板柱状的钾长石为主，尺寸范围约0.3-5.0 mm，约占砾石整体的1%-10%。基质主要由钾长石微晶、绿泥石或蚀变的暗色矿物以及磁铁矿构成，这些矿物成分与脱玻化的玻璃质部分（\~50%）紧密结合，形成玻晶交织结构。这种结构性质使粗面岩的质地处于非晶质和隐晶质结构之间，断裂时容易产生贝壳状断口。由于玻晶交织结构中矿物晶体紧密结合，因此比起玻璃质原料（如黑曜岩），粗面岩的硬度更大，因此其剥片产品也更为耐用。上述观察结果表明，粗面岩的不仅质地均匀，利于产生边缘锋利的石片，并且硬度较大，使剥片产品的耐用性更高。
+
+## 表征Quina河谷的Quina刮削器
+
+### 技术类型特征
+
+毛坯生产：先给毛坯体积概念。再通过数据论证。
+
+刃缘修理：
+
+从技术上来看，基纳刮削器（长×宽×厚=58.3×47.2×24.6 mm）的毛坯均为石片，这些石片的最大厚度往往位于石片侧缘背部（lateral back），因此产生了不对称的横截面，提供了较大的加工空间（Turq, 1992）。 由于消减的影响，仅少数基纳刮削器保留了毛坯的台面（n=52, 34.9%）。这些台面的尺寸普遍较大（MdnPD=13.9 mm）且多为钝角（MIPA=122°），体现了古人类生产大型石片的剥片策略（Clarkson and Hiscock, 2011; Dogandžić et al., 2015; McPherron et al., 2020）。从台面类型来看，基纳刮削器的毛坯多为素台面（n=39, 75.0%），自然台面（n=7, 13.5%）和单棱脊台面（n=6, 11.5%）占比较低。需要注意的是，在单棱脊台面中有4件为talon à pan，由两个同向或对向且垂直于石片技术轴的先前片疤构成，体现了平面-斜割型的基纳剥片策略（Bourguignon, 1997）。
+
+99件（59.6%）基纳刮削器存在砾石面，其中以砾石面占比＞25%的标本为主（n=116, 77.9%），砾石面占比≤25%的标本（n=33, 22.1%）较少。从砾石面分布位置来看，分布在边缘的标本有43件（50.6%），其次为砾石面近似覆盖背面的标本（n=26, 30.6%），而仅在中心区域存在砾石面的基纳刮削器最少（n=16, 18.8%），后者多为周身加工的三角形和蛞蝓形器。砾石面的特征反映了古人类有目的性的毛坯选择，结合基纳刮削器中未发现减薄等与装柄相关的技术特征，因而砾石面的选择更可能体现了适应持握的工具设计理念。 虽然本研究不涉及石核与未加工石片的分析，但基纳刮削器毛坯的背面片疤模式能够反映古人类的剥片策略。在工具组合中，共53件（31.9%）基纳刮削器在毛坯背面保留了可识别方向的片疤。其中，近端单向剥片（n=29, 54.7%）的标本数量最多，其次为侧向剥片（n=13, 24.5%），其余背疤模式类型较少，包括对向（n=6, 11.3%）、正交（n=3, 5.7%）和向心（n=2, 3.8%）。背疤模式指示了以石核表面为导向的开发策略，且剥片以连续单向为主；若假设基纳刮削器的毛坯来源于同一套剥片概念，则侧向、正交和向心模式能够反映台面位置的转换；毛坯以人工台面为主，表明对石核多表面的开发策略。从基纳刮削器毛坯反映的剥片方式来看，其与西欧基纳技术体系和龙潭遗址基纳石核的循环交替剥片策略高度相似。
+
+全部基纳刮削器均以层叠阶梯状的凹型修疤为特征，部分刮削器存在少量凸型修疤，展现出典型的基纳式修理技术。从修理方向来看，基纳刮削器以正向修理（n=194, 89.8%）为主，其次为反向修理（n=20, 9.2%），转向修理（n=1）和两面修理（n=1）较少。 从再修理特征来看，基纳刮削器的修理序列以3层（n=117, 48.8%）为主，其次为2层（n=86, 36.2%）和4层（n=37, 15.4%）。不同修理序列的修疤在形态上存在差异，分布在第一序列上的修疤，往往具有凸起、平坦或略微凹陷的形态，统称为凸型修疤（Mdn=3）；分布在其余修理序列上的修疤通常凹陷程度较深、尾端形态呈阶梯状或铰链状，称为凹型修疤（Mdn=11）（Lemorini et al., 2015; Peresani et al., 2022）。上述技术特征也同样反映在了再修理石片（n=58）上。再修理石片的整体尺寸较小（长×宽×厚=35.7×26.5×9.3 mm），台面尺寸同样较小（PD=5.3 mm），整体形态较宽（Elongation Index=1.4），侧轮廓多呈凸起的拱形；最重要的是，再修理石片的背面近端处保留了先前的修理序列，以3层序列为主（n=40, 69.0%），其次为2层（n=16, 27.6%）和1层（n=2, 3.4%）。此外，一些基纳刮削器和再修理石片展现出了“克拉克当凹口”式的再修理策略，以这种方式进行再修理会在基纳刮削器的刃缘处形成较大的凹型修疤，对应的再修理石片也具有较大的尺寸和台面，后者因此具有修理为工具的潜力（Bourguignon, 1997）。
+
+基纳刮削器的再修理策略反映了“curated”的加工特征，这种精致性也能够在高程度的消减中得到体现。LrI指数的计算方式为修理长度除以工具周长，能够反映古人类对毛坯边缘的利用程度。基纳刮削器的LrI指数中值为0.46，表明多数毛坯边缘被加工了一半左右。从刃角来看，基纳刮削器以陡刃为主，刃角中值为72°，表明多数基纳刮削器在废弃时均难以再进一步进行加工，也说明了基纳刮削器普遍具有较高的消减程度（Lin and Marreiros, 2021）。GIUR和II是测量工具消减程度的良好代理指标（Kuhn, 1992; Clarkson, 2002），这两个指数的中值分别为0.77和0.70，是基纳刮削器具有高消减程度最直接的证据。
+
+### 技术一致性分析
+
+# Discussion
+
+# Conclusions
+
+# CRediT author statement {.unnumbered}
+
+# Declaration of competing interest {.unnumbered}
+
+# Funding {.unnumbered}
+
+# Data availability {.unnumbered}
+
+# Acknowledgements {.unnumbered}
+
+\newpage
+
+# References {.unnumbered}
+
+<!-- The reference list is inserted here for Word/HTML output rather than at the very end. -->
+
+::: {#refs}
+:::
+
+\newpage
+
+## Colophon {.unnumbered}
+
+This report was generated on `r Sys.time()` using the following computational environment and dependencies:
+
+```{r}
+#| label: colophon
+#| cache: false
+
+if ("devtools" %in% installed.packages()) devtools::session_info()
+```
