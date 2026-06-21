@@ -1,8 +1,7 @@
 ## Raw-material selection: composition + Jacobs' electivity index (D)
 ##
 ## Availability reference : Raw_mat_basin.xlsx           (Sheet1,           Lithology)
-## Used assemblages       : SC Quina scraper  = Quina_scraper_surface.xlsx (sheet "Quina scraper", Raw_material)
-##                          LT Quina scraper  = Longtan_lithic_tools.xlsx  (sheet "Quina scraper", Raw_material)
+## Used assemblage        : SC Quina scraper  = Quina_scraper_surface.xlsx (sheet "Quina scraper", Raw_material)
 ##
 ## Category harmonisation : basin "Quartz sandstone" + "Coarse sandstone" -> "Sandstone"
 ##                          (so the basin lithologies and the tool raw materials are comparable)
@@ -31,25 +30,23 @@ library(ggplot2)
 
 basin_path <- "H:/Quina_valleys/Raw_mat_basin.xlsx"
 sc_path    <- "H:/Quina_valleys/Quina_scraper_surface.xlsx"
-lt_path    <- "H:/Quina_valleys/Longtan_lithic_tools.xlsx"
 output_dir <- "H:/Quina_valleys/outputs"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- shared raw-material levels and colours (Okabe-Ito palette) ----
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone",
-                     "Andesite", "Hornfel")
+                     "Andesite")
 
 material_colors <- c(
   Trachyte  = "#D55E00",
   Sandstone = "#E69F00",
   Quartz    = "#56B4E9",
   Mudstone  = "#0072B2",
-  Andesite  = "#009E73",
-  Hornfel   = "#CC79A7"
+  Andesite  = "#009E73"
 )
 
-group_levels <- c("Basin (available)", "SC Quina scraper", "LT Quina scraper")
+group_levels <- c("Basin (available)", "SC Quina scraper")
 
 ## ---- shared plot theme ----
 base_theme <- theme_minimal(base_size = 13) +
@@ -79,7 +76,6 @@ read_material <- function(path, sheet, column) {
 
 basin_raw <- read_material(basin_path, "Sheet1", "Lithology")
 sc_raw    <- read_material(sc_path, "Quina scraper", "Raw_material")
-lt_raw    <- read_material(lt_path, "Quina scraper", "Raw_material")
 
 ## Merge the two basin sandstone classes so they match the tools' "Sandstone".
 basin_raw <- dplyr::recode(
@@ -90,7 +86,7 @@ basin_raw <- dplyr::recode(
 
 ## Guard against unexpected categories (typos, new materials) silently dropping out.
 unknown_materials <- setdiff(
-  unique(c(basin_raw, sc_raw, lt_raw)),
+  unique(c(basin_raw, sc_raw)),
   c(material_levels, NA, "", "NA")
 )
 if (length(unknown_materials) > 0) {
@@ -103,8 +99,7 @@ if (length(unknown_materials) > 0) {
 
 material_data <- bind_rows(
   tibble(Group = "Basin (available)", Material = basin_raw),
-  tibble(Group = "SC Quina scraper",  Material = sc_raw),
-  tibble(Group = "LT Quina scraper",  Material = lt_raw)
+  tibble(Group = "SC Quina scraper",  Material = sc_raw)
 ) |>
   filter(!is.na(Material), !Material %in% c("", "NA")) |>
   mutate(
@@ -170,7 +165,7 @@ stacked_plot <- ggplot(
 ggsave(
   filename = file.path(output_dir, "raw_material_stacked_bar.png"),
   plot = stacked_plot,
-  width = 7.2,
+  width = 5.5,
   height = 5.4,
   dpi = 300
 )
@@ -214,7 +209,7 @@ write.csv(
   row.names = FALSE
 )
 
-## ---- electivity visualization (diverging bars, faceted by assemblage) ----
+## ---- electivity visualization (diverging bars) ----
 electivity_plot <- ggplot(
   electivity,
   aes(x = D, y = Material, fill = Selection)
@@ -228,7 +223,6 @@ electivity_plot <- ggplot(
     ),
     size = 3, color = "#303238"
   ) +
-  facet_wrap(~ Assemblage) +
   scale_fill_manual(
     values = c("Selected (preferred)" = "#009E73", "Avoided" = "#D55E00")
   ) +
@@ -250,7 +244,7 @@ electivity_plot <- ggplot(
 ggsave(
   filename = file.path(output_dir, "jacobs_electivity_index.png"),
   plot = electivity_plot,
-  width = 8.2,
+  width = 6.5,
   height = 5.0,
   dpi = 300
 )

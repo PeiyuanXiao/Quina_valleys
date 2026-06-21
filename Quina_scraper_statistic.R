@@ -1,8 +1,9 @@
-## Spearman correlations of Ave_RG with reduction/morphology variables
-## Data: Quina_scraper_surface.xlsx, "Quina scraper" sheet
-## Ave_RG is correlated (Spearman's rho) with Edge_Angle, Thickness, Ave_GIUR,
-## and Retouch_length_index, then visualised as faceted scatter plots with a
-## loess trend and the rho / p annotation for each pair.
+## Spearman correlation analyses (Quina scraper, Quina_scraper_surface.xlsx)
+##   (1) Ave_RG             ~ Edge_Angle, Thickness, Ave_GIUR, Retouch_length_index
+##   (2) Section_asymmetric ~ Edge_Angle, Ave_GIUR, Retouch_length_index, Ave_RG,
+##                            Thickness, Invasive_index
+## Each pair: Spearman's rho, visualised as faceted scatter plots with a loess
+## trend and the rho / p annotation for each pair.
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2")
 missing_packages <- required_packages[
@@ -24,9 +25,6 @@ sc_path    <- "H:/Quina_valleys/Quina_scraper_surface.xlsx"
 output_dir <- "H:/Quina_valleys/outputs"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-focal_var <- "Ave_RG"
-corr_vars <- c("Edge_Angle", "Thickness", "Ave_GIUR", "Retouch_length_index")
-
 fmt_p <- function(p) {
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3)))
 }
@@ -46,72 +44,97 @@ corr_theme <- theme_minimal(base_size = 13) +
     panel.background = element_rect(color = NA, fill = "white")
   )
 
-## ---- load ----
-quina <- read_excel(sc_path, sheet = "Quina scraper") |>
-  select(all_of(c(focal_var, corr_vars))) |>
-  mutate(across(everything(), as.numeric))
+## ---- load once (all columns available; each analysis selects what it needs) ----
+quina <- read_excel(sc_path, sheet = "Quina scraper")
 
-## ---- Spearman correlations ----
-spearman_one <- function(v) {
-  pair <- na.omit(quina[, c(focal_var, v)])
-  ct <- suppressWarnings(
-    cor.test(pair[[focal_var]], pair[[v]], method = "spearman", exact = FALSE)
-  )
-  data.frame(
-    Variable = v,
-    n        = nrow(pair),
-    rho      = unname(ct$estimate),
-    S        = unname(ct$statistic),
-    p_value  = ct$p.value,
-    row.names = NULL
-  )
+## ---- reusable Spearman analysis + faceted scatter plot ----
+run_spearman_analysis <- function(data, focal_var, corr_vars,
+                                  csv_name, png_name,
+                                  ncol = 2, width = 7.6, height = 6.0) {
+  d <- data |>
+    select(all_of(c(focal_var, corr_vars))) |>
+    mutate(across(everything(), as.numeric))
+
+  spearman_one <- function(v) {
+    pair <- na.omit(d[, c(focal_var, v)])
+    ct <- suppressWarnings(
+      cor.test(pair[[focal_var]], pair[[v]], method = "spearman", exact = FALSE)
+    )
+    data.frame(
+      Variable = v, n = nrow(pair),
+      rho = unname(ct$estimate), S = unname(ct$statistic),
+      p_value = ct$p.value, row.names = NULL
+    )
+  }
+
+  results <- do.call(rbind, lapply(corr_vars, spearman_one))
+  results$p_adjusted <- p.adjust(results$p_value, method = "BH")
+
+  cat("\nSpearman correlations with", focal_var, ":\n")
+  print(results)
+  write.csv(results, file.path(output_dir, csv_name), row.names = FALSE)
+
+  long <- d |>
+    pivot_longer(all_of(corr_vars), names_to = "Variable", values_to = "Value") |>
+    filter(!is.na(.data[[focal_var]]), !is.na(Value)) |>
+    mutate(Variable = factor(Variable, levels = corr_vars))
+
+  labels <- results |>
+    mutate(
+      Variable = factor(Variable, levels = corr_vars),
+      label = sprintf("rho = %.2f\np %s", rho, fmt_p(p_value))
+    )
+
+  p <- ggplot(long, aes(x = Value, y = .data[[focal_var]])) +
+    geom_point(color = "#303238", alpha = 0.5, size = 1.6, shape = 16) +
+    geom_smooth(method = "lm", formula = y ~ x, se = TRUE,
+                color = "#6BA8CE", fill = "#9BC7DF", linewidth = 0.8) +
+    geom_text(
+      data = labels,
+      aes(x = -Inf, y = Inf, label = label),
+      hjust = -0.12, vjust = 1.2, size = 3.4, color = "#202124",
+      lineheight = 0.95, inherit.aes = FALSE
+    ) +
+    facet_wrap(
+      ~ Variable, scales = "free_x", ncol = ncol,
+      labeller = as_labeller(function(x) gsub("_", " ", x))
+    ) +
+    labs(x = NULL, y = focal_var) +
+    corr_theme
+
+  ggsave(file.path(output_dir, png_name), p,
+         width = width, height = height, dpi = 300)
+  print(p)
+  invisible(results)
 }
 
-cor_results <- do.call(rbind, lapply(corr_vars, spearman_one))
-cor_results$p_adjusted <- p.adjust(cor_results$p_value, method = "BH")
-
-cat("Spearman correlations with", focal_var, ":\n")
-print(cor_results)
-
-write.csv(
-  cor_results,
-  file.path(output_dir, "spearman_AveRG_correlations.csv"),
-  row.names = FALSE
+## ---- (1) Ave_RG ----
+run_spearman_analysis(
+  quina,
+  focal_var = "Ave_RG",
+  corr_vars = c("Edge_Angle", "Thickness", "Ave_GIUR", "Retouch_length_index"),
+  csv_name  = "spearman_AveRG_correlations.csv",
+  png_name  = "spearman_AveRG_scatter.png",
+  ncol = 2, width = 7.6, height = 6.0
 )
 
-## ---- faceted scatter plots with loess trend ----
-long <- quina |>
-  pivot_longer(all_of(corr_vars), names_to = "Variable", values_to = "Value") |>
-  filter(!is.na(.data[[focal_var]]), !is.na(Value)) |>
-  mutate(Variable = factor(Variable, levels = corr_vars))
-
-cor_labels <- cor_results |>
-  mutate(
-    Variable = factor(Variable, levels = corr_vars),
-    label = sprintf("rho = %.2f\np %s", rho, fmt_p(p_value))
-  )
-
-spearman_plot <- ggplot(long, aes(x = Value, y = .data[[focal_var]])) +
-  geom_point(color = "#303238", alpha = 0.5, size = 1.6, shape = 16) +
-  geom_smooth(method = "loess", formula = y ~ x, se = TRUE,
-              color = "#6BA8CE", fill = "#9BC7DF", linewidth = 0.8) +
-  geom_text(
-    data = cor_labels,
-    aes(x = -Inf, y = Inf, label = label),
-    hjust = -0.12, vjust = 1.2, size = 3.4, color = "#202124",
-    lineheight = 0.95, inherit.aes = FALSE
-  ) +
-  facet_wrap(
-    ~ Variable, scales = "free_x",
-    labeller = as_labeller(function(x) gsub("_", " ", x))
-  ) +
-  labs(x = NULL, y = focal_var) +
-  corr_theme
-
-ggsave(
-  file.path(output_dir, "spearman_AveRG_scatter.png"),
-  spearman_plot,
-  width = 7.6, height = 6.0, dpi = 300
+## ---- (2) Section_asymmetric ----
+run_spearman_analysis(
+  quina,
+  focal_var = "Section_asymmetric",
+  corr_vars = c("Edge_Angle", "Ave_GIUR", "Retouch_length_index",
+                "Ave_RG", "Thickness", "Invasive_index"),
+  csv_name  = "spearman_Section_asymmetric_correlations.csv",
+  png_name  = "spearman_Section_asymmetric_scatter.png",
+  ncol = 3, width = 9.2, height = 6.0
 )
 
-print(spearman_plot)
+## ---- (3) Edge_Angle ----
+run_spearman_analysis(
+  quina,
+  focal_var = "Edge_Angle",
+  corr_vars = c("Retouch_length_index", "Ave_GIUR", "Ave_RG"),
+  csv_name  = "spearman_EdgeAngle_correlations.csv",
+  png_name  = "spearman_EdgeAngle_scatter.png",
+  ncol = 3, width = 9.2, height = 3.7
+)
