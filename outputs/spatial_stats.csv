@@ -1,0 +1,4 @@
+"group","n","nnd_mean","nnd_median","nnd_min","nnd_max","clark_evans_R","clark_evans_p","clark_evans_note"
+"Binchuan",22,982.1842436033,659.073039808842,134.996207771707,2621.43254710006,NA,NA,"exploratory: 2-D CSR invalid (linear along-river)"
+"Heqing",5,2566.13830607831,3311.10186848103,892.543929982732,4423.399933464,NA,NA,"n=5, not tested"
+"All",27,1275.50906998756,892.543929982732,134.996207771707,4423.399933464,NA,NA,"pooled (basins not comparable)"
