@@ -109,30 +109,17 @@ library(here)
 
 # Introduction
 
-MP 的行为多样性； Mousterian 变异性的解读长期争论。
+旧石器时代中期是人类演化至关重要的时期，这一阶段不仅人群构成复杂，且在技术文化上也展现了极高的多样性。但是，这些多样性的技术体系的驱动因素，即究竟代表了不同文化传统，或是古人类对环境的响应，始终是学界长期关注的重要议题。这一议题引发了莫斯特争论，不同学者分别就文化传统、居址功能、环境塑造等维度，对西欧莫斯特工业的变异性进行解释。其中，基纳型莫斯特是讨论争议的核心之一。
 
-在这些 Mousterian 变体中，Quina 是结构化程度最高、最可辨识的技术体系之一：两相交表面交替/侧向/不对称为目标的剥坯；厚"背"对侧 + talon à pan 等诊断台面；scalariform 修理；两支 ramification）。
+基纳技术体系不仅是多样化的旧石器中期工业中最具辨识度的技术体系之一，也通常与特殊的生计策略和环境适应相关联，代表一种非常独特且灵活的技术-经济概念。基纳体系的特征主要包含三个维度：在剥片策略，基纳石核主要以在近平行和secant的两个表面，进行交替且连续的剥离；通过侵入式剥片迅速提取石核的可用体积。体现在毛坯上，基纳石片通常具有较大的厚度和不对称的截面形态，通常一侧是锋利边缘而另一侧是较厚back。这种体积构型能够承受多次再修理和循环利用，是支持Quina修理的关键基础。在刃缘修理层面，基纳修理策略具有以下特点：其一，打制者通过对工具功能刃缘持续地进行再修理和维护，从而产生阶梯状的多层修疤；其二，打制者在不同的再修理阶段采用不同的打制方式。具体来说，在再修理的初始阶段，打制者通常使用软锤锤击剥下尺寸较大的再修理石片，从而在基纳刮削器的刃缘上产生凸型修疤（Convexity scar），使刃口构成“平-凸”形态，能够为后续加工和维护刃缘提供足够的体积空间；接下来，打制者通常使用硬锤在刃缘的边缘处进行连续地再修理，形成尺寸较小的再修理石片和具有阶梯状尾端形态的凹型修疤（Concavity scar），产生“平-凹”形刃口，以维持刃缘的功能性。维护刃缘产生的再修理石片也通常具有直接使用的潜力，在一些情况下，甚至可能对这些再修理石片进行修理，使其转化为工具。这也体现了Quina概念的第三个维度，即ramification。同样地，ramification也体现在对Quina石片的利用方式上，除制作Quina刮削器外，这些大尺寸的石片还可以直接用以剥取小型石片，即Core-on-flake。
 
-Quina 被较一致地关联到一种特定的生计-生态情境——高居住流动性、强烈的工具精致修理与维护，出现在开阔、资源斑块化、对流动性要求高的景观中（在欧洲常为 MIS4 的冷-开阔草原）。Quina 的经典地理范围为西欧和南欧，西亚也存在Quina现象。但，旧大陆东侧是长期空白的。
+由于Quina体系剥坯序列的高效性、高强度的工具维护策略和ramification的灵活性，被较一致地关联到一种特定的生计策略和环境背景中。通常认为，Quina与高群体流动性有关。这通常反映在动物考古学证据上：Quina遗址通常与种群单一的季节性迁徙型动物群为主，如驯鹿。生计活动所必需的规划也体现在聚落组织上，即在主要营地周边形成专门化的猎杀地点。这种情景也通常与开阔、资源斑块化的景观背景相关联，大多数基纳组合集中分布于西欧和南欧，时间大致位于 MIS 4 至 MIS 3 初期之间，这是个气候剧烈振荡的时期。在西亚，也有Quina修理的证据，通常出现在Achealean-Yabrudian的背景中，年代可早至MIS 11。但是，不论是Quina技术体系，还是单独Quina修理特征，在旧大陆东侧都是长期缺失的。
 
-中国 MP 多样性背景和中期争议。龙潭是首个性质明确、经发掘、有测年、已发表的 Quina 组合。但龙潭不是孤例：自 2010 年以来，在鹤庆黄坪盆地与宾川盆地的河流阶地上，已发现一含 Quina 石制品的地表地点。这暗示青藏高原东南缘可能存在一个区域性的 Quina 技术群体，是区域现象而非孤例。
+东亚的旧石器时代中期长期存在争议。旧有观点认为，东亚的旧石器技术长期稳定，在旧石器时代晚期以前未出现革新性变化，因此认为东亚不存在旧石器时代中期技术。近年来，越来越多的发现表明中国地区在中期阶段存在革新性且多样化的石器技术，如灵井遗址（125-90 ka）的盘状技术、金斯太遗址和观音洞遗址的勒瓦娄哇技术。Quina技术在龙潭遗址被识别，系东亚首个性质明确、经发掘、有测年、已发表的完整的Quina体系。更重要的是，龙潭遗址可能并非孤例，自 2010 年以来，在龙潭遗址所处的黄坪盆地与相邻的宾川盆地的河流阶地上，已发现多处含 Quina 特征石制品的地表遗址。这暗示青藏高原东南缘可能存在一个区域性的 Quina 技术群体。因此，这或许指示了东亚的Quina体系在青藏高原东南缘是一种区域的技术现象。
 
-青藏高原东南缘、金沙江上游的干热断陷河谷——高海拔、季风影响、季节性干旱、植被开阔的环境，与欧洲 Quina 的温带/冰缘情境不同，也与中国其他 MP 技术（Levallois/盘状）所处环境不同。
+青藏高原东南缘，或者说横断山脉地区，具有显著的海拔梯度、丰富的地貌单元、多样的气候特征，是现代全球生物多样性的热点区域。黄坪盆地、宾川盆地所处的地貌位置，属于金沙江流域的干热断陷河谷。这里由于受到高海拔、季风影响，表现出季节性干旱的气候，和植被开阔的环境。这种地质环境特征，不仅与欧洲 Quina 遗址所处的的温带、冰缘环境不同，也与中国其他报道旧石器中期技术的地区存在显著差别。
 
-问题：1.这是否是一个真实、连贯的区域 Quina 现象？——这些地表组合在技术上是否一致地符合同一个 Quina 概念（与龙潭一致），从而值得作为区域实体来识别？2.为什么 Quina 会出现在这种环境地质背景下？
-
-在此，我们报道材料。旨在1.定量表征两盆地地表 Quina 刮器 + 再修理石片，检验其与龙潭的技术一致性，以确立"Quina valleys"这一区域技术现象；2.将其复现放到区域环境-地质背景（古气候 + 原料经济 + 阶地地貌）中讨论"为什么这里"出现Quina。
-
-
-旧石器时代中期是人类演化至关重要的时期。这一阶段不仅人群构成复杂，且在技术文化上也展现了极高的多样性。但是，这些多样性的技术体系究竟代表了不同文化传统，还是古人类对环境的响应，长期受到学界关注。以莫斯特争论为例，欧洲的旧石器时代中期组合主要以勒瓦娄哇、盘状、石叶和基纳为特色，其中，基纳技术体系由于其剥坯序列的灵活性和高强度的工具维护策略，广泛认为代表了高度流动性的一类技术，普遍被解释为古人类对干冷、开阔环境的特殊行为适应策略。
-
-近年来，越来越多的发现表明中国地区在中期阶段存在革新性的石器技术。灵井遗址（125-90 ka）的石制品组合以盘状石核技术和多样化的小型石片工具为特色；金斯太遗址和观音洞遗址均存在勒瓦娄哇剥片技术，但后者的技术性质存在争议；龙潭遗址存在清晰且完整的基纳技术消减序列，是目前东亚地区唯一报道的基纳技术体系组合，其文化层的年代距今约为60-50 ka BP（Ruan et al., 2025）。上述这些具有显著革新性质的石制品组合表明，中国地区存在多样化的旧石器中期技术体系。
-
-基纳技术体系是欧洲旧石器时代中期技术的一种重要类型，以基纳刮削器、特殊的剥坯概念和分支化的消减策略为特征（Bourguignon, 1997; Hiscock et al., 2009; Delpiano et al., 2022）。其中，基纳刮削器的毛坯通常为横截面不对称且保留砾石面的厚石片，这种厚石片往往通过特殊的平面-斜割型剥坯概念生产；同时，其刃缘具有层叠阶梯状的修疤，反映了古人类对基纳刮削器的持续修理和维护行为（Bourguignon, 1997; Hiscock et al., 2009; Delpiano et al., 2022）。一些情况下，古人类会对刃缘维护产生的再修理石片进行修理或直接使用，指示了分支化的消减序列（Bourguignon et al., 2004; Delpiano et al., 2022; Peresani et al., 2023）。目前，基纳技术体系仅发现于欧洲，其年代最早可追溯至MIS 8-9，但以MIS 4-3期间的遗存最为丰富（Delpiano et al., 2022; Romagnoli et al., 2022）；而基纳刮削器出现的最早时间可在西亚地区追溯至MIS 11，但其与欧洲基纳技术体系的关联仍处于争论（Falguères et al., 2015）。
-
-目前，东亚地区仅有龙潭遗址明确了基纳技术体系的存在，显著的地理缺环导致龙潭组合展现出相当程度的隔绝性，因此研究人员倾向于认为该遗址的基纳技术体系源自技术趋同，而非技术交流所致（Ruan et al., 2025）。也因如此，我们难以探讨东亚基纳人群的分布范围和空间活动模式，极大限制了对该地区基纳技术人群生存策略的理解。
-
-在此，我们对中国滇西北地区鹤庆黄坪盆地和宾川盆地发现基纳遗址群开展研究。鹤庆黄坪盆地和宾川盆地是两处毗邻的构造断陷盆地，在2010年以来的多次调查中发现了大量旧石器遗址，包括龙潭遗址和天华洞遗址。这些遗址发现的石制品技术面貌相似，并以存在较高比例的基纳刮削器和再修理石片等基纳技术产品为特色。本研究旨在通过对基纳遗址群和基纳刮削器进行综合分析，厘清基纳技术在滇西北地区的地理范围和空间分布特征，提出“Quina valley”概念，明确东亚地区具有基纳技术人群的分布，并进一步证明中国旧石器时代中期技术体系的多样性和复杂性。
+在此，我们对青藏高原东南缘的黄坪盆地和宾川盆地发现基纳遗存开展研究。我们对遗址的景观分布模式、原料可供性、以及选择Quina体系最具特征的Quina修理产品，即Quina刮削器和再修理石片进行综合分析。我们想回答两个问题：1.这是否是一个真实、连贯的区域 Quina 现象？这些地表组合在技术上是否一致地符合同一个 Quina 概念，从而值得作为区域实体来识别？；2.为什么 Quina 会出现在这种环境地质背景下？
 
 # 区域地质与古环境背景
 
@@ -156,7 +143,7 @@ Quina 被较一致地关联到一种特定的生计-生态情境——高居住�
 
 ## Raw material composition and electivity
 
-Raw-material selection was quantified with Jacobs' electivity index *D* [@jacobs1974], a modification of Ivlev's index that is independent of the relative abundance of the resources:
+Raw material selection was quantified with Jacobs' electivity index *D* [@jacobs1974], a modification of Ivlev's index that is independent of the relative abundance of the resources:
 
 $$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$
 
@@ -167,6 +154,8 @@ where $r$ is the proportion of a raw material among the *used* tools and $p$ is 
 ## Quina修理产品的技术类型分析
 
 ## Reproducibility and open materials
+
+Computational reproducibility remains an ongoing challenge in archaeological science, yet it is essential for the credibility and cumulative progress of quantitative research [@marwickComputationalReproducibilityArchaeological2017; @marwickOpenScienceArchaeology2017]. To support reproducibility and re-use, all materials necessary to reproduce the analyses presented here are provided in version-controlled online repository at OSF. These materials include the complete R and Python scripts used for all analyses and visualizations, and the raw datasets underlying all reported results. The repositories are organized following established best practices for research compendia, with a logical folder structure and relative file paths that allow all code to be executed without manual modification. All figures, tables, and statistical results presented in this paper can therefore be independently reproduced from these materials.
 
 # Results
 
