@@ -1,20 +1,24 @@
 ## 03_elevation_profile.R — site elevation profile (line chart) along the valleys.
-## Standalone: reads only Quina_sites_27_clean.csv (no network, no cache needed).
+## Standalone: reads only Site_information.xlsx (no network, no cache needed).
 ## Sites are ordered by latitude within each river transect (a proxy for
 ## along-valley position); Binchuan splits into its two rivers.
 
 library(dplyr)
-library(readr)
+library(readxl)
 library(ggplot2)
 
 proj_dir   <- "H:/Quina_valleys"
 output_dir <- file.path(proj_dir, "outputs")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-sites <- readr::read_csv(file.path(proj_dir, "Quina_sites_27_clean.csv"),
-                         show_col_types = FALSE) |>
+## Site_information.xlsx = source of truth (29 sites); drop PJDD/ZKZ -> clean 27.
+sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+names(sites) <- trimws(names(sites))
+sites <- sites |>
+  rename(code = Code) |>
+  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(
-    basin    = factor(basin, levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop")),
     ## river transect: Binchuan = Sangyuan (north ~26.0N) vs Liandong (south ~25.83-25.91N)
     transect = case_when(

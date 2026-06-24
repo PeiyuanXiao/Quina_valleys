@@ -11,7 +11,7 @@
 
 library(sf)
 library(dplyr)
-library(readr)
+library(readxl)
 library(ggplot2)
 library(terra)
 library(tidyterra)
@@ -27,10 +27,13 @@ cache_dir  <- file.path(proj_dir, "data_cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)
 
-## ---- sites ----
-sites <- readr::read_csv(file.path(proj_dir, "Quina_sites_27_clean.csv"),
-                         show_col_types = FALSE) |>
-  mutate(basin = factor(basin, levels = c("Binchuan", "Heqing"))) |>
+## ---- sites (Site_information.xlsx = source of truth; drop PJDD/ZKZ -> 27) ----
+sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+names(sites) <- trimws(names(sites))
+sites <- sites |>
+  rename(code = Code) |>
+  filter(!code %in% c("PJDD", "ZKZ")) |>
+  mutate(basin = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing"))) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)
 sites_utm <- st_transform(sites, 32647)
 anchor    <- subset(sites_utm, code %in% c("LT", "THC"))

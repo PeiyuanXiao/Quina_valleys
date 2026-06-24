@@ -9,7 +9,7 @@
 
 library(sf)
 library(dplyr)
-library(readr)
+library(readxl)
 library(ggplot2)
 library(terra)
 library(tidyterra)
@@ -36,11 +36,14 @@ water_col     <- "#5E86A0"                                    # rivers + lakes s
 contour_minor <- "#8C857A"; contour_index <- "#6E685D"
 label_col     <- "#4A463F"
 
-## ---- sites ---------------------------------------------------------------
-sites <- readr::read_csv(file.path(proj_dir, "Quina_sites_27_clean.csv"),
-                         show_col_types = FALSE) |>
+## ---- sites (Site_information.xlsx = source of truth; drop PJDD/ZKZ -> 27) -
+sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+names(sites) <- trimws(names(sites))
+sites <- sites |>
+  rename(code = Code) |>
+  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(
-    basin    = factor(basin,    levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop"))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)

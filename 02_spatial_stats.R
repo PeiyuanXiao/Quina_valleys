@@ -1,10 +1,10 @@
 ## 02_spatial_stats.R — C. Point-pattern description + distance-to-river test.
 ## Honesty guardrails are implemented throughout; see outputs/spatial_notes.md.
-## Requires 00_setup.R (for cached rivers). Sites are rebuilt from the clean CSV.
+## Requires 00_setup.R (for cached rivers). Sites are read from Site_information.xlsx.
 
 library(sf)
 library(dplyr)
-library(readr)
+library(readxl)
 library(ggplot2)
 library(spatstat.geom)
 library(spatstat.explore)
@@ -16,11 +16,15 @@ output_dir <- file.path(proj_dir, "outputs")
 cache_dir  <- file.path(proj_dir, "data_cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-## ---- sites in UTM 47N (metres) -------------------------------------------
-sites <- readr::read_csv(file.path(proj_dir, "Quina_sites_27_clean.csv"),
-                         show_col_types = FALSE) |>
+## ---- sites in UTM 47N (metres); source of truth = Site_information.xlsx ----
+## drop PJDD/ZKZ to keep the analysed clean 27.
+sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+names(sites) <- trimws(names(sites))
+sites <- sites |>
+  rename(code = Code) |>
+  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(
-    basin    = factor(basin,    levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop"))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)
@@ -190,7 +194,8 @@ notes <- c(
   "- **Height-above-river (h_river_m) is descriptive only.** If terraces were defined by height, 'T4 higher than T3' is circular; h_river is used only to separate near-river terraces from uplifted hilltops.",
   "",
   "## Data note",
-  "- geomorph in Site_information.xlsx was corrupted (mojibake) and was recovered from station codes via guardrail #3; the basin x geomorph table is internally consistent with that rule."
+  "- Sites are read directly from Site_information.xlsx (29 sites); PJDD and ZKZ are excluded to give the analysed clean 27.",
+  "- geomorph in Site_information.xlsx had been corrupted (mojibake) and has been repaired in-file to the canonical T2/T3/T4/hilltop tokens; the basin x geomorph table is internally consistent with guardrail #3 (hilltop/T4 only Binchuan; T2 only Heqing)."
 )
 writeLines(notes, file.path(output_dir, "spatial_notes.md"))
 

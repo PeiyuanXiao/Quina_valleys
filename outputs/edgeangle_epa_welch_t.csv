@@ -1,2 +1,0 @@
-"estimate","estimate1","estimate2",".y.","group1","group2","n1","n2","statistic","p","df","conf.low","conf.high","method","alternative","cohens_d","d_magnitude","d_conf.low","d_conf.high"
--2.80413558997896,69.9637215528782,72.7678571428571,"Value","edge","epa",166,56,-1.98627393171082,0.0503,84.027160107165,-5.61155541182017,0.00328423186226162,"T-test","two.sided",-0.318244485142947,"small",-0.66,0.0022

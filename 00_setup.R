@@ -7,7 +7,7 @@
 pkgs <- c(
   "sf", "terra", "tidyterra", "elevatr", "ggplot2", "ggspatial",
   "rnaturalearth", "rnaturalearthdata", "spatstat", "spatstat.geom",
-  "spatstat.explore", "dplyr", "readr", "patchwork", "viridis", "osmdata",
+  "spatstat.explore", "dplyr", "readr", "readxl", "patchwork", "viridis", "osmdata",
   "ggrepel", "ggnewscale", "maptiles"
 )
 to_install <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
@@ -18,12 +18,12 @@ if (length(to_install)) {
 
 library(sf)
 library(dplyr)
-library(readr)
+library(readxl)
 sf::sf_use_s2(FALSE)            # planar ops are fine for this small study area
 
 ## ---- paths ---------------------------------------------------------------
 proj_dir   <- "H:/Quina_valleys"
-clean_csv  <- file.path(proj_dir, "Quina_sites_27_clean.csv")
+site_xlsx  <- file.path(proj_dir, "Site_information.xlsx")
 output_dir <- file.path(proj_dir, "outputs")
 cache_dir  <- file.path(proj_dir, "data_cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
@@ -33,13 +33,19 @@ dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)
 ## D1 rivers: set a local line shapefile here to override the osmdata download.
 rivers_local_path <- NA_character_   # e.g. "H:/Quina_valleys/data_raw/rivers.shp"
 
-## ---- A.1 read clean sites, build sf, project -----------------------------
-## NOTE: Quina_sites_27_clean.csv was derived from Site_information.xlsx; the
-## xlsx `geomorph` column was corrupted (mojibake) and was recovered from the
-## station codes using guardrail #3 (hilltop/T4 only Binchuan; T2 only Heqing).
-sites <- readr::read_csv(clean_csv, show_col_types = FALSE) |>
+## ---- A.1 read sites from Site_information.xlsx, build sf, project ---------
+## Site_information.xlsx is the single source of truth (29 sites). We drop PJDD
+## and ZKZ to keep the analysed "clean 27". The xlsx `geomorph` column was
+## previously corrupted (mojibake) and has been repaired in-file to the canonical
+## T2/T3/T4/hilltop tokens; headers carry trailing spaces so are trimmed on read,
+## and `basin` is stored as "<name> basin" so the " basin" suffix is stripped.
+sites <- readxl::read_excel(site_xlsx)
+names(sites) <- trimws(names(sites))
+sites <- sites |>
+  rename(code = Code) |>
+  filter(!code %in% c("PJDD", "ZKZ")) |>                 # the clean 27
   mutate(
-    basin    = factor(basin,    levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop"))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)
