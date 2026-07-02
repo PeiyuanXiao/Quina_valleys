@@ -47,9 +47,9 @@ group_fills <- c(
   LT_Ordinary = "#6BA8CE"
 )
 
-sc_path <- "H:/Quina_valleys/Quina_scraper_surface.xlsx"
-lt_path <- "H:/Quina_valleys/Longtan_lithic_tools.xlsx"
-output_dir <- "H:/Quina_valleys/outputs"
+sc_path <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
+lt_path <- "H:/Quina_valleys/data/Longtan_lithic_tools.xlsx"
+output_dir <- "H:/Quina_valleys/output"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

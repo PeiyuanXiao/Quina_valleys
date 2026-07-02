@@ -23,8 +23,8 @@ library(rstatix)
 
 set.seed(123)
 
-sc_path    <- "H:/Quina_valleys/Quina_scraper_surface.xlsx"
-output_dir <- "H:/Quina_valleys/outputs"
+sc_path    <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
+output_dir <- "H:/Quina_valleys/output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- group labels, colours, theme ----

@@ -63,9 +63,9 @@ B_BOOT <- 5000   # bootstrap / permutation replicates (>= 5000 as specified)
 
 ## ---- paths -----------------------------------------------------------------
 proj_dir <- "H:/Quina_valleys"
-sc_path  <- file.path(proj_dir, "Quina_scraper_surface.xlsx")
-lt_path  <- file.path(proj_dir, "Longtan_lithic_tools.xlsx")
-out_root <- file.path(proj_dir, "outputs")
+sc_path  <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
+lt_path  <- file.path(proj_dir, "data", "Longtan_lithic_tools.xlsx")
+out_root <- file.path(proj_dir, "output")
 base_dir <- file.path(out_root, "dispersion_LT_vs_SC")
 sub <- list(mv  = file.path(base_dir, "multivariate_permdisp"),
             cv  = file.path(base_dir, "cv_dimensional"),

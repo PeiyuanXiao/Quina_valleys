@@ -30,8 +30,8 @@ sf::sf_use_s2(FALSE)
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "outputs")
-cache_dir  <- file.path(proj_dir, "data_cache")
+output_dir <- file.path(proj_dir, "output")
+cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- switches --------------------------------------------------------------
@@ -65,7 +65,7 @@ fault_col   <- "#2B2B2B"
 label_col   <- "#3A352E"
 
 ## ---- sites (mirror 01_map.R exactly so the two maps agree) ------------------
-sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
@@ -267,4 +267,4 @@ p <- p +
 ## ---- export ----------------------------------------------------------------
 ggsave(file.path(output_dir, "map_geology.pdf"), p, width = 9.3, height = 8)
 ggsave(file.path(output_dir, "map_geology.png"), p, width = 9.3, height = 8, dpi = 300)
-message("04_geology_map.R done -> outputs/map_geology.(pdf|png)")
+message("04_geology_map.R done -> output/map_geology.(pdf|png)")

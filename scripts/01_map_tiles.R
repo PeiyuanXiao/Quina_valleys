@@ -22,13 +22,13 @@ sf::sf_use_s2(FALSE)
 if (!requireNamespace("maptiles", quietly = TRUE)) install.packages("maptiles")
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "outputs")
-cache_dir  <- file.path(proj_dir, "data_cache")
+output_dir <- file.path(proj_dir, "output")
+cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)
 
 ## ---- sites (Site_information.xlsx = source of truth; drop PJDD/ZKZ -> 27) ----
-sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
@@ -123,4 +123,4 @@ if (!is.null(china)) {
 ggsave(file.path(output_dir, "map_quina_sites_terrain.pdf"), final, width = 9, height = 9)
 ggsave(file.path(output_dir, "map_quina_sites_terrain.png"), final, width = 9, height = 9,
        dpi = 300)
-message("01_map_tiles.R done -> outputs/map_quina_sites_terrain.(pdf|png)")
+message("01_map_tiles.R done -> output/map_quina_sites_terrain.(pdf|png)")

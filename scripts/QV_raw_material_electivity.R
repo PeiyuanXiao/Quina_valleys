@@ -28,9 +28,9 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-basin_path <- "H:/Quina_valleys/Raw_mat_basin.xlsx"
-sc_path    <- "H:/Quina_valleys/Quina_scraper_surface.xlsx"
-output_dir <- "H:/Quina_valleys/outputs"
+basin_path <- "H:/Quina_valleys/data/Raw_mat_basin.xlsx"
+sc_path    <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
+output_dir <- "H:/Quina_valleys/output"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

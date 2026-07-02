@@ -65,10 +65,10 @@ kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")                 # KW + Dunn
 welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")  # Welch ANOVA + t
 
 proj_dir   <- "H:/Quina_valleys"
-sc_path    <- file.path(proj_dir, "Quina_scraper_surface.xlsx")
-site_path  <- file.path(proj_dir, "Site_information.xlsx")
-lt_path    <- file.path(proj_dir, "Longtan_lithic_tools.xlsx")
-out_root   <- file.path(proj_dir, "outputs")
+sc_path    <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
+site_path  <- file.path(proj_dir, "data", "Site_information.xlsx")
+lt_path    <- file.path(proj_dir, "data", "Longtan_lithic_tools.xlsx")
+out_root   <- file.path(proj_dir, "output")
 dir.create(out_root, showWarnings = FALSE, recursive = TRUE)
 
 guardrails <- c(

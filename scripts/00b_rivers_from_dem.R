@@ -1,8 +1,8 @@
 ## 00b_rivers_from_dem.R — derive a stream network from the cached DEM.
 ## OSM (osmdata) returned no waterways for these valleys, so rivers are extracted
-## hydrologically from data_cache/dem.tif via WhiteboxTools. Also tries to fetch
+## hydrologically from data/cache/dem.tif via WhiteboxTools. Also tries to fetch
 ## lake/water polygons from OSM. Run once after 00_setup.R; 01_map.R then picks
-## up data_cache/rivers_dem.gpkg (and water.gpkg) automatically.
+## up data/cache/rivers_dem.gpkg (and water.gpkg) automatically.
 ##
 ## BEST alternative: if you have a river shapefile (e.g. from the thesis GIS),
 ## skip this and set `rivers_local_path` in 01_map.R — that is cleaner than a
@@ -12,7 +12,7 @@ library(sf)
 library(terra)
 
 proj_dir  <- "H:/Quina_valleys"
-cache_dir <- file.path(proj_dir, "data_cache")
+cache_dir <- file.path(proj_dir, "data", "cache")
 dem_path  <- file.path(cache_dir, "dem.tif")
 stopifnot(file.exists(dem_path))
 

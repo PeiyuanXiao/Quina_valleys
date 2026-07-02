@@ -8,11 +8,11 @@ library(readxl)
 library(ggplot2)
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "outputs")
+output_dir <- file.path(proj_dir, "output")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## Site_information.xlsx = source of truth (29 sites); drop PJDD/ZKZ -> clean 27.
-sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
@@ -64,4 +64,4 @@ p <- ggplot(sites, aes(x = lat, y = elev_m, group = transect, color = transect))
 ggsave(file.path(output_dir, "elevation_profile.png"), p, width = 9, height = 5,
        dpi = 300)
 ggsave(file.path(output_dir, "elevation_profile.pdf"), p, width = 9, height = 5)
-message("03_elevation_profile.R done -> outputs/elevation_profile.(png|pdf)")
+message("03_elevation_profile.R done -> output/elevation_profile.(png|pdf)")

@@ -3,8 +3,8 @@
 ## and a river vector, so it contains NO roads and NO basemap place-names.
 ##
 ## Rivers/lakes: loaded from whichever of these exists (in this order):
-##   data_cache/rivers.gpkg      (OSM, from 00_setup.R — often empty here)
-##   data_cache/rivers_dem.gpkg  (DEM-derived, from 00b_rivers_from_dem.R)
+##   data/cache/rivers.gpkg      (OSM, from 00_setup.R — often empty here)
+##   data/cache/rivers_dem.gpkg  (DEM-derived, from 00b_rivers_from_dem.R)
 ## A local shapefile is best: set rivers_local_path below.
 
 library(sf)
@@ -18,8 +18,8 @@ sf::sf_use_s2(FALSE)
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "outputs")
-cache_dir  <- file.path(proj_dir, "data_cache")
+output_dir <- file.path(proj_dir, "output")
+cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- display toggles -----------------------------------------------------
@@ -37,7 +37,7 @@ contour_minor <- "#8C857A"; contour_index <- "#6E685D"
 label_col     <- "#4A463F"
 
 ## ---- sites (Site_information.xlsx = source of truth; drop PJDD/ZKZ -> 27) -
-sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
@@ -176,4 +176,4 @@ p <- p +
 ## ---- export (no inset) ---------------------------------------------------
 ggsave(file.path(output_dir, "map_quina_sites.pdf"), p, width = 9, height = 8)
 ggsave(file.path(output_dir, "map_quina_sites.png"), p, width = 9, height = 8, dpi = 300)
-message("01_map.R done -> outputs/map_quina_sites.(pdf|png)")
+message("01_map.R done -> output/map_quina_sites.(pdf|png)")

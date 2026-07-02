@@ -1,6 +1,6 @@
 ## 00_setup.R — packages, clean data, projections, and one-time downloads.
 ## Run order:  00_setup.R  ->  01_map.R  ->  02_spatial_stats.R
-## Downloads (DEM / rivers / admin) are cached in data_cache/ so that 01 and 02
+## Downloads (DEM / rivers / admin) are cached in data/cache/ so that 01 and 02
 ## need no network. Re-running 00 reuses any cache that already exists.
 
 ## ---- packages ------------------------------------------------------------
@@ -23,9 +23,9 @@ sf::sf_use_s2(FALSE)            # planar ops are fine for this small study area
 
 ## ---- paths ---------------------------------------------------------------
 proj_dir   <- "H:/Quina_valleys"
-site_xlsx  <- file.path(proj_dir, "Site_information.xlsx")
-output_dir <- file.path(proj_dir, "outputs")
-cache_dir  <- file.path(proj_dir, "data_cache")
+site_xlsx  <- file.path(proj_dir, "data", "Site_information.xlsx")
+output_dir <- file.path(proj_dir, "output")
+cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)
 

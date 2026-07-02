@@ -1,5 +1,5 @@
 ## 02_spatial_stats.R — C. Point-pattern description + distance-to-river test.
-## Honesty guardrails are implemented throughout; see outputs/spatial_notes.md.
+## Honesty guardrails are implemented throughout; see output/spatial_notes.md.
 ## Requires 00_setup.R (for cached rivers). Sites are read from Site_information.xlsx.
 
 library(sf)
@@ -12,13 +12,13 @@ sf::sf_use_s2(FALSE)
 set.seed(123)
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "outputs")
-cache_dir  <- file.path(proj_dir, "data_cache")
+output_dir <- file.path(proj_dir, "output")
+cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- sites in UTM 47N (metres); source of truth = Site_information.xlsx ----
 ## drop PJDD/ZKZ to keep the analysed clean 27.
-sites <- readxl::read_excel(file.path(proj_dir, "Site_information.xlsx"))
+sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
@@ -202,5 +202,5 @@ writeLines(notes, file.path(output_dir, "spatial_notes.md"))
 cat("\n== NND summary ==\n"); print(nnd_tbl)
 cat("\nClark-Evans (Binchuan): R =", round(ce_R, 3), " p =", signif(ce_p, 3), "\n")
 if (!is.null(dist_stats)) { cat("\n== Distance to river ==\n"); print(dist_stats) }
-message("\n02_spatial_stats.R done -> outputs/{spatial_stats.csv, nnd_histogram.png, ",
+message("\n02_spatial_stats.R done -> output/{spatial_stats.csv, nnd_histogram.png, ",
         "ripley_L_binchuan.png, dist_to_river.png, geomorph_basin_table.csv, spatial_notes.md}")
