@@ -32,7 +32,7 @@ set.seed(123)
 
 proj_dir  <- "H:/Quina_valleys"
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
-out_dir   <- file.path(proj_dir, "output", "dist_river_by_group")
+out_dir   <- file.path(proj_dir, "output", "01_landscape_raw_material", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 perm <- 999
 drop_sites <- c("PJDD", "ZKZ")

@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 PROJ = Path("H:/Quina_valleys")
 DEM = PROJ / "data" / "cache" / "dem.tif"
 GEO_DIR = PROJ / "data" / "derived" / "geology_extraction"
-OUT = PROJ / "output"
+OUT = PROJ / "output" / "maps"
 
 
 def load_geotiff_extent(path: Path) -> tuple[Image.Image, tuple[float, float, float, float]]:

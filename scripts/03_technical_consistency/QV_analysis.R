@@ -49,7 +49,7 @@ group_fills <- c(
 
 sc_path <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
 lt_path <- "H:/Quina_valleys/data/Longtan_lithic_tools.xlsx"
-output_dir <- "H:/Quina_valleys/output"
+output_dir <- "H:/Quina_valleys/output/03_technical_consistency"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

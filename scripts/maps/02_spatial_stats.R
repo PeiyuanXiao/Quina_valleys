@@ -12,7 +12,7 @@ sf::sf_use_s2(FALSE)
 set.seed(123)
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "output")
+output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

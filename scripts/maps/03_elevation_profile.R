@@ -8,7 +8,7 @@ library(readxl)
 library(ggplot2)
 
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "output")
+output_dir <- file.path(proj_dir, "output", "maps")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## Site_information.xlsx = source of truth (29 sites); drop PJDD/ZKZ -> clean 27.

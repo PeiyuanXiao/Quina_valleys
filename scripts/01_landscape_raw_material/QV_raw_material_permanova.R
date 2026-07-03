@@ -57,7 +57,7 @@ proj_dir  <- "H:/Quina_valleys"
 sc_path   <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 basin_path<- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
-out_dir   <- file.path(proj_dir, "output", "raw_material_permanova")
+out_dir   <- file.path(proj_dir, "output", "01_landscape_raw_material", "raw_material_permanova")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 drop_sites <- c("PJDD", "ZKZ")                    # -> the analysed "clean 27"

@@ -23,7 +23,7 @@ library(sf); library(dplyr); library(readxl)
 library(ggplot2); library(terra); library(tidyterra); library(ggspatial)
 sf::sf_use_s2(FALSE)
 proj_dir   <- "H:/Quina_valleys"
-output_dir <- file.path(proj_dir, "output")
+output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
 
 ## ===========================================================================

@@ -24,7 +24,7 @@ sf::sf_use_s2(FALSE)            # planar ops are fine for this small study area
 ## ---- paths ---------------------------------------------------------------
 proj_dir   <- "H:/Quina_valleys"
 site_xlsx  <- file.path(proj_dir, "data", "Site_information.xlsx")
-output_dir <- file.path(proj_dir, "output")
+output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)

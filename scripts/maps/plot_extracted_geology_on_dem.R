@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 
 proj_dir <- "H:/Quina_valleys"
 in_dir <- file.path(proj_dir, "data", "derived", "geology_extraction")
-out_dir <- file.path(proj_dir, "output")
+out_dir <- file.path(proj_dir, "output", "maps")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 dem_path <- file.path(proj_dir, "data", "cache", "dem.tif")
