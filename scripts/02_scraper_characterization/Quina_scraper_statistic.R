@@ -72,7 +72,6 @@ run_spearman_analysis <- function(data, focal_var, corr_vars,
 
   cat("\nSpearman correlations with", focal_var, ":\n")
   print(results)
-  write.csv(results, file.path(output_dir, csv_name), row.names = FALSE)
 
   long <- d |>
     pivot_longer(all_of(corr_vars), names_to = "Variable", values_to = "Value") |>

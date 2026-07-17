@@ -73,8 +73,6 @@ cat("By river:\n");    print(table(dat$river_ID))
 ## ---- descriptives + assumption checks --------------------------------------
 desc_basin <- dat |> group_by(basin)    |> get_summary_stats(d, type = "common") |> ungroup()
 desc_river <- dat |> group_by(river_ID) |> get_summary_stats(d, type = "common") |> ungroup()
-write.csv(desc_basin, file.path(out_dir, "descriptives_by_basin.csv"), row.names = FALSE)
-write.csv(desc_river, file.path(out_dir, "descriptives_by_river.csv"), row.names = FALSE)
 cat("\n== d_river_m descriptives by basin ==\n"); print(desc_basin |> select(basin, n, median, iqr, mean, sd, min, max))
 cat("\n== d_river_m descriptives by river ==\n"); print(desc_river |> select(river_ID, n, median, iqr, mean, sd, min, max))
 
@@ -94,8 +92,6 @@ mw_basin  <- dat |> wilcox_test(d ~ basin) |> add_significance()
 eff_basin <- dat |> wilcox_effsize(d ~ basin)                       # rank-biserial r
 t_basin   <- dat |> t_test(d ~ basin, var.equal = FALSE)            # Welch
 cd_basin  <- dat |> cohens_d(d ~ basin, var.equal = FALSE)
-write.csv(mw_basin,  file.path(out_dir, "basin_mannwhitney.csv"), row.names = FALSE)
-write.csv(t_basin,   file.path(out_dir, "basin_welch_t.csv"),     row.names = FALSE)
 cat("\n########## (1) BASIN ##########\n")
 cat(sprintf("Mann-Whitney U: p %s | rank-biserial r = %.2f (%s)\n",
             fmt_p(mw_basin$p), eff_basin$effsize, eff_basin$magnitude))
@@ -110,9 +106,6 @@ kw_eff  <- dat |> kruskal_effsize(d ~ river_ID)                     # epsilon^2
 dunn    <- dat |> dunn_test(d ~ river_ID, p.adjust.method = "bonferroni")
 welch_a <- dat |> welch_anova_test(d ~ river_ID)
 gh      <- dat |> games_howell_test(d ~ river_ID)
-write.csv(kw,   file.path(out_dir, "river_kruskal.csv"),         row.names = FALSE)
-write.csv(dunn, file.path(out_dir, "river_dunn_bonferroni.csv"), row.names = FALSE)
-write.csv(gh,   file.path(out_dir, "river_games_howell.csv"),    row.names = FALSE)
 cat("\n########## (2) RIVER ##########\n")
 cat(sprintf("Kruskal-Wallis: chi2 = %.2f, df = %d, p %s | epsilon^2 = %.2f (%s)\n",
             kw$statistic, kw$df, fmt_p(kw$p), kw_eff$effsize, kw_eff$magnitude))
@@ -133,15 +126,12 @@ run_perm <- function(fac) {
              disp_p <- pt$tab$`Pr(>F)`[1] }, error = function(e) {})
   cat(sprintf("adonis2(d ~ %-8s): R2 = %.3f, F = %.2f, p %s | PERMDISP p %s\n",
               fac, ad$R2[1], ad$F[1], fmt_p(ad$`Pr(>F)`[1]), fmt_p(disp_p)))
-  write.csv(as.data.frame(ad), file.path(out_dir, sprintf("permanova_%s.csv", fac)))
   data.frame(term = fac, R2 = ad$R2[1], F = ad$F[1], p = ad$`Pr(>F)`[1], permdisp_p = disp_p)
 }
 cat("\n########## (3) permutational ANOVA (Euclidean, 1 var) + PERMDISP ##########\n")
 pm <- bind_rows(run_perm("basin"), run_perm("river_ID"))
 nested <- adonis2(D ~ basin / river_ID, data = dat, permutations = perm, by = "terms")
-write.csv(as.data.frame(nested), file.path(out_dir, "permanova_nested.csv"))
 cat("\nNested d ~ basin/river_ID (between-basin vs river-within-basin):\n"); print(nested)
-write.csv(pm, file.path(out_dir, "permanova_summary.csv"), row.names = FALSE)
 
 ## ============================================================================
 ## VISUALISATION: boxplots (log10 y) by basin and by river, with post-hoc

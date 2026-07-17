@@ -101,14 +101,10 @@ strip_basin <- function(x) sub(" basin$", "", trimws(as.character(x)))
 run_oneway <- function(D, meta, fac, prefix, label) {
   form <- stats::as.formula(paste("D ~", fac))
   ad <- adonis2(form, data = meta, permutations = perm)
-  write.csv(as.data.frame(ad),
-            file.path(out_dir, sprintf("%s_permanova_%s.csv", prefix, fac)))
   disp_p <- NA_real_
   tryCatch({
     b  <- betadisper(D, meta[[fac]])
     pt <- permutest(b, permutations = perm)
-    write.csv(as.data.frame(pt$tab),
-              file.path(out_dir, sprintf("%s_permdisp_%s.csv", prefix, fac)))
     disp_p <- pt$tab$`Pr(>F)`[1]
   }, error = function(e) message("  PERMDISP skipped for ", fac, ": ", conditionMessage(e)))
   cat(sprintf("\n[%s]  %s ~ %-9s :  R2 = %.3f | F = %.2f | p %s | PERMDISP p %s\n",
@@ -122,7 +118,6 @@ run_oneway <- function(D, meta, fac, prefix, label) {
 ## nested model D ~ basin/river_ID : separates between-basin vs river-within-basin
 run_nested <- function(D, meta, prefix, label) {
   ad <- adonis2(D ~ basin / river_ID, data = meta, permutations = perm, by = "terms")
-  write.csv(as.data.frame(ad), file.path(out_dir, sprintf("%s_permanova_nested.csv", prefix)))
   cat(sprintf("\n[%s]  %s ~ basin/river_ID  (sequential variance partition):\n", prefix, label))
   print(ad)
   rn <- rownames(ad)
@@ -162,7 +157,6 @@ composition_bar <- function(df, group_levels, group_lab, title, subtitle, file, 
     labs(title = title, subtitle = subtitle, x = group_lab, y = "Percentage", fill = "Raw material") +
     base_theme + theme(panel.grid.major.x = element_blank())
   ggsave(file, p, width = width, height = 5.2, dpi = 300)
-  write.csv(comp, sub("\\.png$", ".csv", file), row.names = FALSE)
   invisible(comp)
 }
 
@@ -221,7 +215,6 @@ clr_biplot <- function(clr_mat, meta, title, subtitle, file, label_col = "Loc") 
   mult <- 0.85 * min(max(abs(sco$PC1)) / max(abs(ld$PC1)),
                      max(abs(sco$PC2)) / max(abs(ld$PC2)))
   lda <- transform(ld, PC1 = PC1 * mult, PC2 = PC2 * mult)
-  write.csv(ld, sub("\\.png$", "_loadings.csv", file), row.names = FALSE)
   p <- ggplot(sco, aes(PC1, PC2)) +
     geom_hline(yintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey55") +
     geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey55") +
@@ -353,10 +346,6 @@ cat("Locality composition (%):\n")
 print(round(100 * prop.table(B_M, 1), 1))
 cat("\nCLR-transformed localities (zeros multiplicatively replaced):\n")
 print(round(B_clr, 3))
-write.csv(cbind(B_meta, round(100 * prop.table(B_M, 1), 2)),
-          file.path(out_dir, "B_avail_locality_composition_pct.csv"), row.names = FALSE)
-write.csv(cbind(B_meta, round(B_clr, 4)),
-          file.path(out_dir, "B_avail_locality_clr.csv"), row.names = FALSE)
 
 push(run_oneway(B_D, B_meta, "basin",    "B_avail", "available-material"))
 push(run_oneway(B_D, B_meta, "river_ID", "B_avail", "available-material"))
@@ -413,7 +402,6 @@ push(run_oneway(C_D, C_meta, "river_ID", "C_clast", "avail-clast"))
 
 ## hierarchical spatial-scale decomposition (basin / river-within-basin / Loc-within-river)
 Chier <- adonis2(C_D ~ basin / river_ID / Loc, data = C_meta, permutations = perm, by = "terms")
-write.csv(as.data.frame(Chier), file.path(out_dir, "C_clast_permanova_hierarchical.csv"))
 cat("\n[C_clast] hierarchical  D ~ basin/river_ID/Loc  (spatial-scale decomposition;\n",
     "  higher-level p anticonservative, only Loc-level contrasts have clast replication):\n", sep = "")
 print(Chier)
@@ -455,8 +443,6 @@ p_part <- ggplot(part, aes(100 * R2, scale, fill = scale)) +
         plot.subtitle = element_text(hjust = 0.5, size = 10, color = "#454649"),
         plot.caption = element_text(hjust = 0, size = 8, color = "#454649"))
 ggsave(file.path(out_dir, "C_clast_variance_partition.png"), p_part, width = 9.2, height = 4.5, dpi = 300)
-write.csv(part[, c("scale", "R2", "p")],
-          file.path(out_dir, "C_clast_variance_partition.csv"), row.names = FALSE)
 
 ## ---- viz C.2: PERMDISP -- compositional evenness per locality (mean +/- SE) ----
 ## Distance-to-centroid on categorical (Bray-Curtis) data is discrete, so raw
@@ -521,7 +507,6 @@ ggsave(file.path(out_dir, "C_clast_pcoa_scatter.png"), p_ord, width = 8.4, heigh
 ## COMBINED SUMMARY (rank the grouping variables by variance explained)
 ## ============================================================================
 summary_tbl <- bind_rows(summary_rows)
-write.csv(summary_tbl, file.path(out_dir, "summary_variance_explained.csv"), row.names = FALSE)
 cat("\n################## SUMMARY: variance in raw-material composition explained ##################\n")
 print(summary_tbl, row.names = FALSE, digits = 3)
 

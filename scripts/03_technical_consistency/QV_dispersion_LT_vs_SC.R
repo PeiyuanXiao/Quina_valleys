@@ -7,6 +7,7 @@
 ##   Block A  multivariate dispersion (PERMDISP, betadisper/permutest)
 ##   Block B  per-variable dispersion, two families
 ##              B1 CV family (ratio/dimensional) : Length, Width, Thickness, Mass, Edge_Angle
+##                 (CV-equality significance = cvequality::asymptotic_test, Feltz-Miller 1996)
 ##              B2 robust family (reduction)     : Ave_GIUR, Retouch_length_index, N_Scar, Ave_RG
 ##   Block C  independence sensitivity (drop SC pieces proximal to LT/THC)
 ##   Block D  cross-variable summary
@@ -41,7 +42,7 @@
 ##    see Block C sensitivity.
 ## ============================================================================
 
-required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix")
+required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "cvequality")
 missing_packages <- required_packages[
   !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
 ]
@@ -55,8 +56,6 @@ library(tidyr)
 library(ggplot2)
 library(vegan)
 library(rstatix)
-
-has_cvequality <- requireNamespace("cvequality", quietly = TRUE)  # optional cross-check; never install
 
 set.seed(123)
 B_BOOT <- 5000   # bootstrap / permutation replicates (>= 5000 as specified)
@@ -154,16 +153,16 @@ boot_ratio_ci <- function(x_sc, x_lt, FUN, B = B_BOOT, mean_guard = FALSE) {
   rr <- replicate(B, FUN(sample(x_sc, replace = TRUE)) / FUN(sample(x_lt, replace = TRUE)))
   unname(quantile(rr, c(0.025, 0.975), na.rm = TRUE))
 }
-## permutation test of CV* equality between two groups (statistic = |dCV*|)
-perm_cv_equal <- function(x_sc, x_lt, B = B_BOOT) {
+## CV-equality test between two groups: Feltz & Miller (1996) asymptotic test,
+## via cvequality::asymptotic_test (Marwick & Krishnamoorthy 2019). Returns the
+## D'_AD statistic + p. Replaces the earlier home-grown CV* permutation test so the
+## significance test comes from the published, peer-reviewed cvequality package.
+cv_equal_test <- function(x_sc, x_lt) {
   x_sc <- finite(x_sc); x_lt <- finite(x_lt)
-  obs <- abs(cv_corr(x_sc) - cv_corr(x_lt))
-  pool <- c(x_sc, x_lt); n1 <- length(x_sc)
-  perm <- replicate(B, {
-    idx <- sample.int(length(pool))
-    abs(cv_corr(pool[idx[seq_len(n1)]]) - cv_corr(pool[idx[(n1 + 1):length(pool)]]))
-  })
-  (1 + sum(perm >= obs)) / (B + 1)
+  vals <- c(x_sc, x_lt)
+  grp  <- rep(c("SC_Quina", "LT_Quina"), c(length(x_sc), length(x_lt)))
+  at <- cvequality::asymptotic_test(vals, grp)
+  list(stat = unname(at$D_AD), p = unname(at$p_value))
 }
 ## Fligner-Killeen p for a 2-group contrast
 fligner_pair <- function(a, b) {
@@ -202,8 +201,7 @@ n_tbl <- dat |>
   pivot_wider(names_from = Group, values_from = n, values_fill = 0) |>
   mutate(Variable = factor(Variable, levels = need_vars)) |> arrange(Variable)
 cat("\nPer-variable complete-case n by group:\n"); print(as.data.frame(n_tbl), row.names = FALSE)
-write.csv(n_tbl, file.path(base_dir, "per_variable_n.csv"), row.names = FALSE)
-cat("\ncvequality available for optional Feltz-Miller cross-check:", has_cvequality, "\n")
+cat("\nCV-equality significance test: cvequality::asymptotic_test (Feltz-Miller 1996)\n")
 
 ## focus / proximal-exclusion masks (Block C)
 proximal_ids <- c("LT", "THC")
@@ -227,13 +225,8 @@ run_permdisp <- function(df, outdir, prefix, title) {
 
   means <- tapply(bd$distances, mvd$Group, mean)
   dist_df <- data.frame(Group = mvd$Group, DistanceToCentroid = bd$distances)
-  write.csv(dist_df, file.path(outdir, paste0(prefix, "_distances.csv")), row.names = FALSE)
-  write.csv(data.frame(Group = names(means), mean_dist_to_centroid = as.numeric(means)),
-            file.path(outdir, paste0(prefix, "_group_mean_dist.csv")), row.names = FALSE)
   overall_p <- pt$tab$`Pr(>F)`[1]
   pw <- pt$pairwise$permuted
-  write.csv(data.frame(pair = names(pw), permuted_p = as.numeric(pw)),
-            file.path(outdir, paste0(prefix, "_pairwise_p.csv")), row.names = FALSE)
 
   cat("Mean distance to centroid (= dispersion size):\n"); print(round(means, 3))
   cat("permutest overall p =", signif(overall_p, 3), "\n")
@@ -299,31 +292,17 @@ for (v in cv_vars) {
   x_lt <- finite(dat[[v]][dat$Group == "LT_Quina"])
   ratio <- cv_corr(x_sc) / cv_corr(x_lt)
   rci <- boot_ratio_ci(x_sc, x_lt, cv_corr, mean_guard = TRUE)
-  pp  <- perm_cv_equal(x_sc, x_lt)
+  ce  <- cv_equal_test(x_sc, x_lt)
   cv_ratio[[length(cv_ratio) + 1]] <- data.frame(
     variable = v, CVstar_SC = cv_corr(x_sc), CVstar_LT = cv_corr(x_lt),
     CVstar_ratio_SC_LT = ratio, ratio_lo = rci[1], ratio_hi = rci[2],
-    perm_p_CVequal = pp, mean_SC = mean(x_sc), mean_LT = mean(x_lt),
+    FM_D_AD = ce$stat, FM_p_CVequal = ce$p, mean_SC = mean(x_sc), mean_LT = mean(x_lt),
     note = if (v == "Edge_Angle") "interval scale; CV by convention only" else "")
 }
 cv_group <- bind_rows(cv_group); cv_ratio <- bind_rows(cv_ratio)
-write.csv(cv_group, file.path(sub$cv, "cv_group_stats.csv"), row.names = FALSE)
-write.csv(cv_ratio, file.path(sub$cv, "cv_ratio_SC_vs_LTquina.csv"), row.names = FALSE)
 cat("\nCV* by group:\n");        print(cv_group, row.names = FALSE)
-cat("\nCV* ratio SC:LT_Quina:\n"); print(cv_ratio, row.names = FALSE)
-
-## optional cvequality (Feltz-Miller) cross-check, 3 groups, per variable (never installs)
-if (has_cvequality) {
-  tryCatch({
-    fm <- lapply(cv_vars, function(v) {
-      dd <- dat |> select(Group, all_of(v)) |> rename(Value = all_of(v)) |> filter(is.finite(Value))
-      t <- cvequality::asymptotic_test(dd$Value, dd$Group)
-      data.frame(variable = v, FM_stat = t$test_statistic, FM_p = t$p_value)
-    })
-    write.csv(bind_rows(fm), file.path(sub$cv, "cv_feltz_miller_3group.csv"), row.names = FALSE)
-    cat("\nFeltz-Miller (cvequality) 3-group cross-check written.\n")
-  }, error = function(e) message("  cvequality cross-check skipped: ", conditionMessage(e)))
-}
+cat("\nCV* ratio SC:LT_Quina  (FM_p_CVequal = Feltz-Miller asymptotic CV-equality test):\n")
+print(cv_ratio, row.names = FALSE)
 
 ## plot: CV* by group (point + bootstrap CI)
 cvg_p <- ggplot(cv_group, aes(group, CVstar, color = group)) +
@@ -419,9 +398,6 @@ for (v in robust_vars) {
   }
 }
 rob_group <- bind_rows(rob_group); rob_ratio <- bind_rows(rob_ratio); rob_extra <- bind_rows(rob_extra)
-write.csv(rob_group, file.path(sub$rob, "robust_group_stats.csv"), row.names = FALSE)
-write.csv(rob_ratio, file.path(sub$rob, "robust_ratio_tests_SC_vs_LTquina.csv"), row.names = FALSE)
-write.csv(rob_extra, file.path(sub$rob, "robust_extra_scale.csv"), row.names = FALSE)
 cat("\nRobust group stats (dispersion next to mean):\n"); print(rob_group, row.names = FALSE)
 cat("\nRobust ratios + dispersion-equality tests (SC vs LT_Quina):\n"); print(rob_ratio, row.names = FALSE)
 cat("\nRobust extra-scale (logit / sqrt+Fano):\n"); print(rob_extra, row.names = FALSE)
@@ -462,7 +438,7 @@ headline_ratio <- function(d, v) {
   x_sc <- finite(d[[v]][d$Group == "SC_Quina"]); x_lt <- finite(d[[v]][d$Group == "LT_Quina"])
   if (fam == "CV") {
     metric <- "CVstar_ratio"; ratio <- cv_corr(x_sc) / cv_corr(x_lt)
-    ci <- boot_ratio_ci(x_sc, x_lt, cv_corr, mean_guard = TRUE); p <- perm_cv_equal(x_sc, x_lt)
+    ci <- boot_ratio_ci(x_sc, x_lt, cv_corr, mean_guard = TRUE); p <- cv_equal_test(x_sc, x_lt)$p
   } else if (fam == "bounded") {
     metric <- "MAD_ratio"; ratio <- mad(x_sc) / mad(x_lt)
     ci <- boot_ratio_ci(x_sc, x_lt, function(z) mad(z)); p <- fligner_pair(x_sc, x_lt)
@@ -490,7 +466,6 @@ sens_tbl <- all_h |>
   bind_rows(data.frame(variable = "PERMDISP_meandist", family = "multivariate", metric = "meandist_ratio",
             ratio_SCall_LT = permA$ratio_SC_LT, p_SCall = permA$overall_p, mean_SCall = NA_real_,
             ratio_SCexcl_LT = permC$ratio_SC_LT, p_SCexcl = permC$overall_p, mean_SCexcl = NA_real_))
-write.csv(sens_tbl, file.path(sub$sen, "sensitivity_SCall_vs_SCexcl.csv"), row.names = FALSE)
 cat("\nSensitivity side-by-side (each relative to LT_Quina):\n"); print(sens_tbl, row.names = FALSE)
 
 ## plot: SC-all vs SC-excl dispersion ratio per variable
@@ -522,18 +497,16 @@ summary_tbl <- all_h |>
             mean_SC = mean_SC, mean_LT = mean_LT,
             mean_ratio_SC_LT = mean_SC / mean_LT) |>
   arrange(desc(abs(log(dispersion_ratio_SC_LT))))
-write.csv(summary_tbl, file.path(base_dir, "dispersion_summary.csv"), row.names = FALSE)
 
 permdisp_headline <- data.frame(
   metric = "PERMDISP mean-distance-to-centroid ratio SC_Quina : LT_Quina",
   ratio = permA$ratio_SC_LT, permutest_overall_p = permA$overall_p,
   mean_dist_SC = unname(permA$means["SC_Quina"]), mean_dist_LTq = unname(permA$means["LT_Quina"]),
   mean_dist_LTo = unname(permA$means["LT_Ordinary"]))
-write.csv(permdisp_headline, file.path(base_dir, "permdisp_headline.csv"), row.names = FALSE)
 
 cat("\n--- PERMDISP HEADLINE (multivariate) ---\n"); print(permdisp_headline, row.names = FALSE)
 cat("\n--- dispersion_summary.csv (sorted by ratio magnitude) ---\n"); print(summary_tbl, row.names = FALSE)
 
 cat("\n########## DONE -> ", base_dir,
-    "\n  multivariate_permdisp/  cv_dimensional/  robust_reduction/  sensitivity/",
-    "\n  dispersion_summary.csv  permdisp_headline.csv  per_variable_n.csv  _GUARDRAILS.txt ##########\n", sep = "")
+    "\n  figures in: multivariate_permdisp/  cv_dimensional/  robust_reduction/  sensitivity/",
+    "\n  all statistics are printed to the console above (no CSV written). ##########\n", sep = "")

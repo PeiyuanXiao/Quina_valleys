@@ -96,9 +96,6 @@ print(as.data.frame(welch_t))
 cat("\n== Effect size (Cohen's d, unequal variance) ==\n")
 print(as.data.frame(effsize))
 
-write.csv(welch_summary,
-          file.path(output_dir, "edgeangle_epa_welch_t.csv"),
-          row.names = FALSE)
 
 ## ---- boxplot: jittered points behind, unfilled black box, black mean dot ----
 stat_a <- welch_t |>

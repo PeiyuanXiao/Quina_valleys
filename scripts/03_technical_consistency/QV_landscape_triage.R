@@ -164,8 +164,6 @@ run_pca_plot <- function(mat, groups, colors, outdir, prefix, title, subtitle) {
   loadings <- data.frame(Variable = rownames(pca$rotation),
                          PC1 = pca$rotation[, 1], PC2 = pca$rotation[, 2],
                          row.names = NULL)
-  write.csv(scores,   file.path(outdir, paste0(prefix, "_pca_scores.csv")),   row.names = FALSE)
-  write.csv(loadings, file.path(outdir, paste0(prefix, "_pca_loadings.csv")), row.names = FALSE)
 
   cent  <- make_centroids(scores, "PC1", "PC2")
   spoke <- make_spokes(scores, cent)
@@ -235,15 +233,10 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
   we_ph  <- we_long |> group_by(Variable) |>
     pairwise_t_test(Value ~ Grp, pool.sd = FALSE, p.adjust.method = "bonferroni") |> ungroup()
 
-  write.csv(kw_omn, file.path(outdir, paste0(prefix, "_kruskal_omnibus.csv")),        row.names = FALSE)
-  write.csv(kw_ph,  file.path(outdir, paste0(prefix, "_dunn_posthoc_bonf.csv")),       row.names = FALSE)
-  write.csv(we_omn, file.path(outdir, paste0(prefix, "_welch_anova_omnibus.csv")),     row.names = FALSE)
-  write.csv(we_ph,  file.path(outdir, paste0(prefix, "_welch_pairwise_t_bonf.csv")),   row.names = FALSE)
 
   ## group medians (direction) + median spread (effect magnitude)
   meds <- long |> group_by(Variable, Grp) |>
     summarise(median = median(Value, na.rm = TRUE), .groups = "drop")
-  write.csv(meds, file.path(outdir, paste0(prefix, "_group_medians.csv")), row.names = FALSE)
   eff <- meds |> group_by(Variable) |>
     summarise(median_spread = max(median) - min(median), .groups = "drop")
   omn_p <- bind_rows(
@@ -306,12 +299,10 @@ run_categorical <- function(dat, group_col, group_levels, colors, outdir, prefix
   d   <- dist(mat, method = "euclidean")
 
   ad <- adonis2(d ~ Grp, data = dd, permutations = perm)
-  write.csv(as.data.frame(ad), file.path(outdir, paste0(prefix, "_permanova.csv")))
   cat("\nPERMANOVA (adonis2):\n"); print(ad)
 
   bd <- betadisper(d, dd$Grp)
   pt <- permutest(bd, permutations = perm, pairwise = TRUE)
-  write.csv(as.data.frame(pt$tab), file.path(outdir, paste0(prefix, "_permdisp.csv")))
   cat("\nPERMDISP (betadisper + permutest):\n"); print(pt$tab)
 
   sub <- sprintf("PERMANOVA R2 = %.3f, p %s  |  PERMDISP p %s",
@@ -367,12 +358,10 @@ run_gradient <- function(dat, grad_col, grad_label, outdir, prefix, perm = 999) 
   ## ---- multivariate (ARTIFACT-LEVEL; pseudoreplicated, exploratory) ----
   df_grad <- data.frame(grad = dd$grad)
   ad <- adonis2(d ~ grad, data = df_grad, permutations = perm)
-  write.csv(as.data.frame(ad), file.path(outdir, paste0(prefix, "_adonis2_gradient.csv")))
   cap_R2 <- NA_real_; cap_p <- NA_real_
   cap_ok <- tryCatch({
     cap   <- vegan::capscale(d ~ grad, data = df_grad)
     cap_a <- anova(cap, permutations = perm)        # anova.cca
-    write.csv(as.data.frame(cap_a), file.path(outdir, paste0(prefix, "_capscale_anova.csv")))
     cap_R2 <- cap$CCA$tot.chi / cap$tot.chi
     cap_p  <- cap_a$`Pr(>F)`[1]
     TRUE
@@ -397,7 +386,6 @@ run_gradient <- function(dat, grad_col, grad_label, outdir, prefix, perm = 999) 
     group_by(Site_ID) |>
     summarise(n = n(), grad = dplyr::first(grad),
               across(all_of(variables), ~ median(.x, na.rm = TRUE)), .groups = "drop")
-  write.csv(site_sum, file.path(outdir, paste0(prefix, "_site_summary_medians.csv")), row.names = FALSE)
   cat("Site-level summary: n_sites =", nrow(site_sum),
       "| sites with n<3 artifacts:", sum(site_sum$n < 3), "(aggregation unstable)\n")
 
@@ -409,7 +397,6 @@ run_gradient <- function(dat, grad_col, grad_label, outdir, prefix, perm = 999) 
   }))
 
   per_var <- art |> left_join(sit, by = "Variable")
-  write.csv(per_var, file.path(outdir, paste0(prefix, "_per_variable_spearman.csv")), row.names = FALSE)
   cat("\nPer-variable Spearman (site-level = cleaner; artifact-level = exploratory):\n")
   print(per_var, row.names = FALSE)
 
@@ -571,7 +558,6 @@ if (file.exists(stored_pp)) {
   cat("\nStored QV_analysis pairwise R2 (cross-check):\n")
   print(sp[, intersect(c("Comparison", "R2", "p_value", "p_adjusted"), names(sp))])
 }
-write.csv(consistency, file.path(a1_dir, "a1_consistency_vs_longtan.csv"), row.names = FALSE)
 cat("\nConsistency comparison (Basin R2 vs SC-Longtan R2):\n"); print(consistency, row.names = FALSE)
 cat("Reading: if Binchuan-Heqing R2 is far SMALLER than SC_Quina-LT_* R2,\n",
     "the two basins are technically close => supports regional consistency.\n")
@@ -588,7 +574,6 @@ run_pca_plot(ov_mat, as.character(overlay$Group), overlay_colors, a1_dir, "a1_ov
              "Analysis 1 overlay: basins vs Longtan (shared z-score)",
              "Do the basins overlap each other & LT_Quina, yet separate from LT_Ordinary?")
 ov_pw <- pairwise_adonis(ov_mat, overlay$Group)
-write.csv(ov_pw, file.path(a1_dir, "a1_overlay_pairwise_permanova.csv"), row.names = FALSE)
 cat("\nOverlay 4-group pairwise PERMANOVA (one shared z-scope = cleanest comparison):\n")
 print(ov_pw, row.names = FALSE)
 
@@ -600,7 +585,6 @@ if (file.exists(stored_load)) {
   sl <- read.csv(stored_load) |> rename(longtan_PC1 = PC1, longtan_PC2 = PC2)
   load_cmp <- load_cmp |> left_join(sl, by = "Variable")
 }
-write.csv(load_cmp, file.path(a1_dir, "a1_loadings_comparison.csv"), row.names = FALSE)
 cat("\nLoadings comparison (same variables driving both analyses?):\n"); print(load_cmp, row.names = FALSE)
 
 ## ---- 1d. composition diagnostic: is "Heqing" really "Tianhua/Longtan area"? ----
@@ -609,7 +593,6 @@ heq_by_site <- heq |> count(Site_ID, name = "n_SC") |> arrange(desc(n_SC))
 prox <- c("THC", "LT")                                   # Tianhua Cave, Longtan
 n_prox <- sum(heq$Site_ID %in% prox)
 frac_prox <- n_prox / nrow(heq)
-write.csv(heq_by_site, file.path(a1_dir, "a1_heqing_composition.csv"), row.names = FALSE)
 cat(sprintf("\nComposition diagnostic: Heqing SC n = %d; from THC/LT = %d (%.0f%%).\n",
             nrow(heq), n_prox, 100 * frac_prox))
 if (frac_prox >= 0.4) {
@@ -625,7 +608,6 @@ sens_tbl <- data.frame(
   Model = c("Basin (all SC)", "Basin (Heqing excl. THC/LT)"),
   R2 = c(a1$R2, a1_sens$R2), p_value = c(a1$p, a1_sens$p),
   PERMDISP_p = c(a1$disp_p, a1_sens$disp_p))
-write.csv(sens_tbl, file.path(a1_dir, "a1_basin_sensitivity_summary.csv"), row.names = FALSE)
 cat("\nBasin sensitivity (with vs without THC/LT in Heqing):\n"); print(sens_tbl, row.names = FALSE)
 
 ## ============================================================================
@@ -640,11 +622,9 @@ push_cat("2_landform", a2)
 mat2 <- scale(as.matrix(sc_cc[, variables]))
 d2   <- dist(mat2, method = "euclidean")
 margin_BL <- adonis2(d2 ~ Basin + Landform, data = sc_cc, by = "margin", permutations = 999)
-write.csv(as.data.frame(margin_BL), file.path(a2_dir, "a2_margin_basin_landform.csv"))
 cat("\nMarginal PERMANOVA dist ~ Basin + Landform (by='margin'):\n"); print(margin_BL)
 cat("Reading: Landform's marginal R2/p = its contribution AFTER Basin is controlled.\n")
 ct <- as.data.frame.matrix(table(sc_cc$Basin, sc_cc$Landform))
-write.csv(ct, file.path(a2_dir, "a2_basin_landform_contingency.csv"))
 cat("\nBasin x Landform (flag small cells: T2 Heqing-only; hilltop/T4 Binchuan-only):\n")
 print(ct)
 
@@ -686,7 +666,6 @@ push_cat("4_size_bins", a4b)
 ## CROSS-ANALYSIS TRIAGE SUMMARY
 ## ============================================================================
 summary_tbl <- bind_rows(summary_rows)
-write.csv(summary_tbl, file.path(out_root, "summary_effect_sizes.csv"), row.names = FALSE)
 cat("\n########## CROSS-ANALYSIS TRIAGE SUMMARY (rank by effect size) ##########\n")
 print(summary_tbl, row.names = FALSE)
 
@@ -698,7 +677,6 @@ mv_head <- bind_rows(
   data.frame(analysis = "4_size_continuous",mv_R2 = a4$mv_R2, mv_p = a4$mv_p, permdisp_p = NA_real_),
   data.frame(analysis = "4_size_bins",      mv_R2 = a4b$R2,   mv_p = a4b$p,   permdisp_p = a4b$disp_p)
 ) |> arrange(desc(mv_R2))
-write.csv(mv_head, file.path(out_root, "summary_multivariate_R2.csv"), row.names = FALSE)
 cat("\nMultivariate R2 ranking (largest = most structured; all exploratory):\n")
 print(mv_head, row.names = FALSE)
 
@@ -712,7 +690,6 @@ writeLines(c(guardrails, "",
   file.path(cross_dir, "_COLLINEARITY_WARNING.txt"))
 combo <- adonis2(d2 ~ Basin + Landform + Distance_to_water + Site_size,
                  data = sc_cc, by = "margin", permutations = 999)
-write.csv(as.data.frame(combo), file.path(cross_dir, "combined_margin_permanova.csv"))
 cat("\nCombined marginal PERMANOVA (exploratory; strong collinearity):\n"); print(combo)
 
 ## collinearity panel: site-level predictor correlations + basin association
@@ -721,7 +698,6 @@ site_pred <- size_check |>
   mutate(Basin_num = as.integer(Basin))
 num_pred <- site_pred |> select(Distance_to_water, Site_size, elev_m, Basin_num)
 pred_cor <- cor(num_pred, use = "pairwise.complete.obs", method = "spearman")
-write.csv(round(pred_cor, 3), file.path(cross_dir, "predictor_spearman_matrix.csv"))
 cat("\nSite-level predictor Spearman matrix (collinearity check):\n"); print(round(pred_cor, 3))
 ## Cramer's V for Basin x Landform (site-level)
 bl <- table(site_pred$Basin, site_pred$Landform)

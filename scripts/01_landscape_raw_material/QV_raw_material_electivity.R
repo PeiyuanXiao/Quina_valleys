@@ -123,11 +123,6 @@ composition |>
   arrange(Group, Material) |>
   print(n = Inf)
 
-write.csv(
-  composition,
-  file.path(output_dir, "raw_material_composition.csv"),
-  row.names = FALSE
-)
 
 ## ---- 100% stacked bar chart of composition ----
 group_totals <- material_data |> count(Group, name = "n_total")
@@ -203,11 +198,6 @@ electivity <- composition |>
 cat("\nJacobs' electivity index (D):\n")
 print(electivity, n = Inf)
 
-write.csv(
-  electivity,
-  file.path(output_dir, "jacobs_electivity_index.csv"),
-  row.names = FALSE
-)
 
 ## ---- electivity visualization (diverging bars) ----
 electivity_plot <- ggplot(

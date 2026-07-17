@@ -95,10 +95,6 @@ permanova_result <- adonis2(
 cat("\nOverall PERMANOVA result:\n")
 print(permanova_result)
 
-write.csv(
-  as.data.frame(permanova_result),
-  file = file.path(output_dir, "permanova_overall.csv")
-)
 
 ## Pairwise post-hoc PERMANOVA with Benjamini-Hochberg adjusted p-values
 pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
@@ -145,11 +141,6 @@ posthoc_result <- pairwise_permanova(
 cat("\nPairwise post-hoc PERMANOVA result:\n")
 print(posthoc_result)
 
-write.csv(
-  posthoc_result,
-  file = file.path(output_dir, "permanova_posthoc_pairwise.csv"),
-  row.names = FALSE
-)
 
 ## ----------------------------------------------------------------------------
 ## Multivariate dispersion (PERMDISP, betadisper)
@@ -174,16 +165,7 @@ dispersion_distances <- data.frame(
   DistanceToCentroid = dispersion$distances
 )
 
-write.csv(
-  as.data.frame(dispersion_anova),
-  file = file.path(output_dir, "betadisper_anova.csv")
-)
 
-write.csv(
-  dispersion_distances,
-  file = file.path(output_dir, "betadisper_distances.csv"),
-  row.names = FALSE
-)
 
 ## ----------------------------------------------------------------------------
 ## Shared plotting elements
@@ -259,10 +241,6 @@ pca_loadings <- data.frame(
   row.names = NULL
 )
 
-write.csv(pca_scores, file.path(output_dir, "pca_scores.csv"),
-          row.names = FALSE)
-write.csv(pca_loadings, file.path(output_dir, "pca_loadings.csv"),
-          row.names = FALSE)
 
 pca_centroids <- make_centroids(pca_scores, "PC1", "PC2")
 pca_spokes <- make_spokes(pca_scores, pca_centroids, "PC1", "PC2")
@@ -429,14 +407,6 @@ print(as.data.frame(welch_omnibus))
 cat("\nPairwise Welch t-tests post-hoc, Bonferroni-adjusted:\n")
 print(as.data.frame(welch_posthoc))
 
-write.csv(kw_omnibus,
-          file.path(output_dir, "kruskal_omnibus.csv"), row.names = FALSE)
-write.csv(kw_posthoc,
-          file.path(output_dir, "dunn_posthoc_bonferroni.csv"), row.names = FALSE)
-write.csv(welch_omnibus,
-          file.path(output_dir, "welch_anova_omnibus.csv"), row.names = FALSE)
-write.csv(welch_posthoc,
-          file.path(output_dir, "welch_pairwise_t_bonferroni.csv"), row.names = FALSE)
 
 ## Format the post-hoc comparisons as bracket annotations, with per-facet y
 ## positions because the boxplots use free_y scales.
