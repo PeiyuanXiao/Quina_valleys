@@ -23,7 +23,7 @@ still a placeholder).
 
 | Manuscript claim | Script | Key output (figure / console) |
 |---|---|---|
-| Site distance-to-river by basin & valley; median 604 m; basin p=0.23, valley p=0.124 | `01_landscape_raw_material/QV_dist_river_by_group.R` | `dist_river_by_group/dist_river_by_group.png`; medians & test p-values printed to console |
+| Site distance-to-river by basin & valley; median 596 m; basin p=0.262 (Mann–Whitney), valley p=0.124 (Kruskal–Wallis) | `01_landscape_raw_material/QV_dist_river_by_group.R` | `dist_river_by_group/dist_river_by_group.png`; medians & test p-values printed to console |
 | Trachyte is the dominant tool raw material | `01_landscape_raw_material/QV_raw_material_electivity.R` | `raw_material_stacked_bar.png`; composition table printed to console |
 | **Trachyte clasts significantly larger than sandstone (U = 16864.00, p < 0.001)** | `01_landscape_raw_material/QV_clast_size_by_material.R` | `clast_size_by_material/clast_size_by_material.png`; per-material geometric means + U/p/r printed to console |
 | River-gravel composition is spatially heterogeneous: PERMANOVA R²=10.8%, p=0.001; between-valley p=0.001 | `01_landscape_raw_material/QV_raw_material_permanova.R` (dataset **C**, clast level) | `raw_material_permanova/C_clast_variance_partition.png`, `C_clast_pcoa_scatter.png`; R²/p printed to console |
@@ -43,7 +43,7 @@ still a placeholder).
 |---|---|---|
 | **Specimen level**: SC vs LT Quina not different (R²=0.004); both differ from ordinary scrapers (pairwise R²=0.29–0.36); per-variable tests | `03_technical_consistency/QV_analysis.R` | `pca_ordination_scraper_groups.png`, `variable_boxplots.png`, `pca_loadings.png`; PERMANOVA / Kruskal / Welch printed to console |
 | **Specimen level**: dispersion equal between the two Quina groups, PERMDISP p=0.53 | `03_technical_consistency/QV_dispersion_LT_vs_SC.R` | `dispersion_LT_vs_SC/multivariate_permdisp/*.png`; PERMDISP p printed to console |
-| **Site–landscape level**: technical variation not structured by basin (R²=0.003), landform (0.019), distance (0.017), site size (0.015) | `03_technical_consistency/QV_landscape_triage.R` | `analysis1_basin/…analysis4_size/*.png`; multivariate R²/p printed to console |
+| **Site–landscape level**: technical variation not structured by basin (R²=0.011), landform (0.073), distance (0.031), site size (0.006) | `03_technical_consistency/QV_landscape_triage.R` | `analysis1_basin/…analysis4_size/*.png`; multivariate R²/p printed to console |
 
 ---
 
