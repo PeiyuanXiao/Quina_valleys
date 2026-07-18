@@ -11,7 +11,7 @@
 #   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
 #
 # Output:
-#   - output/02_scraper_characterization/spearman_*_scatter.png
+#   - output/scraper_analysis/spearman_*_scatter.png
 
 # ==============================================================================
 # Setup
@@ -38,7 +38,7 @@ library(ggplot2)
 # ==============================================================================
 
 sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "02_scraper_characterization")
+output_dir <- here::here("output", "scraper_analysis")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 fmt_p <- function(p) {

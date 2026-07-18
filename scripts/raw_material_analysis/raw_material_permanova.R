@@ -22,7 +22,7 @@
 #   - data/Raw_mat_basin.xlsx
 #
 # Output:
-#   - output/01_landscape_raw_material/raw_material_permanova/*.png
+#   - output/raw_material_analysis/raw_material_permanova/*.png
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan")
 missing_packages <- required_packages[
@@ -47,13 +47,13 @@ proj_dir  <- here::here()
 sc_path   <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 basin_path<- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
-out_dir   <- file.path(proj_dir, "output", "01_landscape_raw_material", "raw_material_permanova")
+out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "raw_material_permanova")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 drop_sites <- c("PJDD", "ZKZ")                    # -> the analysed "clean 27"
 perm       <- 999
 
-## ---- shared levels / palettes (project idiom) ------------------------------
+# ---- shared levels / palettes (project idiom) ------------------------------
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone", "Andesite")
 material_colors <- c(Trachyte = "#D55E00", Sandstone = "#E69F00",
                      Quartz = "#56B4E9", Mudstone = "#0072B2", Andesite = "#009E73")
@@ -90,7 +90,7 @@ harmonise_lithology <- function(x) {
 }
 strip_basin <- function(x) sub(" basin$", "", trimws(as.character(x)))
 
-## one-way PERMANOVA + PERMDISP for a single grouping factor
+# one-way PERMANOVA + PERMDISP for a single grouping factor
 run_oneway <- function(D, meta, fac, prefix, label) {
   form <- stats::as.formula(paste("D ~", fac))
   ad <- adonis2(form, data = meta, permutations = perm)
@@ -108,7 +108,7 @@ run_oneway <- function(D, meta, fac, prefix, label) {
              stringsAsFactors = FALSE)
 }
 
-## nested model D ~ basin/river_ID : separates between-basin vs river-within-basin
+# nested model D ~ basin/river_ID : separates between-basin vs river-within-basin
 run_nested <- function(D, meta, prefix, label) {
   ad <- adonis2(D ~ basin / river_ID, data = meta, permutations = perm, by = "terms")
   cat(sprintf("\n[%s]  %s ~ basin/river_ID  (sequential variance partition):\n", prefix, label))
@@ -124,7 +124,7 @@ run_nested <- function(D, meta, prefix, label) {
     stringsAsFactors = FALSE)
 }
 
-## PCoA (metric MDS) of a dissimilarity, Cailliez-corrected so eigenvalues >= 0
+# PCoA (metric MDS) of a dissimilarity, Cailliez-corrected so eigenvalues >= 0
 pcoa_scores <- function(D) {
   cm  <- cmdscale(D, k = 2, eig = TRUE, add = TRUE)
   eig <- cm$eig; pos <- eig[eig > 0]
@@ -132,7 +132,7 @@ pcoa_scores <- function(D) {
        pct = round(100 * pos[1:2] / sum(pos), 1))
 }
 
-## stacked composition bar (percent within group)
+# stacked composition bar (percent within group)
 composition_bar <- function(df, group_levels, group_lab, title, subtitle, file, width = 5.6) {
   comp <- df |>
     count(Group, Material, name = "n") |>
@@ -153,7 +153,7 @@ composition_bar <- function(df, group_levels, group_lab, title, subtitle, file, 
   invisible(comp)
 }
 
-## PCoA ordination plot (points coloured by basin, shaped by river)
+# PCoA ordination plot (points coloured by basin, shaped by river)
 pcoa_plot <- function(D, meta, title, subtitle, file, label_col = NULL) {
   sc <- pcoa_scores(D)
   dd <- cbind(sc$pts, meta)
@@ -173,12 +173,12 @@ pcoa_plot <- function(D, meta, title, subtitle, file, label_col = NULL) {
   invisible(sc)
 }
 
-## ---- compositional (Aitchison) helpers -------------------------------------
-## Count-zero multiplicative replacement (Martin-Fernandez et al. 2003): impute
-## each zero at a per-row detection limit (frac of one count) and rescale the
-## observed parts so the row still closes to 1 -> preserves ratios among the
-## non-zero parts (subcompositional coherence). A transparent, dependency-free
-## stand-in for zCompositions::cmultRepl(method = "CZM").
+# ---- compositional (Aitchison) helpers -------------------------------------
+# Count-zero multiplicative replacement (Martin-Fernandez et al. 2003): impute
+# each zero at a per-row detection limit (frac of one count) and rescale the
+# observed parts so the row still closes to 1 -> preserves ratios among the
+# non-zero parts (subcompositional coherence). A transparent, dependency-free
+# stand-in for zCompositions::cmultRepl(method = "CZM").
 czm_replace <- function(counts, frac = 0.65) {
   N <- rowSums(counts)
   P <- sweep(counts, 1, N, "/")
@@ -192,13 +192,13 @@ czm_replace <- function(counts, frac = 0.65) {
   }
   P
 }
-## centred log-ratio (row-wise): clr(x) = log(x) - mean(log(x))
+# centred log-ratio (row-wise): clr(x) = log(x) - mean(log(x))
 clr_rows <- function(P) { L <- log(P); sweep(L, 1, rowMeans(L), "-") }
 
-## CLR "form" biplot: PCA of the clr matrix -> sample scores + raw-material arrows.
-## Aitchison distance = Euclidean on clr, so this biplot is the ordination that
-## matches the adonis2 dissimilarity. Arrow directions/lengths show which parts
-## drive each axis; links between arrow tips approximate pairwise log-ratio spread.
+# CLR "form" biplot: PCA of the clr matrix -> sample scores + raw-material arrows.
+# Aitchison distance = Euclidean on clr, so this biplot is the ordination that
+# matches the adonis2 dissimilarity. Arrow directions/lengths show which parts
+# drive each axis; links between arrow tips approximate pairwise log-ratio spread.
 clr_biplot <- function(clr_mat, meta, title, subtitle, file, label_col = "Loc") {
   pca <- prcomp(clr_mat, center = TRUE, scale. = FALSE)
   ve  <- pca$sdev^2 / sum(pca$sdev^2) * 100
@@ -266,7 +266,7 @@ cat("\nArtifact-level N =", nrow(sc), " across", dplyr::n_distinct(sc$Site_ID), 
 cat("Raw material x basin (counts):\n");    print(table(sc$Material, sc$basin))
 cat("\nRaw material x river_ID (counts):\n"); print(table(sc$Material, sc$river_ID))
 
-## Bray-Curtis on the artifact x material indicator matrix (one 1 per artifact)
+# Bray-Curtis on the artifact x material indicator matrix (one 1 per artifact)
 A_ind  <- table(seq_len(nrow(sc)), droplevels(sc$Material))
 A_D    <- vegdist(as.matrix(unclass(A_ind)), method = "bray")
 A_meta <- data.frame(basin = droplevels(sc$basin), river_ID = droplevels(sc$river_ID))
@@ -275,7 +275,7 @@ push(run_oneway(A_D, A_meta, "basin",    "A_tools", "used-material"))
 push(run_oneway(A_D, A_meta, "river_ID", "A_tools", "used-material"))
 push(run_nested(A_D, A_meta, "A_tools", "used-material"))
 
-## composition figures (the near-constant Trachyte signal is the message here)
+# composition figures (the near-constant Trachyte signal is the message here)
 composition_bar(transmute(sc, Group = basin, Material),
                 basin_levels, "Basin",
                 "Used raw material by basin (Quina scrapers)",
@@ -287,7 +287,7 @@ composition_bar(transmute(sc, Group = river_ID, Material),
                 "Artifact-level composition; ~96% Trachyte overall",
                 file.path(out_dir, "A_tools_composition_by_river.png"), width = 6.4)
 
-## site-level PCoA (exploratory; most sites are pure Trachyte -> they overlap)
+# site-level PCoA (exploratory; most sites are pure Trachyte -> they overlap)
 site_comp <- sc |> count(Site_ID, basin, river_ID, Material, name = "n") |>
   tidyr::complete(tidyr::nesting(Site_ID, basin, river_ID), Material, fill = list(n = 0))
 site_mat <- site_comp |>
@@ -319,7 +319,7 @@ clasts <- clasts |>
 cat("\nClast N =", nrow(clasts), " across", dplyr::n_distinct(clasts$Loc), "localities\n")
 cat("Lithology x Loc (counts):\n"); print(table(clasts$Material, clasts$Loc))
 
-## aggregate to Loc x material COUNT matrix (5 rows), then Bray-Curtis on it
+# aggregate to Loc x material COUNT matrix (5 rows), then Bray-Curtis on it
 B_wide <- clasts |> count(Loc, basin, river_ID, Material, name = "n") |>
   tidyr::complete(tidyr::nesting(Loc, basin, river_ID), Material, fill = list(n = 0)) |>
   pivot_wider(names_from = Material, values_from = n, values_fill = 0) |>
@@ -330,7 +330,7 @@ B_M <- B_wide |> select(-Loc, -basin, -river_ID) |> as.matrix()
 rownames(B_M) <- B_wide$Loc
 B_M <- B_M[, colSums(B_M) > 0, drop = FALSE]     # drop all-zero parts (Andesite: absent in survey)
 
-## Aitchison geometry: count-zero multiplicative replacement -> CLR -> Euclidean
+# Aitchison geometry: count-zero multiplicative replacement -> CLR -> Euclidean
 B_prop <- czm_replace(B_M)
 B_clr  <- clr_rows(B_prop)
 B_D    <- dist(B_clr, method = "euclidean")      # Aitchison distance
@@ -346,7 +346,7 @@ push(run_oneway(B_D, B_meta, "basin",    "B_avail", "available-material"))
 push(run_oneway(B_D, B_meta, "river_ID", "B_avail", "available-material"))
 push(run_nested(B_D, B_meta, "B_avail", "available-material"))
 
-## CLR biplot of the 5 localities (arrows = raw materials) + composition bars
+# CLR biplot of the 5 localities (arrows = raw materials) + composition bars
 clr_biplot(B_clr, B_meta,
            "Dataset B: raw-material availability -- CLR biplot (Aitchison)",
            "n = 5 localities; points fill = basin, shape = river; arrows = raw materials",
@@ -383,26 +383,26 @@ C_D   <- vegdist(as.matrix(unclass(C_ind)), method = "bray")
 cat("\nClast N =", nrow(C_meta), " | Loc x lithology:\n")
 print(table(C_meta$Loc, C_meta$Material))
 
-## (1) PRIMARY -- spatial heterogeneity among the 5 localities (valid & powered)
+# (1) PRIMARY -- spatial heterogeneity among the 5 localities (valid & powered)
 C_loc <- run_oneway(C_D, C_meta, "Loc", "C_clast", "avail-clast"); push(C_loc)
-## (2),(3) basin / river at clast level -- R2 = effect size; p PSEUDOREPLICATED
+# (2),(3) basin / river at clast level -- R2 = effect size; p PSEUDOREPLICATED
 cat("\n  NOTE: the two tests below are pseudoreplicated (basin/river are Loc-level\n",
     "  properties); read R2 only. Honest basin/river significance = dataset B.\n", sep = "")
 push(run_oneway(C_D, C_meta, "basin",    "C_clast", "avail-clast"))
 push(run_oneway(C_D, C_meta, "river_ID", "C_clast", "avail-clast"))
 
-## hierarchical spatial-scale decomposition (basin / river-within-basin / Loc-within-river)
+# hierarchical spatial-scale decomposition (basin / river-within-basin / Loc-within-river)
 Chier <- adonis2(C_D ~ basin / river_ID / Loc, data = C_meta, permutations = perm, by = "terms")
 cat("\n[C_clast] hierarchical  D ~ basin/river_ID/Loc  (spatial-scale decomposition;\n",
     "  higher-level p anticonservative, only Loc-level contrasts have clast replication):\n", sep = "")
 print(Chier)
 
-## contingency cross-check: single categorical var -> classic Loc x lithology test
+# contingency cross-check: single categorical var -> classic Loc x lithology test
 gt <- chisq.test(table(C_meta$Loc, C_meta$Material), simulate.p.value = TRUE, B = 4999)
 cat(sprintf("\nCross-check: chi-square Loc x lithology (Monte-Carlo, B=4999): X2 = %.1f, p = %.4f\n",
             unname(gt$statistic), gt$p.value))
 
-## ---- viz C.1: spatial variance partition (hierarchical R2 by scale) ---------
+# ---- viz C.1: spatial variance partition (hierarchical R2 by scale) ---------
 star <- function(p) ifelse(is.na(p), "", ifelse(p < 0.001, "***",
   ifelse(p < 0.01, "**", ifelse(p < 0.05, "*", "ns"))))
 part <- data.frame(
@@ -435,10 +435,10 @@ p_part <- ggplot(part, aes(100 * R2, scale, fill = scale)) +
         plot.caption = element_text(hjust = 0, size = 8, color = "#454649"))
 ggsave(file.path(out_dir, "C_clast_variance_partition.png"), p_part, width = 9.2, height = 4.5, dpi = 300)
 
-## ---- viz C.2: PERMDISP -- compositional evenness per locality (mean +/- SE) ----
-## Distance-to-centroid on categorical (Bray-Curtis) data is discrete, so raw
-## boxplots are degenerate; the informative summary is the group MEAN dispersion
-## (= the PERMDISP statistic), which reads as compositional evenness per locality.
+# ---- viz C.2: PERMDISP -- compositional evenness per locality (mean +/- SE) ----
+# Distance-to-centroid on categorical (Bray-Curtis) data is discrete, so raw
+# boxplots are degenerate; the informative summary is the group MEAN dispersion
+# (= the PERMDISP statistic), which reads as compositional evenness per locality.
 bd_loc  <- betadisper(C_D, C_meta$Loc)
 disp_df <- data.frame(Loc = factor(C_meta$Loc), dist = bd_loc$distances)
 disp_sum <- disp_df |> group_by(Loc) |>
@@ -455,10 +455,10 @@ p_disp <- ggplot(disp_sum, aes(Loc, mean, color = Loc)) +
   base_theme + theme(legend.position = "none", plot.title = element_text(size = 13.5))
 ggsave(file.path(out_dir, "C_clast_permdisp_dispersion.png"), p_disp, width = 7.8, height = 4.6, dpi = 300)
 
-## ---- viz C.3: clast-level PCoA scatter (Bray-Curtis) + locality centroids -----
-## Single-category rows -> distances are 0/1 -> the 469 clasts collapse onto 4
-## lithology vertices (shown jittered). The 5 locality CENTROIDS (mean positions)
-## are the structure that D ~ Loc tests: their spread = between-locality signal.
+# ---- viz C.3: clast-level PCoA scatter (Bray-Curtis) + locality centroids -----
+# Single-category rows -> distances are 0/1 -> the 469 clasts collapse onto 4
+# lithology vertices (shown jittered). The 5 locality CENTROIDS (mean positions)
+# are the structure that D ~ Loc tests: their spread = between-locality signal.
 pc  <- cmdscale(C_D, k = 2, eig = TRUE, add = TRUE)
 evp <- pc$eig[pc$eig > 0]; pct <- round(100 * evp[1:2] / sum(evp), 1)
 scl <- data.frame(A1 = pc$points[, 1], A2 = pc$points[, 2],

@@ -21,7 +21,7 @@
 #   - data/Site_information.xlsx
 #
 # Output:
-#   - output/03_technical_consistency/ (analysis1_basin/ ... cross_analysis/)
+#   - output/technological_consistency/ (analysis1_basin/ ... cross_analysis/)
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan",
                        "rstatix", "ggpubr")
@@ -42,7 +42,7 @@ library(rstatix)
 
 set.seed(123)
 
-## ---- constants -------------------------------------------------------------
+# ---- constants -------------------------------------------------------------
 variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                "N_Scar", "Ave_RG", "Edge_Angle")
 kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")                 # KW + Dunn
@@ -51,7 +51,7 @@ welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")  # Welch ANOV
 proj_dir   <- here::here()
 sc_path    <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path  <- file.path(proj_dir, "data", "Site_information.xlsx")
-out_root   <- file.path(proj_dir, "output", "03_technical_consistency")
+out_root   <- file.path(proj_dir, "output", "technological_consistency")
 dir.create(out_root, showWarnings = FALSE, recursive = TRUE)
 
 guardrails <- c(
@@ -69,7 +69,7 @@ guardrails <- c(
   "  reduction intensity, NOT evidence of a provisioning system."
 )
 
-## ---- shared visual style (matches QV_analysis.R) ---------------------------
+# ---- shared visual style (matches QV_analysis.R) ---------------------------
 ordination_theme <- theme_minimal(base_size = 13) +
   theme(
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
@@ -108,7 +108,7 @@ corr_theme <- theme_minimal(base_size = 13) +
     panel.background = element_rect(color = NA, fill = "white")
   )
 
-## categorical palettes (muted, low-saturation, in the QV idiom)
+# categorical palettes (muted, low-saturation, in the QV idiom)
 basin_colors    <- c(Binchuan = "#C9603F", Heqing = "#3F7CAC")
 landform_colors <- c(T2 = "#6BA8CE", T3 = "#7FB069",
                      T4 = "#E6C25C", hilltop = "#E07C90")
@@ -117,7 +117,7 @@ sizebin_colors  <- c(`1` = "#C9D6DF", `2-3` = "#6BA8CE", `4+` = "#2C5F7C")
 fmt_p <- function(p) ifelse(is.na(p), "NA",
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3))))
 
-## ---- PCA helpers (identical drawing logic to QV_analysis.R) ----------------
+# ---- PCA helpers (identical drawing logic to QV_analysis.R) ----------------
 make_centroids <- function(scores, x_var, y_var) {
   scores |>
     group_by(Group) |>
@@ -138,7 +138,7 @@ make_convex_hulls <- function(scores, x_var, y_var) {
     ungroup()
 }
 
-## prcomp PCA on a z-scored matrix + ordination plot; writes scores/loadings/png.
+# prcomp PCA on a z-scored matrix + ordination plot; writes scores/loadings/png.
 run_pca_plot <- function(mat, groups, colors, outdir, prefix, title, subtitle) {
   pca <- prcomp(mat, center = TRUE, scale. = FALSE)
   vexp <- pca$sdev^2 / sum(pca$sdev^2) * 100
@@ -178,7 +178,7 @@ run_pca_plot <- function(mat, groups, colors, outdir, prefix, title, subtitle) {
   ggsave(file.path(outdir, paste0(prefix, "_pca_ordination.png")), p,
          width = 7.6, height = 5.8, dpi = 300)
 
-  ## loadings bar (same look as QV_analysis.R)
+  # loadings bar (same look as QV_analysis.R)
   ll <- loadings |>
     pivot_longer(c(PC1, PC2), names_to = "PC", values_to = "Loading") |>
     mutate(PC = factor(PC, levels = c("PC1", "PC2")),
@@ -198,9 +198,9 @@ run_pca_plot <- function(mat, groups, colors, outdir, prefix, title, subtitle) {
   list(scores = scores, loadings = loadings, var_explained = vexp)
 }
 
-## ---- per-variable categorical engine (KW+Dunn / Welch ANOVA+t) -------------
-## dd must contain a factor column `Grp` plus the 6 variable columns (SITE rows).
-## Robust to small / zero-variance groups: a failed test is skipped, not fatal.
+# ---- per-variable categorical engine (KW+Dunn / Welch ANOVA+t) -------------
+# dd must contain a factor column `Grp` plus the 6 variable columns (SITE rows).
+# Robust to small / zero-variance groups: a failed test is skipped, not fatal.
 per_variable_tests <- function(dd, colors, outdir, prefix) {
   long <- dd |>
     select(Grp, all_of(variables)) |>
@@ -221,7 +221,7 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
   we_ph  <- safe(we_long |> group_by(Variable) |>
     pairwise_t_test(Value ~ Grp, pool.sd = FALSE, p.adjust.method = "bonferroni") |> ungroup())
 
-  ## group medians (direction) + median spread (effect magnitude)
+  # group medians (direction) + median spread (effect magnitude)
   meds <- long |> group_by(Variable, Grp) |>
     summarise(median = median(Value, na.rm = TRUE), .groups = "drop")
   eff <- meds |> group_by(Variable) |>
@@ -232,7 +232,7 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
   eff <- eff |> mutate(Variable = as.character(Variable))
   if (nrow(omn_p) > 0) eff <- eff |> left_join(omn_p, by = "Variable") else eff$omnibus_p <- NA_real_
 
-  ## boxplot with Bonferroni post-hoc brackets (free_y; per-facet positions)
+  # boxplot with Bonferroni post-hoc brackets (free_y; per-facet positions)
   brackets <- bind_rows(
     if (!is.null(kw_ph)) kw_ph |> transmute(Variable, group1, group2, p.adj, p.adj.signif),
     if (!is.null(we_ph)) we_ph |> transmute(Variable, group1, group2, p.adj, p.adj.signif))
@@ -269,8 +269,8 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
   eff
 }
 
-## ---- categorical analysis driver (PERMANOVA + PERMDISP + PCA + per-var) -----
-## `dat` is the SITE-LEVEL frame; each row is one site.
+# ---- categorical analysis driver (PERMANOVA + PERMDISP + PCA + per-var) -----
+# `dat` is the SITE-LEVEL frame; each row is one site.
 run_categorical <- function(dat, group_col, group_levels, colors, outdir, prefix,
                             title, perm = 999) {
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
@@ -306,7 +306,7 @@ run_categorical <- function(dat, group_col, group_levels, colors, outdir, prefix
        pca = pca)
 }
 
-## weighted Spearman = weighted Pearson on ranks (base R; no extra packages)
+# weighted Spearman = weighted Pearson on ranks (base R; no extra packages)
 weighted_spearman <- function(x, y, w) {
   ok <- is.finite(x) & is.finite(y) & is.finite(w)
   x <- rank(x[ok]); y <- rank(y[ok]); w <- w[ok]
@@ -316,8 +316,8 @@ weighted_spearman <- function(x, y, w) {
   if (den == 0) NA_real_ else num / den
 }
 
-## ---- continuous-gradient analysis driver (SITE-LEVEL only) -----------------
-## `site_df` is one row per site; gradient is a site attribute.
+# ---- continuous-gradient analysis driver (SITE-LEVEL only) -----------------
+# `site_df` is one row per site; gradient is a site attribute.
 run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 999) {
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   writeLines(guardrails, file.path(outdir, "_GUARDRAILS.txt"))
@@ -335,12 +335,12 @@ run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9
   mat <- scale(as.matrix(dd[, variables]))
   d   <- dist(mat, method = "euclidean")
 
-  ## ---- multivariate (SITE-LEVEL; one row per site, NOT pseudoreplicated) ----
+  # ---- multivariate (SITE-LEVEL; one row per site, NOT pseudoreplicated) ----
   ad <- adonis2(d ~ grad, data = data.frame(grad = dd$grad), permutations = perm)
   cat(sprintf("\nadonis2(dist ~ %s): R2 = %.3f, p %s  [site-level]\n",
               grad_label, ad$R2[1], fmt_p(ad$`Pr(>F)`[1])))
 
-  ## ---- per-variable SITE-LEVEL Spearman (unweighted + weighted by n_art) ----
+  # ---- per-variable SITE-LEVEL Spearman (unweighted + weighted by n_art) ----
   per_var <- do.call(rbind, lapply(variables, function(v) {
     ct <- suppressWarnings(cor.test(dd[[v]], dd$grad, method = "spearman", exact = FALSE))
     data.frame(Variable = v, n_sites = nrow(dd),
@@ -350,7 +350,7 @@ run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9
   cat("\nPer-variable Spearman (site-level; rho_site_wtd weights by n scrapers per site):\n")
   print(per_var, row.names = FALSE)
 
-  ## ---- faceted scatter: one point per site (size = n scrapers) + lm trend ----
+  # ---- faceted scatter: one point per site (size = n scrapers) + lm trend ----
   long <- dd |> select(Site_ID, Basin, n_art, grad, all_of(variables)) |>
     pivot_longer(all_of(variables), names_to = "Variable", values_to = "Value") |>
     mutate(Variable = factor(Variable, levels = variables))
@@ -411,7 +411,7 @@ site_land <- site_raw |>
     n_Quina_scraper_col = as.numeric(n_Quina_scraper)
   )
 
-## Site_size = per-site SC artifact count (preferred), cross-checked vs the column
+# Site_size = per-site SC artifact count (preferred), cross-checked vs the column
 sc_count <- sc |> count(Site_ID, name = "Site_size")
 size_check <- site_land |> left_join(sc_count, by = "Site_ID") |>
   mutate(Site_size = dplyr::coalesce(Site_size, 0L))
@@ -420,7 +420,7 @@ cat("\nSite_size cross-check (SC count vs n_Quina_scraper column): ",
     nrow(mismatch), " mismatched site(s)\n", sep = "")
 if (nrow(mismatch) > 0) print(mismatch |> select(Site_ID, Site_size, n_Quina_scraper_col))
 
-## artifacts -> landscape join, complete-case on the 6 variables
+# artifacts -> landscape join, complete-case on the 6 variables
 sc_cc <- sc |>
   left_join(site_land, by = "Site_ID") |>
   left_join(sc_count,  by = "Site_ID") |>
@@ -433,7 +433,7 @@ if (nrow(unmatched) > 0) {
   stop("Unmatched artifacts; resolve the join key before proceeding.")
 }
 
-## ---- AGGREGATE TO SITE LEVEL: each site -> median vector (the analysis frame) ----
+# ---- AGGREGATE TO SITE LEVEL: each site -> median vector (the analysis frame) ----
 site_df <- sc_cc |>
   group_by(Site_ID) |>
   summarise(n_art = n(),
@@ -455,7 +455,7 @@ cat("\nN sites by Landform:\n"); print(table(site_df$Landform))
 cat("\nBasin x Landform contingency (site-level; empty cells => confounded):\n")
 print(table(site_df$Basin, site_df$Landform))
 
-## accumulator for the cross-analysis triage summary
+# accumulator for the cross-analysis triage summary
 summary_rows <- list()
 push_cat <- function(tag, res) {
   e <- res$eff
@@ -478,15 +478,15 @@ push_grad <- function(tag, res) {
     p_secondary = NA_real_, stringsAsFactors = FALSE)
 }
 
-## ============================================================================
-## ANALYSIS 1 -- BASIN  (Binchuan vs Heqing; site-level)
-## ============================================================================
+# ==============================================================================
+# 1. Basin (Binchuan vs Heqing; site-level)
+# ==============================================================================
 a1_dir <- file.path(out_root, "analysis1_basin")
 a1 <- run_categorical(site_df, "Basin", c("Binchuan", "Heqing"), basin_colors,
                       a1_dir, "a1_basin", "Analysis 1: technical metrics ~ Basin (site-level)")
 push_cat("1_basin", a1)
 
-## ---- 1a. composition diagnostic: is "Heqing" really "Tianhua/Longtan area"? ----
+# ---- 1a. composition diagnostic: is "Heqing" really "Tianhua/Longtan area"? ----
 prox     <- c("THC", "LT")                                # Tianhua Cave, Longtan
 heq      <- site_df |> filter(Basin == "Heqing")
 n_prox   <- sum(heq$Site_ID %in% prox)
@@ -496,7 +496,7 @@ if (nrow(heq) > 0 && n_prox / nrow(heq) >= 0.4) {
   cat("WARNING: 'Heqing basin' is dominated by Tianhua/Longtan-proximal sites\n",
       "  => here 'Heqing basin' ~= 'Tianhua/Longtan area'; Basin and site are CONFOUNDED.\n")
 }
-## sensitivity: drop THC/LT sites from Heqing, re-run the basin contrast (site-level)
+# sensitivity: drop THC/LT sites from Heqing, re-run the basin contrast (site-level)
 sens_data <- site_df |> filter(!(Basin == "Heqing" & Site_ID %in% prox))
 a1_sens <- run_categorical(sens_data, "Basin", c("Binchuan", "Heqing"), basin_colors,
                            a1_dir, "a1_basin_sensitivity",
@@ -507,15 +507,15 @@ sens_tbl <- data.frame(
   PERMDISP_p = c(a1$disp_p, a1_sens$disp_p))
 cat("\nBasin sensitivity (with vs without THC/LT in Heqing):\n"); print(sens_tbl, row.names = FALSE)
 
-## ============================================================================
-## ANALYSIS 2 -- LANDFORM (geomorphic position; categorical, site-level)
-## ============================================================================
+# ==============================================================================
+# 2. Landform (geomorphic position; categorical, site-level)
+# ==============================================================================
 a2_dir <- file.path(out_root, "analysis2_landform")
 a2 <- run_categorical(site_df, "Landform", c("T2", "T3", "T4", "hilltop"), landform_colors,
                       a2_dir, "a2_landform", "Analysis 2: technical metrics ~ Landform (site-level)")
 push_cat("2_landform", a2)
 
-## ---- 2a. collinearity with Basin: marginal (Type-III-like) PERMANOVA ----
+# ---- 2a. collinearity with Basin: marginal (Type-III-like) PERMANOVA ----
 mat2 <- scale(as.matrix(site_df[, variables]))
 d2   <- dist(mat2, method = "euclidean")
 margin_BL <- tryCatch(
@@ -529,17 +529,17 @@ if (!is.null(margin_BL)) {
 cat("\nBasin x Landform (site-level; flag small/empty cells):\n")
 print(as.data.frame.matrix(table(site_df$Basin, site_df$Landform)))
 
-## ============================================================================
-## ANALYSIS 3 -- DISTANCE TO WATER (continuous gradient, site-level)
-## ============================================================================
+# ==============================================================================
+# 3. Distance to water (continuous gradient, site-level)
+# ==============================================================================
 a3_dir <- file.path(out_root, "analysis3_distance")
 a3 <- run_gradient(site_df, "Distance_to_water", "Distance to river (m)",
                    a3_dir, "a3_distance")
 push_grad("3_distance", a3)
 
-## ============================================================================
-## ANALYSIS 4 -- SITE SIZE (continuous gradient, site-level) + bin robustness
-## ============================================================================
+# ==============================================================================
+# 4. Site size (continuous gradient, site-level) + bin robustness
+# ==============================================================================
 a4_dir <- file.path(out_root, "analysis4_size")
 a4 <- run_gradient(site_df, "Site_size", "Site size (SC artifact count)",
                    a4_dir, "a4_size")
@@ -552,7 +552,7 @@ writeLines(c(guardrails, "",
   "A correlation here can be a collection artefact, possibly even sign-reversed."),
   file.path(a4_dir, "a4_size_CAVEAT.txt"))
 
-## bin robustness: does a continuous trend survive coarse binning of SITES?
+# bin robustness: does a continuous trend survive coarse binning of SITES?
 site_bin <- site_df |>
   mutate(Size_bin = cut(Site_size, breaks = c(-Inf, 1, 3, Inf),
                         labels = c("1", "2-3", "4+")))
@@ -562,14 +562,14 @@ a4b <- run_categorical(site_bin, "Size_bin", c("1", "2-3", "4+"), sizebin_colors
                        "Analysis 4 robustness: technical metrics ~ site-size bin (site-level)")
 push_cat("4_size_bins", a4b)
 
-## ============================================================================
-## CROSS-ANALYSIS TRIAGE SUMMARY
-## ============================================================================
+# ==============================================================================
+# Cross-analysis triage summary
+# ==============================================================================
 summary_tbl <- bind_rows(summary_rows)
 cat("\n########## CROSS-ANALYSIS TRIAGE SUMMARY (site-level; rank by effect size) ##########\n")
 print(summary_tbl, row.names = FALSE)
 
-## per-analysis multivariate headline (which grouping/gradient structures most?)
+# per-analysis multivariate headline (which grouping/gradient structures most?)
 mv_head <- bind_rows(
   data.frame(analysis = "1_basin",          mv_R2 = a1$R2,    mv_p = a1$p,    permdisp_p = a1$disp_p),
   data.frame(analysis = "2_landform",       mv_R2 = a2$R2,    mv_p = a2$p,    permdisp_p = a2$disp_p),
@@ -580,7 +580,7 @@ mv_head <- bind_rows(
 cat("\nMultivariate R2 ranking (site-level; largest = most structured; all exploratory):\n")
 print(mv_head, row.names = FALSE)
 
-## ---- combined marginal model 'who structures technique most?' (site-level) ----
+# ---- combined marginal model 'who structures technique most?' (site-level) ----
 cross_dir <- file.path(out_root, "cross_analysis")
 dir.create(cross_dir, showWarnings = FALSE, recursive = TRUE)
 writeLines(c(guardrails, "",
@@ -598,12 +598,12 @@ if (!is.null(combo)) {
   cat("\nCombined marginal PERMANOVA (site-level; exploratory; strong collinearity):\n"); print(combo)
 }
 
-## collinearity panel: site-level predictor correlations + basin association
+# collinearity panel: site-level predictor correlations + basin association
 num_pred <- site_df |>
   transmute(Distance_to_water, Site_size, elev_m, Basin_num = as.integer(Basin))
 pred_cor <- cor(num_pred, use = "pairwise.complete.obs", method = "spearman")
 cat("\nSite-level predictor Spearman matrix (collinearity check):\n"); print(round(pred_cor, 3))
-## Cramer's V for Basin x Landform (site-level)
+# Cramer's V for Basin x Landform (site-level)
 bl <- table(site_df$Basin, site_df$Landform)
 chi <- suppressWarnings(chisq.test(bl))
 cramers_v <- sqrt(as.numeric(chi$statistic) / (sum(bl) * (min(dim(bl)) - 1)))

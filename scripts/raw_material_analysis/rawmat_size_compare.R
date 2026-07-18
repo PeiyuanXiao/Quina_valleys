@@ -17,7 +17,7 @@
 #   - data/Raw_mat_basin.xlsx (Sheet1, 469 river-gravel clasts)
 #
 # Output:
-#   - output/01_landscape_raw_material/clast_size_by_material/clast_size_by_material.png
+#   - output/raw_material_analysis/clast_size_by_material/clast_size_by_material.png
 
 # ==============================================================================
 # Setup
@@ -44,7 +44,7 @@ set.seed(123)
 
 proj_dir   <- here::here()
 basin_path <- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
-out_dir    <- file.path(proj_dir, "output", "01_landscape_raw_material", "clast_size_by_material")
+out_dir    <- file.path(proj_dir, "output", "raw_material_analysis", "clast_size_by_material")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- Raw-material levels + palette ---
@@ -191,7 +191,7 @@ print(mw_tbl[, c("sandstone_definition", "n_sandstone", "direction",
                  "U", "p_two_sided", "effsize_r")], row.names = FALSE, digits = 4)
 cat("\nNote: the manuscript's 'U = 16356.00, p = 0.003' corresponds to the\n",
     "Quartz-sandstone-only row. The harmonised-Sandstone row is the definition\n",
-    "used by every other 01_landscape_raw_material script.\n", sep = "")
+    "used by every other raw_material_analysis script.\n", sep = "")
 
 # ==============================================================================
 # 4. Figure: clast size by material (Trachyte vs harmonised Sandstone)

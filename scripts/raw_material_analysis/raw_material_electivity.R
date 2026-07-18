@@ -15,8 +15,8 @@
 #   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper", Raw_material)
 #
 # Output:
-#   - output/01_landscape_raw_material/raw_material_stacked_bar.png
-#   - output/01_landscape_raw_material/jacobs_electivity_index.png
+#   - output/raw_material_analysis/raw_material_stacked_bar.png
+#   - output/raw_material_analysis/jacobs_electivity_index.png
 
 # ==============================================================================
 # Setup
@@ -45,7 +45,7 @@ library(ggplot2)
 
 basin_path <- here::here("data", "Raw_mat_basin.xlsx")
 sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "01_landscape_raw_material")
+output_dir <- here::here("output", "raw_material_analysis")
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

@@ -1,28 +1,32 @@
-# QV_dispersion_LT_vs_SC.R
-# Dispersion (variability) comparison: SC vs Longtan Quina scrapers.
+# surface_vs_longtan.R
+# Technical consistency of surface-collected (SC) Quina scrapers vs excavated
+# Longtan (LT) Quina scrapers, with LT ordinary scrapers as a yardstick.
 #
-# Exploratory: rank by effect size, not p<0.05. Dispersion depends on the mean, so
-# every spread stat is reported next to the group mean. Focus contrast = SC_Quina
-# vs LT_Quina (same tool-class); LT_Ordinary is a yardstick only. Full guardrails
-# are written to _GUARDRAILS.txt.
+# Two complementary questions on the technical variables:
+#   Part 1 LOCATION   -- are the group centroids different?  (PERMANOVA)
+#   Part 2 DISPERSION -- are the within-group spreads different?  (PERMDISP + CV/robust)
+# Exploratory: rank by effect size, not p<0.05. Merged from the former QV_analysis.R
+# + QV_dispersion_LT_vs_SC.R. Full dispersion guardrails -> _GUARDRAILS.txt.
 #
 # Pipeline:
-#   A. Multivariate dispersion (PERMDISP: betadisper / permutest) on 6 z-scored
-#      technical variables.
-#   B. Per-variable dispersion:
-#        B1 CV family (dimensional): Krishnamoorthy-Lee MSLRT (cvequality).
-#        B2 robust family (reduction): Fligner-Killeen (+ logit / sqrt scales).
-#   C. Independence sensitivity (drop SC pieces proximal to LT/THC).
-#   D. Cross-variable summary.
+#   Part 1  PERMANOVA (overall + pairwise BH) + per-variable KW/Welch + boxplots.
+#   Part 2  A PERMDISP; B1 CV / KL-MSLRT; B2 Fligner (+ logit/sqrt); C sensitivity;
+#           D cross-variable summary.
 #
 # Input:
 #   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
 #   - data/Longtan_lithic_tools.xlsx (sheets "Quina scraper", "Ordinary scraper")
 #
 # Output:
-#   - output/03_technical_consistency/dispersion_LT_vs_SC/ (figures + _GUARDRAILS.txt)
+#   - output/technological_consistency/variable_boxplots.png
+#   - output/technological_consistency/dispersion_LT_vs_SC/ (figures + _GUARDRAILS.txt)
 
-required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "cvequality")
+# ==============================================================================
+# Setup
+# ==============================================================================
+
+required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan",
+                       "rstatix", "ggpubr", "cvequality")
 missing_packages <- required_packages[
   !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
 ]
@@ -30,6 +34,7 @@ if (length(missing_packages) > 0) {
   stop("Please install the following R packages before running this script: ",
        paste(missing_packages, collapse = ", "))
 }
+
 library(readxl)
 library(dplyr)
 library(tidyr)
@@ -38,17 +43,296 @@ library(vegan)
 library(rstatix)
 
 set.seed(123)
-B_BOOT   <- 5000   # bootstrap / permutation replicates (>= 5000 as specified)
+B_BOOT   <- 5000   # bootstrap / permutation replicates
 MSLR_NR  <- 1e5    # Monte-Carlo iterations for cvequality::mslr_test (Krishnamoorthy-Lee)
+# ==============================================================================
+# Part 1 -- Location (parameters + centroid analysis)
+# ==============================================================================
+
+variables <- c(
+  "Thickness",
+  "Retouch_length_index",
+  "Ave_GIUR",
+  "N_Scar",
+  "Ave_RG",
+  "Edge_Angle"
+)
+
+group_colors <- c(
+  SC_Quina = "#E07C90",
+  LT_Quina = "#E6C25C",
+  LT_Ordinary = "#6BA8CE"
+)
+
+group_fills <- c(
+  SC_Quina = "#E07C90",
+  LT_Quina = "#E6C25C",
+  LT_Ordinary = "#6BA8CE"
+)
+
+sc_path <- here::here("data", "Quina_scraper_surface.xlsx")
+lt_path <- here::here("data", "Longtan_lithic_tools.xlsx")
+output_dir <- here::here("output", "technological_consistency")
+
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # ==============================================================================
-# Global parameters
+# 1. Load + prepare data
 # ==============================================================================
+
+read_scraper_group <- function(path, sheet, group_name) {
+  read_excel(path, sheet = sheet) |>
+    mutate(Group = group_name) |>
+    select(Group, all_of(variables))
+}
+
+scraper_data <- bind_rows(
+  read_scraper_group(sc_path, "Quina scraper", "SC_Quina"),
+  read_scraper_group(lt_path, "Quina scraper", "LT_Quina"),
+  read_scraper_group(lt_path, "Ordinary scraper", "LT_Ordinary")
+) |>
+  mutate(
+    Group = factor(Group, levels = c("SC_Quina", "LT_Quina", "LT_Ordinary")),
+    across(all_of(variables), as.numeric)
+  )
+
+complete_data <- scraper_data |>
+  filter(if_all(all_of(variables), ~ !is.na(.x)))
+
+cat("Sample size before removing missing values:\n")
+print(table(scraper_data$Group))
+
+cat("\nSample size used in multivariate analyses:\n")
+print(table(complete_data$Group))
+
+analysis_matrix <- complete_data |>
+  select(all_of(variables)) |>
+  scale() |>
+  as.matrix()
+
+euclidean_distance <- dist(analysis_matrix, method = "euclidean")
+
+# ==============================================================================
+# 2. PERMANOVA (group centroids)
+# ==============================================================================
+
+# --- Overall PERMANOVA ---
+permanova_result <- adonis2(
+  euclidean_distance ~ Group,
+  data = complete_data,
+  permutations = 999
+)
+
+cat("\nOverall PERMANOVA result:\n")
+print(permanova_result)
+
+
+# --- Pairwise post-hoc PERMANOVA (Benjamini-Hochberg) ---
+pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
+                               permutations = 999,
+                               p_adjust_method = "BH") {
+  groups <- levels(droplevels(data[[group_col]]))
+  group_pairs <- combn(groups, 2, simplify = FALSE)
+
+  results <- lapply(group_pairs, function(pair) {
+    pair_rows <- data[[group_col]] %in% pair
+    pair_data <- data[pair_rows, , drop = FALSE]
+    pair_data[[group_col]] <- droplevels(pair_data[[group_col]])
+
+    pair_distance <- dist(scaled_matrix[pair_rows, , drop = FALSE],
+                          method = "euclidean")
+    pair_model <- adonis2(
+      pair_distance ~ Group,
+      data = pair_data,
+      permutations = permutations
+    )
+
+    data.frame(
+      Comparison = paste(pair, collapse = " vs "),
+      Df = pair_model$Df[1],
+      SumOfSqs = pair_model$SumOfSqs[1],
+      R2 = pair_model$R2[1],
+      F = pair_model$F[1],
+      p_value = pair_model$`Pr(>F)`[1],
+      stringsAsFactors = FALSE
+    )
+  })
+
+  bind_rows(results) |>
+    mutate(p_adjusted = p.adjust(p_value, method = p_adjust_method))
+}
+
+posthoc_result <- pairwise_permanova(
+  complete_data,
+  analysis_matrix,
+  permutations = 999,
+  p_adjust_method = "BH"
+)
+
+cat("\nPairwise post-hoc PERMANOVA result:\n")
+print(posthoc_result)
+
+
+# Dispersion (PERMDISP) for these same groups lives in QV_dispersion_LT_vs_SC.R
+# (Block A); this script covers group LOCATION only.
+
+# ==============================================================================
+# 3. Per-variable location tests
+# ==============================================================================
+
+# --- Shared plotting theme ---
+plot_theme <- theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
+    axis.ticks = element_line(color = "#202124", linewidth = 0.35),
+    axis.ticks.length = grid::unit(2.5, "pt"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15,
+                              margin = margin(b = 4)),
+    plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649",
+                                 margin = margin(b = 8)),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(color = "#303238"),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.key = element_blank(),
+    strip.text = element_text(face = "bold", color = "#202124"),
+    strip.background = element_rect(fill = "#E8E8E8", color = NA),
+    plot.background = element_rect(color = NA, fill = "white"),
+    panel.background = element_rect(color = NA, fill = "white")
+  )
+
+# --- Per-variable distributions (raw values) ---
+variable_long <- complete_data |>
+  select(Group, all_of(variables)) |>
+  pivot_longer(
+    cols = all_of(variables),
+    names_to = "Variable",
+    values_to = "Value"
+  ) |>
+  mutate(Variable = factor(Variable, levels = variables))
+
+# --- Per-variable tests: KW + Dunn (indices/counts); Welch ANOVA + t (continuous) ---
+kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")
+welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")
+
+kw_long <- variable_long |>
+  filter(Variable %in% kw_vars) |>
+  mutate(Variable = droplevels(Variable))
+welch_long <- variable_long |>
+  filter(Variable %in% welch_vars) |>
+  mutate(Variable = droplevels(Variable))
+
+kw_omnibus <- kw_long |>
+  group_by(Variable) |>
+  kruskal_test(Value ~ Group) |>
+  ungroup()
+kw_posthoc <- kw_long |>
+  group_by(Variable) |>
+  dunn_test(Value ~ Group, p.adjust.method = "bonferroni") |>
+  ungroup()
+
+welch_omnibus <- welch_long |>
+  group_by(Variable) |>
+  welch_anova_test(Value ~ Group) |>
+  ungroup()
+welch_posthoc <- welch_long |>
+  group_by(Variable) |>
+  pairwise_t_test(Value ~ Group, pool.sd = FALSE,
+                  p.adjust.method = "bonferroni") |>
+  ungroup()
+
+cat("\nKruskal-Wallis omnibus (Ave_GIUR, N_Scar, Ave_RG):\n")
+print(as.data.frame(kw_omnibus))
+cat("\nDunn post-hoc, Bonferroni-adjusted:\n")
+print(as.data.frame(kw_posthoc))
+cat("\nWelch's ANOVA omnibus (Retouch_length_index, Thickness, Edge_Angle):\n")
+print(as.data.frame(welch_omnibus))
+cat("\nPairwise Welch t-tests post-hoc, Bonferroni-adjusted:\n")
+print(as.data.frame(welch_posthoc))
+
+
+# Format the post-hoc comparisons as bracket annotations, with per-facet y
+# positions because the boxplots use free_y scales.
+posthoc_brackets <- bind_rows(
+  kw_posthoc    |> transmute(Variable, group1, group2, p.adj, p.adj.signif),
+  welch_posthoc |> transmute(Variable, group1, group2, p.adj, p.adj.signif)
+) |>
+  mutate(Variable = factor(as.character(Variable), levels = variables))
+
+facet_ranges <- variable_long |>
+  group_by(Variable) |>
+  summarise(
+    ymax = max(Value, na.rm = TRUE),
+    yrange = diff(range(Value, na.rm = TRUE)),
+    .groups = "drop"
+  )
+
+posthoc_brackets <- posthoc_brackets |>
+  group_by(Variable) |>
+  mutate(step = row_number()) |>
+  ungroup() |>
+  left_join(facet_ranges, by = "Variable") |>
+  mutate(y.position = ymax + yrange * (0.06 + 0.10 * step))
+
+variable_boxplots <- ggplot(
+  variable_long,
+  aes(x = Group, y = Value)
+) +
+  geom_jitter(aes(color = Group), width = 0.31, height = 0,
+              size = 1.4, alpha = 0.6, shape = 16) +
+  geom_boxplot(color = "black", fill = NA, width = 0.62,
+               linewidth = 0.6, outlier.shape = NA) +
+  stat_summary(fun = mean, geom = "point", shape = 16, size = 2,
+               color = "black") +
+  ggpubr::stat_pvalue_manual(
+    posthoc_brackets,
+    label = "p.adj.signif",
+    y.position = "y.position",
+    tip.length = 0.012,
+    bracket.size = 0.4,
+    label.size = 3,
+    color = "#202124"
+  ) +
+  facet_wrap(
+    ~ Variable, scales = "free_y", ncol = 3,
+    labeller = as_labeller(function(x) gsub("_", " ", x))
+  ) +
+  scale_color_manual(values = group_colors) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  labs(
+    subtitle = "Pairwise post-hoc, Bonferroni-adjusted (ns / * / ** / *** / ****)",
+    x = NULL,
+    y = NULL
+  ) +
+  plot_theme +
+  theme(
+    panel.grid.major = element_blank(),
+    axis.text.x = element_text(angle = 20, hjust = 1),
+    legend.position = "none"
+  )
+
+ggsave(
+  filename = file.path(output_dir, "variable_boxplots.png"),
+  plot = variable_boxplots,
+  width = 8.4,
+  height = 6.8,
+  dpi = 300
+)
+
+print(variable_boxplots)
+
+# ==============================================================================
+# Part 2 -- Dispersion (parameters, helpers + analysis)
+# ==============================================================================
+
+# Re-seed so Part 2's permutations / bootstraps reproduce the standalone run
+# (Part 1's PERMANOVA permutations above advanced the shared RNG stream).
+set.seed(123)
 
 proj_dir <- here::here()
-sc_path  <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
-lt_path  <- file.path(proj_dir, "data", "Longtan_lithic_tools.xlsx")
-out_root <- file.path(proj_dir, "output", "03_technical_consistency")
+out_root <- file.path(proj_dir, "output", "technological_consistency")
 base_dir <- file.path(out_root, "dispersion_LT_vs_SC")
 sub <- list(mv  = file.path(base_dir, "multivariate_permdisp"),
             cv  = file.path(base_dir, "cv_dimensional"),
@@ -56,7 +340,7 @@ sub <- list(mv  = file.path(base_dir, "multivariate_permdisp"),
             sen = file.path(base_dir, "sensitivity"))
 for (d in c(base_dir, unlist(sub))) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 
-## ---- variables / families --------------------------------------------------
+# ---- variables / families --------------------------------------------------
 cv_vars      <- c("Length", "Width", "Thickness", "Mass", "Edge_Angle")     # CV family
 bounded_vars <- c("Ave_GIUR", "Retouch_length_index")                       # [0,1] indices
 count_vars   <- c("N_Scar", "Ave_RG")                                       # counts / count-like
@@ -65,8 +349,6 @@ need_vars    <- c(cv_vars, robust_vars)
 tech6        <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                   "N_Scar", "Ave_RG", "Edge_Angle")  # the established technical space (Block A)
 grp_levels   <- c("SC_Quina", "LT_Quina", "LT_Ordinary")
-
-group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
 
 guardrails <- c(
   "DISPERSION (variability) comparison SC vs Longtan Quina scrapers -- EXPLORATORY.",
@@ -82,7 +364,7 @@ guardrails <- c(
 )
 writeLines(guardrails, file.path(base_dir, "_GUARDRAILS.txt"))
 
-## ---- shared visual style (QV idiom) ----------------------------------------
+# ---- shared visual style (QV idiom) ----------------------------------------
 ordination_theme <- theme_minimal(base_size = 13) +
   theme(
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
@@ -124,25 +406,25 @@ cv_corr   <- function(x) { x <- finite(x); n <- length(x); (sd(x) / mean(x)) * (
 fano      <- function(x) { x <- finite(x); var(x) / mean(x) }
 emp_logit <- function(x) qlogis(pmin(pmax(x, 1e-3), 1 - 1e-3))  # 0/1 clamped to (1e-3, 1-1e-3)
 
-## bootstrap percentile CI of a one-sample statistic
+# bootstrap percentile CI of a one-sample statistic
 boot_stat_ci <- function(x, FUN, B = B_BOOT) {
   x <- finite(x)
   rr <- replicate(B, FUN(sample(x, replace = TRUE)))
   unname(quantile(rr, c(0.025, 0.975), na.rm = TRUE))
 }
-## bootstrap percentile CI of a ratio FUN(x_sc)/FUN(x_lt); skip if a mean ~ 0
+# bootstrap percentile CI of a ratio FUN(x_sc)/FUN(x_lt); skip if a mean ~ 0
 boot_ratio_ci <- function(x_sc, x_lt, FUN, B = B_BOOT, mean_guard = FALSE) {
   x_sc <- finite(x_sc); x_lt <- finite(x_lt)
   if (mean_guard && (abs(mean(x_sc)) < 1e-8 || abs(mean(x_lt)) < 1e-8)) return(c(NA_real_, NA_real_))
   rr <- replicate(B, FUN(sample(x_sc, replace = TRUE)) / FUN(sample(x_lt, replace = TRUE)))
   unname(quantile(rr, c(0.025, 0.975), na.rm = TRUE))
 }
-## CV-equality test between two groups: Krishnamoorthy & Lee (2014) modified
-## signed-likelihood-ratio test (MSLRT), via cvequality::mslr_test
-## (Marwick & Krishnamoorthy 2019). Returns the MSLRT statistic + p.
-## mslr_test is Monte-Carlo; its RNG use is INSULATED (save/restore .Random.seed +
-## a fixed local seed) so every bootstrap CI in the rest of the script is unaffected
-## and each variable's MSLRT is itself reproducible regardless of call order.
+# CV-equality test between two groups: Krishnamoorthy & Lee (2014) modified
+# signed-likelihood-ratio test (MSLRT), via cvequality::mslr_test
+# (Marwick & Krishnamoorthy 2019). Returns the MSLRT statistic + p.
+# mslr_test is Monte-Carlo; its RNG use is INSULATED (save/restore .Random.seed +
+# a fixed local seed) so every bootstrap CI in the rest of the script is unaffected
+# and each variable's MSLRT is itself reproducible regardless of call order.
 cv_equal_test <- function(x_sc, x_lt) {
   x_sc <- finite(x_sc); x_lt <- finite(x_lt)
   vals <- c(x_sc, x_lt)
@@ -154,7 +436,7 @@ cv_equal_test <- function(x_sc, x_lt) {
   ml <- cvequality::mslr_test(nr = MSLR_NR, x = vals, y = grp)
   list(stat = unname(ml$MSLRT), p = unname(ml$p_value))
 }
-## Fligner-Killeen p for a 2-group contrast
+# Fligner-Killeen p for a 2-group contrast
 fligner_pair <- function(a, b) {
   a <- finite(a); b <- finite(b)
   g <- factor(rep(c("SC", "LT"), c(length(a), length(b))))
@@ -183,7 +465,7 @@ dat <- bind_rows(
   read_group(lt_path, "Ordinary scraper", "LT_Ordinary", FALSE)
 ) |> mutate(Group = factor(Group, levels = grp_levels))
 
-## per-variable per-group complete-case n (each variable on its own complete-case)
+# per-variable per-group complete-case n (each variable on its own complete-case)
 n_tbl <- dat |>
   pivot_longer(all_of(need_vars), names_to = "Variable", values_to = "Value") |>
   filter(is.finite(Value)) |>
@@ -194,7 +476,7 @@ cat("\nPer-variable complete-case n by group:\n"); print(as.data.frame(n_tbl), r
 cat(sprintf(paste0("\nCV-equality significance test: cvequality::mslr_test",
                    " (Krishnamoorthy-Lee 2014 MSLRT, nr = %g)\n"), MSLR_NR))
 
-## focus / proximal-exclusion masks (Block C)
+# focus / proximal-exclusion masks (Block C)
 proximal_ids <- c("LT", "THC")
 n_prox <- sum(dat$Group == "SC_Quina" & dat$Site_ID %in% proximal_ids)
 cat(sprintf("SC_Quina proximal to LT/THC: %d of %d (%.0f%% of all SC); SC excl-proximal n = %d\n",
@@ -204,8 +486,8 @@ cat(sprintf("SC_Quina proximal to LT/THC: %d of %d (%.0f%% of all SC); SC excl-p
 # ==============================================================================
 # A. Multivariate dispersion (PERMDISP)
 # ==============================================================================
-## Runs betadisper/permutest on z-scored {tech6} -> Euclidean for a given data
-## frame; returns per-group mean distance-to-centroid + pairwise permuted p.
+# Runs betadisper/permutest on z-scored {tech6} -> Euclidean for a given data
+# frame; returns per-group mean distance-to-centroid + pairwise permuted p.
 run_permdisp <- function(df, outdir, prefix, title) {
   mvd <- df |> filter(if_all(all_of(tech6), is.finite)) |> mutate(Group = droplevels(Group))
   cat("\n[", title, "] N per group (complete-case on tech6):\n", sep = ""); print(table(mvd$Group))
@@ -223,7 +505,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
   cat("permutest overall p =", signif(overall_p, 3), "\n")
   cat("pairwise permuted p:\n"); print(round(pw, 3))
 
-  ## plot 1: distance-to-centroid box + violin
+  # plot 1: distance-to-centroid box + violin
   p1 <- ggplot(dist_df, aes(Group, DistanceToCentroid, fill = Group, color = Group)) +
     geom_violin(alpha = 0.18, color = NA, width = 0.9) +
     geom_boxplot(fill = NA, color = "black", width = 0.42, linewidth = 0.6, outlier.shape = NA) +
@@ -237,7 +519,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
   ggsave(file.path(outdir, paste0(prefix, "_distance_boxplot.png")), p1,
          width = 7.0, height = 5.2, dpi = 300)
 
-  ## plot 2: PCA (= PCoA of Euclidean) ordination with convex hulls
+  # plot 2: PCA (= PCoA of Euclidean) ordination with convex hulls
   pca <- prcomp(mat, center = TRUE, scale. = FALSE)
   vexp <- pca$sdev^2 / sum(pca$sdev^2) * 100
   scores <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2], Group = mvd$Group)
@@ -296,13 +578,13 @@ cat("\nCV* by group:\n");        print(cv_group, row.names = FALSE)
 cat("\nCV* ratio SC:LT_Quina  (KL_p_CVequal = Krishnamoorthy-Lee MSLRT CV-equality test):\n")
 print(cv_ratio, row.names = FALSE)
 
-## KL MSLRT significance summary (exploratory; rank by CV* ratio, not p<0.05)
+# KL MSLRT significance summary (exploratory; rank by CV* ratio, not p<0.05)
 kl_sig <- cv_ratio$variable[which(cv_ratio$KL_p_CVequal < 0.05)]  # which() drops any NA p
 cat(sprintf("\nKrishnamoorthy-Lee MSLRT (nr = %g): %d of %d CV variables reject equal-CV at alpha = 0.05%s\n",
             MSLR_NR, length(kl_sig), nrow(cv_ratio),
             if (length(kl_sig) > 0) paste0(" (", paste(kl_sig, collapse = ", "), ")") else ""))
 
-## plot: CV* by group (point + bootstrap CI)
+# plot: CV* by group (point + bootstrap CI)
 cvg_p <- ggplot(cv_group, aes(group, CVstar, color = group)) +
   geom_pointrange(aes(ymin = CVstar_lo, ymax = CVstar_hi), size = 0.55, linewidth = 0.7) +
   facet_wrap(~ factor(variable, levels = cv_vars), scales = "free_y", nrow = 1) +
@@ -313,7 +595,7 @@ cvg_p <- ggplot(cv_group, aes(group, CVstar, color = group)) +
   corr_theme + theme(legend.position = "none", axis.text.x = element_text(angle = 25, hjust = 1))
 ggsave(file.path(sub$cv, "cv_by_group.png"), cvg_p, width = 10.5, height = 4.2, dpi = 300)
 
-## forest plot: CV* ratio SC:LT_Quina
+# forest plot: CV* ratio SC:LT_Quina
 cvr_p <- ggplot(cv_ratio, aes(CVstar_ratio_SC_LT, factor(variable, levels = rev(cv_vars)))) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "#202124") +
   geom_errorbarh(aes(xmin = ratio_lo, xmax = ratio_hi), height = 0.22, color = "#454649") +
@@ -329,7 +611,7 @@ ggsave(file.path(sub$cv, "cv_ratio_forest.png"), cvr_p, width = 7.2, height = 4.
 # B2. Robust family (reduction indicators)
 # ==============================================================================
 cat("\n########## BLOCK B2: robust (reduction indicators) ##########\n")
-## overall (3-group) + SC-vs-LT_Quina pairwise dispersion tests on a given scale
+# overall (3-group) + SC-vs-LT_Quina pairwise dispersion tests on a given scale
 disp_tests <- function(value, group) {
   ok <- is.finite(value)
   value <- value[ok]; group <- droplevels(factor(group[ok]))
@@ -358,7 +640,7 @@ for (v in robust_vars) {
       MAD = mad(x), IQR = IQR(x), variance = var(x),
       Fano = if (fam == "count") fano(x) else NA_real_)
   }
-  ## robust dispersion ratios SC:LT_Quina (+ bootstrap CI). mean reported for confound check.
+  # robust dispersion ratios SC:LT_Quina (+ bootstrap CI). mean reported for confound check.
   mad_r <- mad(x_sc) / mad(x_lt); mad_ci <- boot_ratio_ci(x_sc, x_lt, function(z) mad(z))
   iqr_r <- IQR(x_sc) / IQR(x_lt); iqr_ci <- boot_ratio_ci(x_sc, x_lt, function(z) IQR(z))
   tests_raw <- disp_tests(dat[[v]], dat$Group)
@@ -371,9 +653,9 @@ for (v in robust_vars) {
     mean_SC = mean(x_sc), mean_LT = mean(x_lt), row.names = NULL)
   rob_ratio[[length(rob_ratio) + 1]] <- row
 
-  ## family-specific extra scale
+  # family-specific extra scale
   if (fam == "bounded") {
-    ## empirical-logit: variance not mechanically compressed near 0/1
+    # empirical-logit: variance not mechanically compressed near 0/1
     ls <- emp_logit(x_sc); ll <- emp_logit(x_lt)
     tl <- disp_tests(emp_logit(dat[[v]]), dat$Group)
     rob_extra[[length(rob_extra) + 1]] <- data.frame(
@@ -384,7 +666,7 @@ for (v in robust_vars) {
       Fano_ratio_SC_LT = NA_real_,
       note = "raw [0,1] compresses variance near boundaries; logit more comparable", row.names = NULL)
   } else {
-    ## counts: Fano = var/mean (count analogue of CV); sqrt = variance-stabilizing
+    # counts: Fano = var/mean (count analogue of CV); sqrt = variance-stabilizing
     ts <- disp_tests(sqrt(pmax(dat[[v]], 0)), dat$Group)
     rob_extra[[length(rob_extra) + 1]] <- data.frame(
       variable = v, scale = "sqrt_variance_stabilizing",
@@ -400,7 +682,7 @@ cat("\nRobust group stats (dispersion next to mean):\n"); print(rob_group, row.n
 cat("\nRobust ratios + dispersion-equality tests (SC vs LT_Quina):\n"); print(rob_ratio, row.names = FALSE)
 cat("\nRobust extra-scale (logit / sqrt+Fano):\n"); print(rob_extra, row.names = FALSE)
 
-## plot: per-variable distributions by group + Fligner pairwise p
+# plot: per-variable distributions by group + Fligner pairwise p
 rob_long <- dat |> select(Group, all_of(robust_vars)) |>
   pivot_longer(all_of(robust_vars), names_to = "Variable", values_to = "Value") |>
   filter(is.finite(Value)) |> mutate(Variable = factor(Variable, levels = robust_vars))
@@ -430,7 +712,7 @@ ggsave(file.path(sub$rob, "robust_boxplots.png"), rob_p, width = 8.6, height = 7
 cat("\n########## BLOCK C: sensitivity (SC excl. LT/THC-proximal) ##########\n")
 dat_excl <- dat |> filter(!(Group == "SC_Quina" & Site_ID %in% proximal_ids))
 
-## headline dispersion ratio (SC:LT_Quina) by family -- reused for all/excl
+# headline dispersion ratio (SC:LT_Quina) by family -- reused for all/excl
 headline_ratio <- function(d, v) {
   fam <- if (v %in% cv_vars) "CV" else if (v %in% bounded_vars) "bounded" else "count"
   x_sc <- finite(d[[v]][d$Group == "SC_Quina"]); x_lt <- finite(d[[v]][d$Group == "LT_Quina"])
@@ -451,7 +733,7 @@ headline_ratio <- function(d, v) {
 all_h  <- bind_rows(lapply(need_vars, function(v) headline_ratio(dat,      v)))
 excl_h <- bind_rows(lapply(need_vars, function(v) headline_ratio(dat_excl, v)))
 
-## PERMDISP re-run on SC-excl
+# PERMDISP re-run on SC-excl
 permC <- run_permdisp(dat_excl, sub$sen, "permdisp_excl",
                       "PERMDISP sensitivity: SC (excl. LT/THC) vs Longtan")
 
@@ -466,7 +748,7 @@ sens_tbl <- all_h |>
             ratio_SCexcl_LT = permC$ratio_SC_LT, p_SCexcl = permC$overall_p, mean_SCexcl = NA_real_))
 cat("\nSensitivity side-by-side (each relative to LT_Quina):\n"); print(sens_tbl, row.names = FALSE)
 
-## plot: SC-all vs SC-excl dispersion ratio per variable
+# plot: SC-all vs SC-excl dispersion ratio per variable
 sens_long <- sens_tbl |> filter(family != "multivariate") |>
   select(variable, ratio_SCall_LT, ratio_SCexcl_LT) |>
   pivot_longer(c(ratio_SCall_LT, ratio_SCexcl_LT), names_to = "SC_set", values_to = "ratio") |>

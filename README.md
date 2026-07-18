@@ -12,13 +12,14 @@ manuscript's **Results** section, so each analysis folder maps to a Results subs
     helpers `extract_geology_scan.py`, `render_geology_dem_overlay.py`,
     `convert_geology_geojson_to_gpkg.R`, `plot_extracted_geology_on_dem.R`).
     Builds the site map, elevation profile, and the geology maps.
-  - `01_landscape_raw_material/` — **Results 6.1** (landscape distribution & raw-material
-    economy): `QV_dist_river_by_group.R`, `QV_raw_material_electivity.R`,
-    `QV_raw_material_permanova.R`.
-  - `02_scraper_characterization/` — **Results 6.2.1** (techno-typological features):
-    `Quina_scraper_statistic.R`, `QV_edge_angle_resharpening.R`.
-  - `03_technical_consistency/` — **Results 6.2.2** (technical consistency):
-    `QV_analysis.R`, `QV_dispersion_LT_vs_SC.R`, `QV_landscape_triage.R`.
+  - `raw_material_analysis/` — **Results 6.1** (landscape distribution & raw-material
+    economy): `raw_material_electivity.R`, `raw_material_permanova.R`,
+    `rawmat_size_compare.R`, `raw_material_distance.R`.
+  - `scraper_analysis/` — **Results 6.2.1** (techno-typological features):
+    `attribute_correlations.R`, `QSEA_vs_RFEPA.R`.
+  - `technological_consistency/` — **Results 6.2.2** (technical consistency):
+    `surface_vs_longtan.R` (SC vs Longtan: Part 1 location + Part 2 dispersion),
+    `landscape_structure.R`.
 - `data/` — source spreadsheets/CSVs (`Site_information.xlsx`,
   `Quina_scraper_surface.xlsx`, `Longtan_lithic_tools.xlsx`, `Raw_mat_basin.xlsx`,
   `Quina_sites_27_clean.csv`) and `data/cache/` for downloaded/derived spatial data
@@ -42,12 +43,9 @@ manuscript's **Results** section, so each analysis folder maps to a Results subs
    `maps/01_map_tiles.R` → `maps/03_elevation_profile.R` →
    `maps/04_geology_map.R` … `maps/07_illustrator_layers.R`
    (see each script's header for details; the geology-scan Python helpers are optional).
-2. **Analyses** (each folder is independent and reads only from `data/`, except as noted):
-   - `01_landscape_raw_material/` — any order.
-   - `02_scraper_characterization/` — any order.
-   - `03_technical_consistency/` — run `QV_analysis.R` **before** `QV_landscape_triage.R`
-     (the triage script reads `permanova_posthoc_pairwise.csv` and `pca_loadings.csv`
-     produced by `QV_analysis.R` in the same output folder).
+2. **Analyses** — each script is self-contained and reads only from `data/`, so the three
+   analysis folders (`raw_material_analysis/`, `scraper_analysis/`, `technological_consistency/`)
+   and the scripts within them can be run in any order.
 
-Scripts use absolute paths rooted at `H:/Quina_valleys`; adjust `proj_dir` if the
-compendium lives elsewhere.
+Paths are resolved with `here::here()` from the project root (the folder holding `.Rproj` /
+`.git`), so the scripts run as-is wherever the compendium is checked out.

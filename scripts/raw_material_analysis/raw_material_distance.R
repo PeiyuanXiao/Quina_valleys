@@ -16,7 +16,7 @@
 #   - data/Site_information.xlsx
 #
 # Output:
-#   - output/01_landscape_raw_material/dist_river_by_group/dist_river_by_group.png
+#   - output/raw_material_analysis/dist_river_by_group/dist_river_by_group.png
 
 required <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "ggpubr", "patchwork")
 miss <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
@@ -31,7 +31,7 @@ set.seed(123)
 
 proj_dir  <- here::here()
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
-out_dir   <- file.path(proj_dir, "output", "01_landscape_raw_material", "dist_river_by_group")
+out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 perm <- 999
 drop_sites <- c("PJDD", "ZKZ")
@@ -144,8 +144,8 @@ cat("\nNested d ~ basin/river_ID (between-basin vs river-within-basin):\n"); pri
 
 lab_out <- dat |> filter(d >= 1200)                          # THC, DPD_1
 
-## house boxplot style (matches QV_landscape_triage.R): jittered coloured points,
-## unfilled black box, solid black point = mean.
+# house boxplot style (matches QV_landscape_triage.R): jittered coloured points,
+# unfilled black box, solid black point = mean.
 box_layer <- function(g, colors)
   list(geom_jitter(aes(color = .data[[g]]), width = 0.28, height = 0,
                    size = 1.7, alpha = 0.6, shape = 16),

@@ -15,7 +15,7 @@
 #   - data/Quina_scraper_surface.xlsx (sheets "Quina scraper", "Resharpening flake")
 #
 # Output:
-#   - output/02_scraper_characterization/edgeangle_epa_welch_boxplot.png
+#   - output/scraper_analysis/edgeangle_epa_welch_boxplot.png
 
 # ==============================================================================
 # Setup
@@ -44,7 +44,7 @@ set.seed(123)
 # ==============================================================================
 
 sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "02_scraper_characterization")
+output_dir <- here::here("output", "scraper_analysis")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- Group labels, colours, theme ---
