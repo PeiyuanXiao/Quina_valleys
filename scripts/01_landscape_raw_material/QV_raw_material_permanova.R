@@ -1,41 +1,28 @@
-## QV_raw_material_permanova.R
-## ============================================================================
-## Question: how much of the variation in RAW-MATERIAL COMPOSITION is explained
-## by (i) basin (Binchuan vs Heqing) and (ii) river_ID, and how do the two
-## grouping variables compare?  Answered with PERMANOVA (vegan::adonis2) +
-## PERMDISP (betadisper):
-##   dataset A -> Bray-Curtis of the artifact x material indicator matrix;
-##   dataset B -> Aitchison distance (Euclidean on CLR-transformed locality
-##                compositions), visualised as a CLR biplot with material arrows.
-##
-## DATASETS:
-##   A. USED tools     : Quina_scraper_surface.xlsx, sheet "Quina scraper"
-##                       (artifact-level raw material; grouping via Site_ID -> Code)
-##   B. AVAILABLE clasts: Raw_mat_basin.xlsx (basin raw-material survey)
-##                       -> LOCALITY level (5 points Loc 1-5), Aitchison/CLR.
-##   C. AVAILABLE clasts, CLAST level (469 clasts) -> spatial-heterogeneity test
-##                       (D ~ Loc valid & powered; basin/river pseudoreplicated).
-##
-## Category harmonisation (matches QV_raw_material_electivity.R):
-##   "Quartz sandstone" + "Coarse sandstone" -> "Sandstone".
-##
-## ----------------------------------------------------------------------------
-## INTERPRETATION GUARDRAILS (read before citing any number this script prints)
-##  * DESIGN CONFOUND: river_ID is NESTED in basin (Sangyuan, Liandong c Binchuan;
-##    Caifeng c Heqing). river_ID is therefore a FINER partition than basin, so a
-##    one-way river_ID R2 is >= basin R2 almost by construction (more groups, more
-##    df). To separate the two we ALSO fit the nested model  D ~ basin/river_ID :
-##      - basin term            = variation between basins
-##      - basin:river_ID term   = variation between rivers WITHIN a basin
-##        (only estimable inside Binchuan, which has 2 rivers; Heqing has 1).
-##  * DATASET A (used tools) is ~96% Trachyte: near-constant composition, so a
-##    tiny R2 here is the *finding* (uniform raw-material selection), not a failure.
-##    Artifact-level adonis2 is PSEUDOREPLICATED (artifacts inherit their site's
-##    basin/river): treat p as exploratory; R2 is the effect size.
-##  * DATASET B is honest at the LOCALITY level but has only n = 5 units. Free
-##    permutations are limited (basin: min p = 0.1; river_ID: min p ~ 0.033), so
-##    read R2 as a descriptive effect size; the p-value has almost no power.
-## ============================================================================
+# QV_raw_material_permanova.R
+# Variation in raw-material composition explained by basin vs river_ID.
+#
+# PERMANOVA (vegan::adonis2) + PERMDISP on three datasets:
+#   A. Used tools (Quina scrapers, artifact level) -- Bray-Curtis.
+#   B. Available clasts (locality level, n = 5)     -- Aitchison/CLR biplot.
+#   C. Available clasts (clast level, n = 469)      -- spatial heterogeneity.
+# river_ID nests in basin, so one-way river R2 >= basin R2 by construction; the
+# nested model D ~ basin/river_ID separates between-basin vs river-within-basin.
+# Dataset A is ~96% Trachyte, so a tiny R2 is the finding (uniform selection).
+# Sandstone = "Quartz sandstone" + "Coarse sandstone" (matches sibling scripts).
+#
+# Pipeline:
+#   1. Dataset A -- used tools: one-way + nested PERMANOVA + composition figures.
+#   2. Dataset B -- available clasts (locality, Aitchison): PERMANOVA + CLR biplot.
+#   3. Dataset C -- available clasts (clast level): D ~ Loc heterogeneity + viz.
+#   4. Combined summary of variance explained.
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
+#   - data/Site_information.xlsx
+#   - data/Raw_mat_basin.xlsx
+#
+# Output:
+#   - output/01_landscape_raw_material/raw_material_permanova/*.png
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan")
 missing_packages <- required_packages[
@@ -52,8 +39,11 @@ library(vegan)
 
 set.seed(123)
 
-## ---- paths -----------------------------------------------------------------
-proj_dir  <- "H:/Quina_valleys"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+proj_dir  <- here::here()
 sc_path   <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 basin_path<- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
@@ -87,7 +77,10 @@ base_theme <- theme_minimal(base_size = 13) +
     plot.background = element_rect(color = NA, fill = "white"),
     panel.background = element_rect(color = NA, fill = "white"))
 
-## ---- helpers ---------------------------------------------------------------
+# ==============================================================================
+# Helpers (tests, ordination, compositional)
+# ==============================================================================
+
 fmt_p <- function(p) ifelse(is.na(p), "NA",
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3))))
 
@@ -242,9 +235,10 @@ clr_biplot <- function(clr_mat, meta, title, subtitle, file, label_col = "Loc") 
 summary_rows <- list()
 push <- function(x) summary_rows[[length(summary_rows) + 1]] <<- x
 
-## ============================================================================
-## DATASET A -- USED TOOLS (artifact-level; Quina scrapers)
-## ============================================================================
+# ==============================================================================
+# 1. Dataset A -- used tools (artifact-level Quina scrapers)
+# ==============================================================================
+
 cat("\n################## DATASET A: USED TOOLS (Quina scrapers) ##################\n")
 
 sites <- read_excel(site_path)
@@ -307,9 +301,10 @@ pcoa_plot(site_D, site_meta,
           "Exploratory; near-total Trachyte dominance -> pure-Trachyte sites coincide",
           file.path(out_dir, "A_tools_pcoa_site.png"), label_col = "Site_ID")
 
-## ============================================================================
-## DATASET B -- AVAILABLE CLASTS (locality level; n = 5)
-## ============================================================================
+# ==============================================================================
+# 2. Dataset B -- available clasts (locality level, n = 5)
+# ==============================================================================
+
 cat("\n################## DATASET B: AVAILABLE CLASTS (locality level) ##################\n")
 
 clasts <- read_excel(basin_path, sheet = "Sheet1")
@@ -370,17 +365,13 @@ composition_bar(transmute(clasts, Group = river_ID, Material), river_levels, "Ri
                 "Clast lithology pooled to river",
                 file.path(out_dir, "B_avail_composition_by_river.png"), width = 6.4)
 
-## ============================================================================
-## DATASET C -- AVAILABILITY, CLAST LEVEL: is raw material SPATIALLY HETEROGENEOUS?
-## ----------------------------------------------------------------------------
-## 469 clasts, lithology dummy-coded -> Bray-Curtis (CLR is undefined for single-
-## category rows, so the Aitchison choice does NOT apply here).
-##   (1) D ~ Loc      : the VALID, powered test of spatial heterogeneity. Loc is the
-##                      true sampling unit; clasts are genuine within-Loc replicates.
-##   (2) D ~ basin, (3) D ~ river_ID : R2 = effect size, but p is PSEUDOREPLICATED
-##       (basin/river are Loc-level properties). Honest p for these = dataset B.
-##   + hierarchical D ~ basin/river_ID/Loc : at what spatial scale does it sit?
-## ============================================================================
+# ==============================================================================
+# 3. Dataset C -- availability spatial heterogeneity (clast level, n = 469)
+# ==============================================================================
+# Bray-Curtis (CLR undefined for single-category rows). Only D ~ Loc is a valid,
+# powered test (Loc = sampling unit); basin/river tests are pseudoreplicated
+# (R2 = effect size; honest p = dataset B).
+
 cat("\n################## DATASET C: AVAILABILITY, CLAST LEVEL (spatial heterogeneity) ##################\n")
 
 C_meta <- clasts |> transmute(Loc = factor(Loc),
@@ -503,9 +494,10 @@ p_ord <- ggplot(scl, aes(A1j, A2j)) +
          fill = guide_legend(override.aes = list(shape = 21)))
 ggsave(file.path(out_dir, "C_clast_pcoa_scatter.png"), p_ord, width = 8.4, height = 6.0, dpi = 300)
 
-## ============================================================================
-## COMBINED SUMMARY (rank the grouping variables by variance explained)
-## ============================================================================
+# ==============================================================================
+# 4. Combined summary (variance explained by each grouping variable)
+# ==============================================================================
+
 summary_tbl <- bind_rows(summary_rows)
 cat("\n################## SUMMARY: variance in raw-material composition explained ##################\n")
 print(summary_tbl, row.names = FALSE, digits = 3)

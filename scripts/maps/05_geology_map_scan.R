@@ -40,7 +40,7 @@ library(tidyterra)
 library(ggspatial)
 sf::sf_use_s2(FALSE)
 
-proj_dir   <- "H:/Quina_valleys"
+proj_dir   <- here::here()
 output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)

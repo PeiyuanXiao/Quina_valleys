@@ -11,7 +11,7 @@
 ## Lighting knobs match 04/06.
 ## -----------------------------------------------------------------------------
 library(terra)
-proj_dir <- "H:/Quina_valleys"; output_dir <- file.path(proj_dir, "output", "maps")
+proj_dir <- here::here(); output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir <- file.path(proj_dir, "data", "cache")
 
 ## -- adjustable lighting --

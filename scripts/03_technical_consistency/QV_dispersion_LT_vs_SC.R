@@ -1,46 +1,26 @@
-## QV_dispersion_LT_vs_SC.R
-## ============================================================================
-## EXPLORATORY dispersion (variability) comparison: SC vs Longtan Quina scrapers.
-## Question: is the technical VARIABILITY of surface-collected (SC) Quina scrapers
-## larger / different from excavated Longtan (LT) Quina scrapers?
-##
-##   Block A  multivariate dispersion (PERMDISP, betadisper/permutest)
-##   Block B  per-variable dispersion, two families
-##              B1 CV family (ratio/dimensional) : Length, Width, Thickness, Mass, Edge_Angle
-##                 (CV-equality significance = cvequality::asymptotic_test, Feltz-Miller 1996)
-##              B2 robust family (reduction)     : Ave_GIUR, Retouch_length_index, N_Scar, Ave_RG
-##   Block C  independence sensitivity (drop SC pieces proximal to LT/THC)
-##   Block D  cross-variable summary
-##
-## Groups:
-##   SC_Quina    = Quina_scraper_surface.xlsx  :: "Quina scraper"   (focus)
-##   LT_Quina    = Longtan_lithic_tools.xlsx   :: "Quina scraper"   (focus comparator)
-##   LT_Ordinary = Longtan_lithic_tools.xlsx   :: "Ordinary scraper"(yardstick only)
-## FOCUS contrast = SC_Quina vs LT_Quina (same tool-class, different burial/time-
-## averaging). LT_Ordinary is only a yardstick (how far apart can two *real* tool
-## classes from the same site be?).
-##
-## ----------------------------------------------------------------------------
-## INTERPRETATION GUARDRAILS (read before citing ANY number below)
-##  * EXPLORATORY. Do NOT quantify "how much time"; do NOT read dispersion as
-##    transmission fidelity. Rank by EFFECT SIZE (dispersion ratio / mean distance
-##    to centroid), NOT by p < 0.05.
-##  * Dispersion depends on the mean: every dispersion stat is reported NEXT TO the
-##    group mean. If SC and LT_Quina means differ, a "spread difference" is
-##    confounded with a location difference. (Prior result: SC approx= LT_Quina,
-##    PERMANOVA R^2 = 0.003 -> expect small; but verify per variable here.)
-##  * CV is only valid for ratio/dimensional variables (+Edge_Angle by convention).
-##    Bounded indices / counts use logit / Fano + robust spread + Fligner instead.
-##  * Reduction-indicator dispersion = the range of REDUCTION STAGES sampled.
-##    SC wider than LT is consistent with stronger time-averaging, but is NOT
-##    evidence of transmission fidelity (a curated single tool-class has variance
-##    dominated by reduction stage).
-##  * Pooling 26 SC sites inflates variance, BUT prior homogeneity (between-basin
-##    R^2 = 0.003, PERMDISP between-basin p = 0.77) shows near-zero between-site
-##    location differences, so pooling's variance impact is limited. Weathering
-##    adds non-behavioural measurement spread to surface pieces (unavoidable) --
-##    see Block C sensitivity.
-## ============================================================================
+# QV_dispersion_LT_vs_SC.R
+# Dispersion (variability) comparison: SC vs Longtan Quina scrapers.
+#
+# Exploratory: rank by effect size, not p<0.05. Dispersion depends on the mean, so
+# every spread stat is reported next to the group mean. Focus contrast = SC_Quina
+# vs LT_Quina (same tool-class); LT_Ordinary is a yardstick only. Full guardrails
+# are written to _GUARDRAILS.txt.
+#
+# Pipeline:
+#   A. Multivariate dispersion (PERMDISP: betadisper / permutest) on 6 z-scored
+#      technical variables.
+#   B. Per-variable dispersion:
+#        B1 CV family (dimensional): Krishnamoorthy-Lee MSLRT (cvequality).
+#        B2 robust family (reduction): Fligner-Killeen (+ logit / sqrt scales).
+#   C. Independence sensitivity (drop SC pieces proximal to LT/THC).
+#   D. Cross-variable summary.
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
+#   - data/Longtan_lithic_tools.xlsx (sheets "Quina scraper", "Ordinary scraper")
+#
+# Output:
+#   - output/03_technical_consistency/dispersion_LT_vs_SC/ (figures + _GUARDRAILS.txt)
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "cvequality")
 missing_packages <- required_packages[
@@ -58,10 +38,14 @@ library(vegan)
 library(rstatix)
 
 set.seed(123)
-B_BOOT <- 5000   # bootstrap / permutation replicates (>= 5000 as specified)
+B_BOOT   <- 5000   # bootstrap / permutation replicates (>= 5000 as specified)
+MSLR_NR  <- 1e5    # Monte-Carlo iterations for cvequality::mslr_test (Krishnamoorthy-Lee)
 
-## ---- paths -----------------------------------------------------------------
-proj_dir <- "H:/Quina_valleys"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+proj_dir <- here::here()
 sc_path  <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 lt_path  <- file.path(proj_dir, "data", "Longtan_lithic_tools.xlsx")
 out_root <- file.path(proj_dir, "output", "03_technical_consistency")
@@ -131,9 +115,9 @@ make_hulls <- function(scores) scores |>
   group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |>
   ungroup()
 
-## ============================================================================
-## STATISTICAL HELPERS (base R; no new packages)
-## ============================================================================
+# ==============================================================================
+# Helpers (base-R statistics)
+# ==============================================================================
 finite <- function(x) x[is.finite(x)]
 cv_raw    <- function(x) { x <- finite(x); sd(x) / mean(x) }
 cv_corr   <- function(x) { x <- finite(x); n <- length(x); (sd(x) / mean(x)) * (1 + 1 / (4 * n)) }  # Sokal-Rohlf
@@ -153,16 +137,22 @@ boot_ratio_ci <- function(x_sc, x_lt, FUN, B = B_BOOT, mean_guard = FALSE) {
   rr <- replicate(B, FUN(sample(x_sc, replace = TRUE)) / FUN(sample(x_lt, replace = TRUE)))
   unname(quantile(rr, c(0.025, 0.975), na.rm = TRUE))
 }
-## CV-equality test between two groups: Feltz & Miller (1996) asymptotic test,
-## via cvequality::asymptotic_test (Marwick & Krishnamoorthy 2019). Returns the
-## D'_AD statistic + p. Replaces the earlier home-grown CV* permutation test so the
-## significance test comes from the published, peer-reviewed cvequality package.
+## CV-equality test between two groups: Krishnamoorthy & Lee (2014) modified
+## signed-likelihood-ratio test (MSLRT), via cvequality::mslr_test
+## (Marwick & Krishnamoorthy 2019). Returns the MSLRT statistic + p.
+## mslr_test is Monte-Carlo; its RNG use is INSULATED (save/restore .Random.seed +
+## a fixed local seed) so every bootstrap CI in the rest of the script is unaffected
+## and each variable's MSLRT is itself reproducible regardless of call order.
 cv_equal_test <- function(x_sc, x_lt) {
   x_sc <- finite(x_sc); x_lt <- finite(x_lt)
   vals <- c(x_sc, x_lt)
   grp  <- rep(c("SC_Quina", "LT_Quina"), c(length(x_sc), length(x_lt)))
-  at <- cvequality::asymptotic_test(vals, grp)
-  list(stat = unname(at$D_AD), p = unname(at$p_value))
+  old_seed <- if (exists(".Random.seed", envir = .GlobalEnv))
+    get(".Random.seed", envir = .GlobalEnv) else NULL
+  on.exit(if (!is.null(old_seed)) assign(".Random.seed", old_seed, envir = .GlobalEnv))
+  set.seed(20240517)                                                 # local, isolated
+  ml <- cvequality::mslr_test(nr = MSLR_NR, x = vals, y = grp)
+  list(stat = unname(ml$MSLRT), p = unname(ml$p_value))
 }
 ## Fligner-Killeen p for a 2-group contrast
 fligner_pair <- function(a, b) {
@@ -171,9 +161,9 @@ fligner_pair <- function(a, b) {
   fligner.test(c(a, b), g)$p.value
 }
 
-## ============================================================================
-## LOAD + SCHEMA CHECK  (printed BEFORE any statistics)
-## ============================================================================
+# ==============================================================================
+# Load + schema check
+# ==============================================================================
 cat("\n########## SCHEMA CHECK / PER-VARIABLE N ##########\n")
 read_group <- function(path, sheet, g, has_site) {
   df <- read_excel(path, sheet = sheet)
@@ -201,7 +191,8 @@ n_tbl <- dat |>
   pivot_wider(names_from = Group, values_from = n, values_fill = 0) |>
   mutate(Variable = factor(Variable, levels = need_vars)) |> arrange(Variable)
 cat("\nPer-variable complete-case n by group:\n"); print(as.data.frame(n_tbl), row.names = FALSE)
-cat("\nCV-equality significance test: cvequality::asymptotic_test (Feltz-Miller 1996)\n")
+cat(sprintf(paste0("\nCV-equality significance test: cvequality::mslr_test",
+                   " (Krishnamoorthy-Lee 2014 MSLRT, nr = %g)\n"), MSLR_NR))
 
 ## focus / proximal-exclusion masks (Block C)
 proximal_ids <- c("LT", "THC")
@@ -210,9 +201,9 @@ cat(sprintf("SC_Quina proximal to LT/THC: %d of %d (%.0f%% of all SC); SC excl-p
             n_prox, sum(dat$Group == "SC_Quina"), 100 * n_prox / sum(dat$Group == "SC_Quina"),
             sum(dat$Group == "SC_Quina") - n_prox))
 
-## ============================================================================
-## BLOCK A -- MULTIVARIATE DISPERSION (PERMDISP)
-## ============================================================================
+# ==============================================================================
+# A. Multivariate dispersion (PERMDISP)
+# ==============================================================================
 ## Runs betadisper/permutest on z-scored {tech6} -> Euclidean for a given data
 ## frame; returns per-group mean distance-to-centroid + pairwise permuted p.
 run_permdisp <- function(df, outdir, prefix, title) {
@@ -274,9 +265,9 @@ cat("\n########## BLOCK A: MULTIVARIATE PERMDISP ##########\n")
 permA <- run_permdisp(dat, sub$mv, "permdisp_all",
                       "Technical-space dispersion (PERMDISP): SC vs Longtan")
 
-## ============================================================================
-## BLOCK B1 -- CV FAMILY (ratio / dimensional variables)
-## ============================================================================
+# ==============================================================================
+# B1. CV family (ratio / dimensional variables)
+# ==============================================================================
 cat("\n########## BLOCK B1: CV (dimensional) ##########\n")
 cv_group <- list(); cv_ratio <- list()
 for (v in cv_vars) {
@@ -296,13 +287,20 @@ for (v in cv_vars) {
   cv_ratio[[length(cv_ratio) + 1]] <- data.frame(
     variable = v, CVstar_SC = cv_corr(x_sc), CVstar_LT = cv_corr(x_lt),
     CVstar_ratio_SC_LT = ratio, ratio_lo = rci[1], ratio_hi = rci[2],
-    FM_D_AD = ce$stat, FM_p_CVequal = ce$p, mean_SC = mean(x_sc), mean_LT = mean(x_lt),
+    KL_MSLRT = ce$stat, KL_p_CVequal = ce$p,
+    mean_SC = mean(x_sc), mean_LT = mean(x_lt),
     note = if (v == "Edge_Angle") "interval scale; CV by convention only" else "")
 }
 cv_group <- bind_rows(cv_group); cv_ratio <- bind_rows(cv_ratio)
 cat("\nCV* by group:\n");        print(cv_group, row.names = FALSE)
-cat("\nCV* ratio SC:LT_Quina  (FM_p_CVequal = Feltz-Miller asymptotic CV-equality test):\n")
+cat("\nCV* ratio SC:LT_Quina  (KL_p_CVequal = Krishnamoorthy-Lee MSLRT CV-equality test):\n")
 print(cv_ratio, row.names = FALSE)
+
+## KL MSLRT significance summary (exploratory; rank by CV* ratio, not p<0.05)
+kl_sig <- cv_ratio$variable[which(cv_ratio$KL_p_CVequal < 0.05)]  # which() drops any NA p
+cat(sprintf("\nKrishnamoorthy-Lee MSLRT (nr = %g): %d of %d CV variables reject equal-CV at alpha = 0.05%s\n",
+            MSLR_NR, length(kl_sig), nrow(cv_ratio),
+            if (length(kl_sig) > 0) paste0(" (", paste(kl_sig, collapse = ", "), ")") else ""))
 
 ## plot: CV* by group (point + bootstrap CI)
 cvg_p <- ggplot(cv_group, aes(group, CVstar, color = group)) +
@@ -327,9 +325,9 @@ cvr_p <- ggplot(cv_ratio, aes(CVstar_ratio_SC_LT, factor(variable, levels = rev(
   corr_theme
 ggsave(file.path(sub$cv, "cv_ratio_forest.png"), cvr_p, width = 7.2, height = 4.2, dpi = 300)
 
-## ============================================================================
-## BLOCK B2 -- ROBUST FAMILY (reduction indicators)
-## ============================================================================
+# ==============================================================================
+# B2. Robust family (reduction indicators)
+# ==============================================================================
 cat("\n########## BLOCK B2: robust (reduction indicators) ##########\n")
 ## overall (3-group) + SC-vs-LT_Quina pairwise dispersion tests on a given scale
 disp_tests <- function(value, group) {
@@ -426,9 +424,9 @@ rob_p <- ggplot(rob_long, aes(Group, Value, fill = Group, color = Group)) +
   ordination_theme + theme(legend.position = "none", axis.text.x = element_text(angle = 20, hjust = 1))
 ggsave(file.path(sub$rob, "robust_boxplots.png"), rob_p, width = 8.6, height = 7.0, dpi = 300)
 
-## ============================================================================
-## BLOCK C -- INDEPENDENCE SENSITIVITY (drop SC pieces proximal to LT/THC)
-## ============================================================================
+# ==============================================================================
+# C. Independence sensitivity (drop SC pieces proximal to LT/THC)
+# ==============================================================================
 cat("\n########## BLOCK C: sensitivity (SC excl. LT/THC-proximal) ##########\n")
 dat_excl <- dat |> filter(!(Group == "SC_Quina" & Site_ID %in% proximal_ids))
 
@@ -486,9 +484,9 @@ sens_p <- ggplot(sens_long, aes(ratio, factor(variable, levels = rev(need_vars))
   corr_theme
 ggsave(file.path(sub$sen, "sensitivity_forest.png"), sens_p, width = 7.6, height = 4.6, dpi = 300)
 
-## ============================================================================
-## BLOCK D -- CROSS-VARIABLE SUMMARY
-## ============================================================================
+# ==============================================================================
+# D. Cross-variable summary
+# ==============================================================================
 cat("\n########## BLOCK D: cross-variable summary ##########\n")
 summary_tbl <- all_h |>
   transmute(variable, family,

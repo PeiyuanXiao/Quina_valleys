@@ -1,15 +1,26 @@
-## Raw-material selection: composition + Jacobs' electivity index (D)
-##
-## Availability reference : Raw_mat_basin.xlsx           (Sheet1,           Lithology)
-## Used assemblage        : SC Quina scraper  = Quina_scraper_surface.xlsx (sheet "Quina scraper", Raw_material)
-##
-## Category harmonisation : basin "Quartz sandstone" + "Coarse sandstone" -> "Sandstone"
-##                          (so the basin lithologies and the tool raw materials are comparable)
-##
-## Jacobs' (1974) electivity index:  D = (r - p) / (r + p - 2 * r * p)
-##   r = proportion of a raw material among the *used* tools
-##   p = proportion of that raw material *available* in the basin
-##   D ranges from -1 (complete avoidance) to +1 (complete selection); 0 = used in proportion to availability.
+# QV_raw_material_electivity.R
+# Raw-material composition + Jacobs' (1974) electivity index D.
+#
+# D = (r - p) / (r + p - 2*r*p); r = proportion among used tools, p = proportion
+# available in the basin survey. D in [-1 avoid, +1 select], 0 = as available.
+#
+# Pipeline:
+#   1. Load used (SC Quina scraper) + available (basin survey) raw materials;
+#      harmonise the two sandstone classes to "Sandstone".
+#   2. Composition (counts / %) + 100% stacked bar.
+#   3. Jacobs' D per material + diverging-bar figure.
+#
+# Input:
+#   - data/Raw_mat_basin.xlsx (Sheet1, Lithology)
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper", Raw_material)
+#
+# Output:
+#   - output/01_landscape_raw_material/raw_material_stacked_bar.png
+#   - output/01_landscape_raw_material/jacobs_electivity_index.png
+
+# ==============================================================================
+# Setup
+# ==============================================================================
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2")
 missing_packages <- required_packages[
@@ -28,13 +39,17 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-basin_path <- "H:/Quina_valleys/data/Raw_mat_basin.xlsx"
-sc_path    <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
-output_dir <- "H:/Quina_valleys/output/01_landscape_raw_material"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+basin_path <- here::here("data", "Raw_mat_basin.xlsx")
+sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here::here("output", "01_landscape_raw_material")
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-## ---- shared raw-material levels and colours (Okabe-Ito palette) ----
+# --- Raw-material levels + colours (Okabe-Ito) ---
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone",
                      "Andesite")
 
@@ -48,7 +63,7 @@ material_colors <- c(
 
 group_levels <- c("Basin (available)", "SC Quina scraper")
 
-## ---- shared plot theme ----
+# --- Plot theme ---
 base_theme <- theme_minimal(base_size = 13) +
   theme(
     panel.grid.minor = element_blank(),
@@ -68,7 +83,10 @@ base_theme <- theme_minimal(base_size = 13) +
     panel.background = element_rect(color = NA, fill = "white")
   )
 
-## ---- load and harmonise raw-material labels ----
+# ==============================================================================
+# 1. Load + harmonise raw-material labels
+# ==============================================================================
+
 read_material <- function(path, sheet, column) {
   values <- read_excel(path, sheet = sheet)[[column]]
   trimws(as.character(values))
@@ -77,14 +95,14 @@ read_material <- function(path, sheet, column) {
 basin_raw <- read_material(basin_path, "Sheet1", "Lithology")
 sc_raw    <- read_material(sc_path, "Quina scraper", "Raw_material")
 
-## Merge the two basin sandstone classes so they match the tools' "Sandstone".
+# Merge basin sandstone classes to match the tools' "Sandstone".
 basin_raw <- dplyr::recode(
   basin_raw,
   "Quartz sandstone" = "Sandstone",
   "Coarse sandstone" = "Sandstone"
 )
 
-## Guard against unexpected categories (typos, new materials) silently dropping out.
+# Fail loudly on raw-material categories not listed in `material_levels`.
 unknown_materials <- setdiff(
   unique(c(basin_raw, sc_raw)),
   c(material_levels, NA, "", "NA")
@@ -107,7 +125,10 @@ material_data <- bind_rows(
     Material = factor(Material, levels = material_levels)
   )
 
-## ---- composition: counts and within-group percentages ----
+# ==============================================================================
+# 2. Composition + stacked bar
+# ==============================================================================
+
 composition <- material_data |>
   count(Group, Material, name = "n") |>
   complete(Group, Material, fill = list(n = 0)) |>
@@ -124,7 +145,7 @@ composition |>
   print(n = Inf)
 
 
-## ---- 100% stacked bar chart of composition ----
+# --- 100% stacked bar ---
 group_totals <- material_data |> count(Group, name = "n_total")
 group_axis_labels <- setNames(
   sprintf("%s\n(n = %d)", group_totals$Group, group_totals$n_total),
@@ -167,7 +188,10 @@ ggsave(
 
 print(stacked_plot)
 
-## ---- Jacobs' electivity index (D) ----
+# ==============================================================================
+# 3. Jacobs' electivity index (D)
+# ==============================================================================
+
 availability <- composition |>
   filter(Group == "Basin (available)") |>
   transmute(Material, p_avail = percent / 100)
@@ -199,7 +223,7 @@ cat("\nJacobs' electivity index (D):\n")
 print(electivity, n = Inf)
 
 
-## ---- electivity visualization (diverging bars) ----
+# --- Diverging-bar figure ---
 electivity_plot <- ggplot(
   electivity,
   aes(x = D, y = Material, fill = Selection)

@@ -11,7 +11,7 @@
 library(sf)
 library(terra)
 
-proj_dir  <- "H:/Quina_valleys"
+proj_dir  <- here::here()
 cache_dir <- file.path(proj_dir, "data", "cache")
 dem_path  <- file.path(cache_dir, "dem.tif")
 stopifnot(file.exists(dem_path))

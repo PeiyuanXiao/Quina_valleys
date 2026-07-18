@@ -7,7 +7,7 @@ library(dplyr)
 library(readxl)
 library(ggplot2)
 
-proj_dir   <- "H:/Quina_valleys"
+proj_dir   <- here::here()
 output_dir <- file.path(proj_dir, "output", "maps")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 

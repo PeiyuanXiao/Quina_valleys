@@ -1,27 +1,22 @@
-## QV_dist_river_by_group.R
-## ============================================================================
-## Question: does site distance-to-river (d_river_m, straight-line/Euclidean)
-## differ (1) between basins and (2) among rivers?
-##
-## DESIGN: one value per SITE (clean 27) -> site-level, NO pseudoreplication.
-##   Basin (2 grp: Binchuan 20, Heqing 5) : Mann-Whitney U (primary) + Welch t.
-##   River (3 grp: Sangyuan 6, Liandong 14, Caifeng 5): Kruskal-Wallis + Dunn
-##      (Bonferroni) (primary) + Welch ANOVA + Games-Howell.
-##   Consistency with the PERMANOVA thread: adonis2(dist(d) ~ grp) is, for one
-##   variable on a Euclidean distance, a permutational ANOVA; PERMDISP checks
-##   whether the SPREAD of distances differs (relevant: THC/DPD_1 are outliers).
-##
-## GUARDRAILS
-##  * Small, unbalanced N + right-skew with outliers (THC 2690 m, DPD_1 1390 m)
-##    -> rank-based tests are primary; read medians, not means; rank tests are
-##    unaffected by the monotonic log axis used for plotting.
-##  * NESTING/CONFOUND: river_ID nests in basin (Sangyuan,Liandong c Binchuan;
-##    Caifeng = Heqing). So the basin contrast = (Sangyuan+Liandong) vs Caifeng,
-##    and the river analysis partly re-expresses the basin difference. The nested
-##    adonis2(d ~ basin/river_ID) separates between-basin vs river-within-basin.
-##  * Sites on one river may be spatially autocorrelated in d_river_m (minor;
-##    not pseudoreplication -- each site still contributes one independent value).
-## ============================================================================
+# QV_dist_river_by_group.R
+# Site distance-to-river (d_river_m) by basin and by river.
+#
+# One value per site (clean 27) -> site-level, no pseudoreplication. Rank-based
+# tests are primary (small, unbalanced N; right-skew with outliers THC, DPD_1).
+# river_ID nests in basin (Caifeng = Heqing); a nested adonis2 separates the two.
+#
+# Pipeline:
+#   1. Load one d_river_m per clean site; descriptives + assumption checks.
+#   2. Basin contrast: Mann-Whitney U (+ Welch t, effect sizes).
+#   3. River contrast: Kruskal-Wallis + Dunn (+ Welch ANOVA, Games-Howell).
+#   4. Permutational ANOVA on Euclidean distance + PERMDISP + nested model.
+#   5. Boxplots (log10 y) by basin and river.
+#
+# Input:
+#   - data/Site_information.xlsx
+#
+# Output:
+#   - output/01_landscape_raw_material/dist_river_by_group/dist_river_by_group.png
 
 required <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "ggpubr", "patchwork")
 miss <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
@@ -30,7 +25,11 @@ library(readxl); library(dplyr); library(tidyr); library(ggplot2)
 library(vegan); library(rstatix); library(ggpubr); library(patchwork)
 set.seed(123)
 
-proj_dir  <- "H:/Quina_valleys"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+proj_dir  <- here::here()
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_dir   <- file.path(proj_dir, "output", "01_landscape_raw_material", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -57,7 +56,10 @@ base_theme <- theme_minimal(base_size = 13) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-## ---- data: one d_river_m per clean site ------------------------------------
+# ==============================================================================
+# 1. Load data + descriptives
+# ==============================================================================
+
 sites <- read_excel(site_path); names(sites) <- trimws(names(sites))
 dat <- sites |>
   transmute(Code = trimws(as.character(Code)),
@@ -70,7 +72,7 @@ cat("N =", nrow(dat), "sites\n")
 cat("\nBy basin:\n");  print(table(dat$basin))
 cat("By river:\n");    print(table(dat$river_ID))
 
-## ---- descriptives + assumption checks --------------------------------------
+# --- Descriptives + assumption checks ---
 desc_basin <- dat |> group_by(basin)    |> get_summary_stats(d, type = "common") |> ungroup()
 desc_river <- dat |> group_by(river_ID) |> get_summary_stats(d, type = "common") |> ungroup()
 cat("\n== d_river_m descriptives by basin ==\n"); print(desc_basin |> select(basin, n, median, iqr, mean, sd, min, max))
@@ -85,9 +87,10 @@ cat("Shapiro by river:\n");               print(sh_river)
 cat("Levene (variance homogeneity): basin p =", signif(lev_basin$p, 3),
     "| river p =", signif(lev_river$p, 3), "\n")
 
-## ============================================================================
-## (1) BASIN -- Mann-Whitney U (primary) + Welch t (cross-check) + effect sizes
-## ============================================================================
+# ==============================================================================
+# 2. Basin: Mann-Whitney U (primary) + Welch t
+# ==============================================================================
+
 mw_basin  <- dat |> wilcox_test(d ~ basin) |> add_significance()
 eff_basin <- dat |> wilcox_effsize(d ~ basin)                       # rank-biserial r
 t_basin   <- dat |> t_test(d ~ basin, var.equal = FALSE)            # Welch
@@ -98,9 +101,10 @@ cat(sprintf("Mann-Whitney U: p %s | rank-biserial r = %.2f (%s)\n",
 cat(sprintf("Welch t: t = %.2f, df = %.1f, p %s | Cohen's d = %.2f (%s)\n",
             t_basin$statistic, t_basin$df, fmt_p(t_basin$p), cd_basin$effsize, cd_basin$magnitude))
 
-## ============================================================================
-## (2) RIVER -- Kruskal-Wallis + Dunn (Bonferroni) + Welch ANOVA + Games-Howell
-## ============================================================================
+# ==============================================================================
+# 3. River: Kruskal-Wallis + Dunn + Welch ANOVA + Games-Howell
+# ==============================================================================
+
 kw      <- dat |> kruskal_test(d ~ river_ID)
 kw_eff  <- dat |> kruskal_effsize(d ~ river_ID)                     # epsilon^2
 dunn    <- dat |> dunn_test(d ~ river_ID, p.adjust.method = "bonferroni")
@@ -115,9 +119,10 @@ print(dunn |> select(group1, group2, n1, n2, statistic, p.adj, p.adj.signif))
 cat("Games-Howell post-hoc:\n")
 print(gh |> select(group1, group2, estimate, conf.low, conf.high, p.adj, p.adj.signif))
 
-## ============================================================================
-## (3) PERMANOVA-consistency: permutational ANOVA on Euclidean d + PERMDISP
-## ============================================================================
+# ==============================================================================
+# 4. Permutational ANOVA on Euclidean distance + PERMDISP
+# ==============================================================================
+
 D <- dist(dat$d, method = "euclidean")
 run_perm <- function(fac) {
   ad <- adonis2(as.formula(paste("D ~", fac)), data = dat, permutations = perm)
@@ -133,9 +138,10 @@ pm <- bind_rows(run_perm("basin"), run_perm("river_ID"))
 nested <- adonis2(D ~ basin / river_ID, data = dat, permutations = perm, by = "terms")
 cat("\nNested d ~ basin/river_ID (between-basin vs river-within-basin):\n"); print(nested)
 
-## ============================================================================
-## VISUALISATION: boxplots (log10 y) by basin and by river, with post-hoc
-## ============================================================================
+# ==============================================================================
+# 5. Visualisation: boxplots (log10 y) by basin and river
+# ==============================================================================
+
 lab_out <- dat |> filter(d >= 1200)                          # THC, DPD_1
 
 ## house boxplot style (matches QV_landscape_triage.R): jittered coloured points,

@@ -22,7 +22,7 @@ library(readxl)
 sf::sf_use_s2(FALSE)            # planar ops are fine for this small study area
 
 ## ---- paths ---------------------------------------------------------------
-proj_dir   <- "H:/Quina_valleys"
+proj_dir   <- here::here()
 site_xlsx  <- file.path(proj_dir, "data", "Site_information.xlsx")
 output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
@@ -31,7 +31,7 @@ dir.create(cache_dir,  showWarnings = FALSE, recursive = TRUE)
 
 ## ---- decision-point switches (spec section 2) ----------------------------
 ## D1 rivers: set a local line shapefile here to override the osmdata download.
-rivers_local_path <- NA_character_   # e.g. "H:/Quina_valleys/data_raw/rivers.shp"
+rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp")
 
 ## ---- A.1 read sites from Site_information.xlsx, build sf, project ---------
 ## Site_information.xlsx is the single source of truth (29 sites). We drop PJDD

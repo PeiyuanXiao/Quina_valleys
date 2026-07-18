@@ -1,9 +1,21 @@
-## Spearman correlation analyses (Quina scraper, Quina_scraper_surface.xlsx)
-##   (1) Ave_RG             ~ Edge_Angle, Thickness, Ave_GIUR, Retouch_length_index
-##   (2) Section_asymmetric ~ Edge_Angle, Ave_GIUR, Retouch_length_index, Ave_RG,
-##                            Thickness, Invasive_index
-## Each pair: Spearman's rho, visualised as faceted scatter plots with a loess
-## trend and the rho / p annotation for each pair.
+# Quina_scraper_statistic.R
+# Spearman rank correlations among Quina-scraper technical variables.
+#
+# Pipeline:
+#   1. Load the Quina-scraper surface assemblage.
+#   2. Spearman correlations (BH-adjusted) for three focal variables, each drawn
+#      as a faceted scatter with an lm trend and rho / p labels:
+#        (1) Ave_RG  (2) Section_asymmetric  (3) Edge_Angle.
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
+#
+# Output:
+#   - output/02_scraper_characterization/spearman_*_scatter.png
+
+# ==============================================================================
+# Setup
+# ==============================================================================
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2")
 missing_packages <- required_packages[
@@ -21,8 +33,12 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-sc_path    <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
-output_dir <- "H:/Quina_valleys/output/02_scraper_characterization"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here::here("output", "02_scraper_characterization")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 fmt_p <- function(p) {
@@ -44,10 +60,16 @@ corr_theme <- theme_minimal(base_size = 13) +
     panel.background = element_rect(color = NA, fill = "white")
   )
 
-## ---- load once (all columns available; each analysis selects what it needs) ----
+# ==============================================================================
+# 1. Load data
+# ==============================================================================
+
 quina <- read_excel(sc_path, sheet = "Quina scraper")
 
-## ---- reusable Spearman analysis + faceted scatter plot ----
+# ==============================================================================
+# 2. Spearman analysis + faceted scatter (helper)
+# ==============================================================================
+
 run_spearman_analysis <- function(data, focal_var, corr_vars,
                                   csv_name, png_name,
                                   ncol = 2, width = 7.6, height = 6.0) {
@@ -107,7 +129,11 @@ run_spearman_analysis <- function(data, focal_var, corr_vars,
   invisible(results)
 }
 
-## ---- (1) Ave_RG ----
+# ==============================================================================
+# 3. Correlations by focal variable
+# ==============================================================================
+
+# --- (1) Ave_RG ---
 run_spearman_analysis(
   quina,
   focal_var = "Ave_RG",
@@ -117,7 +143,7 @@ run_spearman_analysis(
   ncol = 2, width = 7.6, height = 6.0
 )
 
-## ---- (2) Section_asymmetric ----
+# --- (2) Section_asymmetric ---
 run_spearman_analysis(
   quina,
   focal_var = "Section_asymmetric",
@@ -128,7 +154,7 @@ run_spearman_analysis(
   ncol = 3, width = 9.2, height = 6.0
 )
 
-## ---- (3) Edge_Angle ----
+# --- (3) Edge_Angle ---
 run_spearman_analysis(
   quina,
   focal_var = "Edge_Angle",

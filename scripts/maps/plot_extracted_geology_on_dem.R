@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
   library(ggnewscale)
 })
 
-proj_dir <- "H:/Quina_valleys"
+proj_dir <- here::here()
 in_dir <- file.path(proj_dir, "data", "derived", "geology_extraction")
 out_dir <- file.path(proj_dir, "output", "maps")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)

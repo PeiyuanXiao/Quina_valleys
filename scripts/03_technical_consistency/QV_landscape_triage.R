@@ -1,59 +1,27 @@
-## QV_landscape_triage.R
-## ============================================================================
-## SITE-LEVEL landscape triage of SURFACE-COLLECTED (SC) Quina scrapers.
-##
-## Rebuilt 2026-07-16: ALL analyses now use the SITE as the unit of observation.
-##   The earlier artifact-level tests were PSEUDOREPLICATED (artifacts inherit
-##   their site's single landscape value) and have been REMOVED. Every landscape
-##   attribute below is a SITE property, so each site enters the analysis ONCE, as
-##   the MEDIAN of its Quina-scraper technical metrics. The redundant SC-vs-Longtan
-##   specimen-level comparison (which lives in QV_analysis.R /
-##   QV_dispersion_LT_vs_SC.R) has also been dropped from this script.
-##
-## Question: are the 6 technical-consistency metrics structured by landscape?
-##   Analysis 1) Basin (Binchuan vs Heqing)            -- categorical (site-level)
-##   Analysis 2) Landform / geomorphic position        -- categorical (site-level)
-##   Analysis 3) Distance to nearest river (d_river_m) -- continuous gradient (site-level)
-##   Analysis 4) Site size (per-site SC count)         -- continuous gradient (site-level)
-##
-## UNIT OF OBSERVATION = the site (n = number of sites with >= 1 complete-case
-##   Quina scraper). Each site is summarised to the MEDIAN of its scrapers on the
-##   6 technical variables, then:
-##     z-score -> Euclidean -> adonis2 (PERMANOVA) + betadisper (PERMDISP);
-##     prcomp PCA with convex hull / centroid / spoke; per-variable test routing
-##       {Ave_GIUR, N_Scar, Ave_RG}  = Kruskal-Wallis + Dunn (Bonferroni)
-##       {Retouch_length_index, Thickness, Edge_Angle} = Welch ANOVA + Welch t (Bonf).
-##   Gradients (distance, size): site-level Spearman (unweighted + weighted by the
-##     number of scrapers behind each site median) + a site-level db-RDA/PERMANOVA
-##     (adonis2). All are one-row-per-site => NOT pseudoreplicated.
-##
-## DATA (checked, not assumed -- see schema section below):
-##   Artifact-level technical data : Quina_scraper_surface.xlsx, sheet "Quina scraper"
-##   Site-level landscape data     : Site_information.xlsx
-##   Join key                      : artifact Site_ID  <->  site Code
-##   -> artifacts are aggregated to SITE MEDIANS before any statistic is computed.
-##
-## ----------------------------------------------------------------------------
-## INTERPRETATION GUARDRAILS (read before citing ANY number this script prints)
-##  * EXPLORATORY, not confirmatory. The site is the unit, so there is NO
-##    artifact-level pseudoreplication -- but N is small (few sites) and the groups
-##    are unbalanced, so treat every p-value as exploratory. Rank by EFFECT SIZE
-##    (R^2 / rho / group median spread), NOT p<0.05.
-##  * Most sites rest on very few scrapers: many site "medians" are effectively a
-##    SINGLE piece. Site medians are therefore NOISY. The weighted Spearman
-##    (weight = n scrapers per site) down-weights singleton sites; read it next to
-##    the unweighted one.
-##  * A significant PERMANOVA with a SMALL R^2 = heavily OVERLAPPING groups. Always
-##    read it next to PERMDISP: if within-group dispersion differs, the
-##    "difference" is mostly spread, not a shift in centroid location.
-##  * Basin and Landform are strongly CONFOUNDED (empty Basin x Landform cells:
-##    T2 = Heqing-only; T4 / hilltop = Binchuan-only) and Heqing has very few sites.
-##    Marginal (Basin + Landform) models are rank-limited => rank RELATIVE
-##    structure only; never read the terms as independent effects.
-##  * SC only, ONE retouch tool-class (not a whole assemblage): any pattern here is
-##    the LANDSCAPE DISTRIBUTION OF REDUCTION INTENSITY, NOT evidence of a
-##    provisioning / curation system.
-## ============================================================================
+# QV_landscape_triage.R
+# Site-level landscape triage of surface-collected (SC) Quina scrapers.
+#
+# Unit = the site: each site enters once as the MEDIAN of its scrapers on the 6
+# technical variables. Exploratory (few sites, unbalanced, basin/landform
+# confounded) -> rank by effect size (R2 / rho / median spread), not p<0.05. SC
+# only, one retouch tool-class: this is the landscape distribution of reduction
+# intensity, not a provisioning system. Full guardrails -> _GUARDRAILS.txt.
+#
+# Question: are the 6 technical-consistency metrics structured by landscape?
+#
+# Pipeline:
+#   1. Basin (Binchuan vs Heqing)      -- categorical: PERMANOVA + PERMDISP + PCA.
+#   2. Landform / geomorphic position  -- categorical: PERMANOVA + PERMDISP + PCA.
+#   3. Distance to nearest river       -- gradient: Spearman (wtd) + site db-RDA.
+#   4. Site size (per-site SC count)   -- gradient + coarse-bin robustness.
+#   + cross-analysis: marginal models + collinearity (all site-level).
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
+#   - data/Site_information.xlsx
+#
+# Output:
+#   - output/03_technical_consistency/ (analysis1_basin/ ... cross_analysis/)
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan",
                        "rstatix", "ggpubr")
@@ -80,7 +48,7 @@ variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
 kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")                 # KW + Dunn
 welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")  # Welch ANOVA + t
 
-proj_dir   <- "H:/Quina_valleys"
+proj_dir   <- here::here()
 sc_path    <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path  <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_root   <- file.path(proj_dir, "output", "03_technical_consistency")
@@ -411,10 +379,9 @@ run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9
   list(mv_R2 = ad$R2[1], mv_p = ad$`Pr(>F)`[1], per_var = per_var, data = dd)
 }
 
-## ============================================================================
-## LOAD + SCHEMA CHECK + JOIN + SITE-LEVEL AGGREGATION
-## (printed BEFORE any statistics are run)
-## ============================================================================
+# ==============================================================================
+# Load + schema check + join + site-level aggregation
+# ==============================================================================
 cat("\n########## DATA / SCHEMA / JOIN / SITE AGGREGATION ##########\n")
 
 sc_raw <- read_excel(sc_path, sheet = "Quina scraper")

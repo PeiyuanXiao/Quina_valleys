@@ -1,9 +1,25 @@
-## Edge angle vs resharpening-flake exterior platform angle (Quina_scraper_surface.xlsx)
-##
-## Rationale: a Quina resharpening (sharpening) flake detaches the working edge of a
-## scraper, so its exterior platform angle (EPA) should record the parent edge angle.
-## We test Quina scraper Edge_Angle vs resharpening-flake EPA with Welch's t-test
-## (unequal variance) and report Cohen's d as the standardized effect size.
+# QV_edge_angle_resharpening.R
+# Scraper edge angle vs resharpening-flake exterior platform angle (EPA).
+#
+# Rationale: a Quina resharpening (sharpening) flake detaches the working edge of
+# a scraper, so its exterior platform angle (EPA) should record the parent edge
+# angle. Quina scraper Edge_Angle vs resharpening-flake EPA is tested with Welch's
+# t-test (unequal variance); Cohen's d is the standardized effect size.
+#
+# Pipeline:
+#   1. Load Edge_Angle (Quina scraper) and EPA (resharpening flake).
+#   2. Welch's t-test Edge_Angle vs EPA + Cohen's d (bootstrap 95% CI).
+#   3. Boxplot annotated with the test result.
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheets "Quina scraper", "Resharpening flake")
+#
+# Output:
+#   - output/02_scraper_characterization/edgeangle_epa_welch_boxplot.png
+
+# ==============================================================================
+# Setup
+# ==============================================================================
 
 required_packages <- c("readxl", "dplyr", "ggplot2", "rstatix", "ggpubr")
 missing_packages <- required_packages[
@@ -23,11 +39,15 @@ library(rstatix)
 
 set.seed(123)
 
-sc_path    <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
-output_dir <- "H:/Quina_valleys/output/02_scraper_characterization"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here::here("output", "02_scraper_characterization")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-## ---- group labels, colours, theme ----
+# --- Group labels, colours, theme ---
 group_display <- c(
   edge = "Scraper\nEdge angle",
   epa  = "Resharpening\nEPA"
@@ -57,16 +77,20 @@ fmt_p <- function(p) {
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3)))
 }
 
-## ---- load angles ----
+# ==============================================================================
+# 1. Load angles
+# ==============================================================================
+
 edge_angle <- read_excel(sc_path, sheet = "Quina scraper")[["Edge_Angle"]] |>
   as.numeric()
 
 epa <- read_excel(sc_path, sheet = "Resharpening flake")[["EPA"]] |>
   as.numeric()
 
-## ============================================================================
-## Welch's t-test: scraper Edge_Angle vs resharpening-flake EPA
-## ============================================================================
+# ==============================================================================
+# 2. Welch's t-test: scraper Edge_Angle vs resharpening-flake EPA
+# ==============================================================================
+
 data_a <- bind_rows(
   tibble(Group = "edge", Value = edge_angle),
   tibble(Group = "epa",  Value = epa)
@@ -77,8 +101,7 @@ data_a <- bind_rows(
 welch_t <- rstatix::t_test(data_a, Value ~ Group,
                            var.equal = FALSE, detailed = TRUE)
 
-## Effect size: Cohen's d (unequal variance, to match the Welch test), with
-## bootstrap 95% CI.
+# --- Effect size: Cohen's d (unequal variance, matches the Welch test) + bootstrap 95% CI ---
 set.seed(123)
 effsize <- rstatix::cohens_d(data_a, Value ~ Group,
                              var.equal = FALSE, ci = TRUE, nboot = 1000)
@@ -97,7 +120,10 @@ cat("\n== Effect size (Cohen's d, unequal variance) ==\n")
 print(as.data.frame(effsize))
 
 
-## ---- boxplot: jittered points behind, unfilled black box, black mean dot ----
+# ==============================================================================
+# 3. Boxplot: jittered points, unfilled black box, black mean dot
+# ==============================================================================
+
 stat_a <- welch_t |>
   rstatix::add_xy_position(x = "Group") |>
   mutate(p.label = paste0("Welch t, p = ", formatC(p, format = "f", digits = 3)))

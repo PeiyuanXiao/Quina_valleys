@@ -3,7 +3,7 @@
 
 suppressPackageStartupMessages(library(sf))
 
-proj_dir <- "H:/Quina_valleys"
+proj_dir <- here::here()
 in_dir <- file.path(proj_dir, "data", "derived", "geology_extraction")
 out_gpkg <- file.path(in_dir, "geology_extracted_units.gpkg")
 

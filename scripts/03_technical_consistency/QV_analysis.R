@@ -1,8 +1,26 @@
-## Quina Valley and Longtan scraper comparison
-## Groups:
-##   SC_Quina     = Quina scraper from Quina_scraper_surface.xlsx
-##   LT_Quina     = Quina scraper from Longtan_lithic_tools.xlsx
-##   LT_Ordinary  = Ordinary scraper from Longtan_lithic_tools.xlsx
+# QV_analysis.R
+# Technical LOCATION comparison of Quina-scraper groups (centroids); companion to
+# the dispersion analysis in QV_dispersion_LT_vs_SC.R.
+#
+# Groups: SC_Quina (surface), LT_Quina (Longtan), LT_Ordinary (Longtan yardstick).
+# 6 z-scored technical variables -> Euclidean distance.
+#
+# Pipeline:
+#   1. Load + z-score the 6 technical variables (complete cases, 3 groups).
+#   2. Overall + pairwise (BH) PERMANOVA on group centroids.
+#   3. Per-variable location tests: Kruskal-Wallis + Dunn and Welch ANOVA + t
+#      (Bonferroni), drawn as boxplots.
+#
+# Input:
+#   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
+#   - data/Longtan_lithic_tools.xlsx (sheets "Quina scraper", "Ordinary scraper")
+#
+# Output:
+#   - output/03_technical_consistency/variable_boxplots.png
+
+# ==============================================================================
+# Setup
+# ==============================================================================
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan",
                        "rstatix", "ggpubr")
@@ -26,6 +44,10 @@ library(rstatix)
 
 set.seed(123)
 
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
 variables <- c(
   "Thickness",
   "Retouch_length_index",
@@ -47,11 +69,15 @@ group_fills <- c(
   LT_Ordinary = "#6BA8CE"
 )
 
-sc_path <- "H:/Quina_valleys/data/Quina_scraper_surface.xlsx"
-lt_path <- "H:/Quina_valleys/data/Longtan_lithic_tools.xlsx"
-output_dir <- "H:/Quina_valleys/output/03_technical_consistency"
+sc_path <- here::here("data", "Quina_scraper_surface.xlsx")
+lt_path <- here::here("data", "Longtan_lithic_tools.xlsx")
+output_dir <- here::here("output", "03_technical_consistency")
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+
+# ==============================================================================
+# 1. Load + prepare data
+# ==============================================================================
 
 read_scraper_group <- function(path, sheet, group_name) {
   read_excel(path, sheet = sheet) |>
@@ -85,7 +111,11 @@ analysis_matrix <- complete_data |>
 
 euclidean_distance <- dist(analysis_matrix, method = "euclidean")
 
-## Overall PERMANOVA
+# ==============================================================================
+# 2. PERMANOVA (group centroids)
+# ==============================================================================
+
+# --- Overall PERMANOVA ---
 permanova_result <- adonis2(
   euclidean_distance ~ Group,
   data = complete_data,
@@ -96,7 +126,7 @@ cat("\nOverall PERMANOVA result:\n")
 print(permanova_result)
 
 
-## Pairwise post-hoc PERMANOVA with Benjamini-Hochberg adjusted p-values
+# --- Pairwise post-hoc PERMANOVA (Benjamini-Hochberg) ---
 pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
                                permutations = 999,
                                p_adjust_method = "BH") {
@@ -142,35 +172,15 @@ cat("\nPairwise post-hoc PERMANOVA result:\n")
 print(posthoc_result)
 
 
-## ----------------------------------------------------------------------------
-## Multivariate dispersion (PERMDISP, betadisper)
-## A significant PERMANOVA can stem from differences in group location
-## (centroids), within-group dispersion, or both. betadisper isolates the
-## dispersion component so the PERMANOVA result is interpreted correctly --
-## important here given the unbalanced group sizes.
-## ----------------------------------------------------------------------------
-dispersion <- betadisper(euclidean_distance, complete_data$Group)
-dispersion_anova <- anova(dispersion)
-dispersion_permutest <- permutest(dispersion, permutations = 999,
-                                  pairwise = TRUE)
+# Dispersion (PERMDISP) for these same groups lives in QV_dispersion_LT_vs_SC.R
+# (Block A); this script covers group LOCATION only.
 
-cat("\nMultivariate dispersion (betadisper) - ANOVA:\n")
-print(dispersion_anova)
+# ==============================================================================
+# 3. Per-variable location tests
+# ==============================================================================
 
-cat("\nMultivariate dispersion (betadisper) - permutation test:\n")
-print(dispersion_permutest)
-
-dispersion_distances <- data.frame(
-  Group = complete_data$Group,
-  DistanceToCentroid = dispersion$distances
-)
-
-
-
-## ----------------------------------------------------------------------------
-## Shared plotting elements
-## ----------------------------------------------------------------------------
-ordination_theme <- theme_minimal(base_size = 13) +
+# --- Shared plotting theme ---
+plot_theme <- theme_minimal(base_size = 13) +
   theme(
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
     panel.grid.minor = element_blank(),
@@ -192,165 +202,7 @@ ordination_theme <- theme_minimal(base_size = 13) +
     panel.background = element_rect(color = NA, fill = "white")
   )
 
-make_centroids <- function(scores, x_var, y_var) {
-  scores |>
-    group_by(Group) |>
-    summarise(
-      x_centroid = mean(.data[[x_var]], na.rm = TRUE),
-      y_centroid = mean(.data[[y_var]], na.rm = TRUE),
-      .groups = "drop"
-    )
-}
-
-make_spokes <- function(scores, centroids, x_var, y_var) {
-  dplyr::left_join(scores, centroids, by = "Group")
-}
-
-make_convex_hulls <- function(scores, x_var, y_var) {
-  scores |>
-    group_by(Group) |>
-    filter(n() >= 3) |>
-    group_modify(function(group_data, group_key) {
-      hull_rows <- chull(group_data[[x_var]], group_data[[y_var]])
-      hull_data <- group_data[hull_rows, , drop = FALSE]
-      bind_rows(hull_data, hull_data[1, , drop = FALSE])
-    }) |>
-    ungroup()
-}
-
-## ----------------------------------------------------------------------------
-## PCA ordination
-## On z-scored variables prcomp() is a PCA of the correlation matrix -- the
-## metric equivalent of the previous PCoA. The ordination shows group convex
-## hulls and within-group spokes to each centroid; the variable loadings are
-## visualised separately below.
-## ----------------------------------------------------------------------------
-pca_result <- prcomp(analysis_matrix, center = TRUE, scale. = FALSE)
-pca_variance <- pca_result$sdev^2 / sum(pca_result$sdev^2) * 100
-
-pca_scores <- data.frame(
-  PC1 = pca_result$x[, 1],
-  PC2 = pca_result$x[, 2],
-  Group = complete_data$Group
-)
-
-pca_loadings <- data.frame(
-  Variable = rownames(pca_result$rotation),
-  PC1 = pca_result$rotation[, 1],
-  PC2 = pca_result$rotation[, 2],
-  row.names = NULL
-)
-
-
-pca_centroids <- make_centroids(pca_scores, "PC1", "PC2")
-pca_spokes <- make_spokes(pca_scores, pca_centroids, "PC1", "PC2")
-pca_hulls <- make_convex_hulls(pca_scores, "PC1", "PC2")
-
-pca_biplot <- ggplot(
-  pca_scores,
-  aes(x = PC1, y = PC2, color = Group)
-) +
-  geom_hline(yintercept = 0, color = "black", linewidth = 0.4,
-             linetype = "dashed") +
-  geom_vline(xintercept = 0, color = "black", linewidth = 0.4,
-             linetype = "dashed") +
-  geom_polygon(
-    data = pca_hulls,
-    aes(x = PC1, y = PC2, fill = Group, group = Group),
-    alpha = 0.12, color = NA, inherit.aes = FALSE
-  ) +
-  geom_path(
-    data = pca_hulls,
-    aes(x = PC1, y = PC2, color = Group, group = Group),
-    linewidth = 0.45, alpha = 0.65, inherit.aes = FALSE
-  ) +
-  geom_segment(
-    data = pca_spokes,
-    aes(x = PC1, y = PC2, xend = x_centroid, yend = y_centroid, color = Group),
-    linewidth = 0.25, alpha = 0.35, inherit.aes = FALSE
-  ) +
-  geom_point(size = 1.85, alpha = 0.8, shape = 16) +
-  geom_point(
-    data = pca_centroids,
-    aes(x = x_centroid, y = y_centroid, color = Group),
-    shape = 21, fill = "white", size = 4, stroke = 1.1, inherit.aes = FALSE
-  ) +
-  scale_color_manual(values = group_colors) +
-  scale_fill_manual(values = group_fills) +
-  scale_x_continuous(expand = expansion(mult = 0.1)) +
-  scale_y_continuous(expand = expansion(mult = 0.1)) +
-  labs(
-    x = paste0("PC1 (", round(pca_variance[1], 1), "%)"),
-    y = paste0("PC2 (", round(pca_variance[2], 1), "%)"),
-    color = "Group",
-    fill = "Group"
-  ) +
-  coord_equal() +
-  ordination_theme +
-  guides(
-    fill = "none",
-    color = guide_legend(
-      override.aes = list(size = 3.2, alpha = 1, shape = 16)
-    )
-  )
-
-ggsave(
-  filename = file.path(output_dir, "pca_ordination_scraper_groups.png"),
-  plot = pca_biplot,
-  width = 7.6,
-  height = 5.8,
-  dpi = 300
-)
-
-print(pca_biplot)
-
-## ----------------------------------------------------------------------------
-## PCA variable loadings (visualised separately from the ordination)
-## ----------------------------------------------------------------------------
-pca_loadings_long <- pca_loadings |>
-  pivot_longer(
-    cols = c(PC1, PC2),
-    names_to = "PC",
-    values_to = "Loading"
-  ) |>
-  mutate(
-    PC = factor(PC, levels = c("PC1", "PC2")),
-    Variable = factor(Variable, levels = rev(variables)),
-    Sign = ifelse(Loading >= 0, "Positive", "Negative")
-  )
-
-pca_loadings_plot <- ggplot(
-  pca_loadings_long,
-  aes(x = Loading, y = Variable, fill = Sign)
-) +
-  geom_col(width = 0.7, color = "#303238", linewidth = 0.3) +
-  geom_vline(xintercept = 0, color = "black", linewidth = 0.4) +
-  facet_wrap(~ PC) +
-  scale_fill_manual(values = c(Positive = "#6BA8CE", Negative = "#E07C90")) +
-  scale_y_discrete(labels = function(x) gsub("_", " ", x)) +
-  labs(
-    subtitle = "PCA variable loadings",
-    x = "Loading",
-    y = NULL,
-    fill = NULL
-  ) +
-  ordination_theme +
-  theme(panel.grid.major.y = element_blank(), legend.position = "top")
-
-ggsave(
-  filename = file.path(output_dir, "pca_loadings.png"),
-  plot = pca_loadings_plot,
-  width = 7.6,
-  height = 4.6,
-  dpi = 300
-)
-
-print(pca_loadings_plot)
-
-## ----------------------------------------------------------------------------
-## Per-variable distribution by group (raw, unscaled values)
-## Shows which individual metrics drive the multivariate group separation.
-## ----------------------------------------------------------------------------
+# --- Per-variable distributions (raw values) ---
 variable_long <- complete_data |>
   select(Group, all_of(variables)) |>
   pivot_longer(
@@ -360,15 +212,7 @@ variable_long <- complete_data |>
   ) |>
   mutate(Variable = factor(Variable, levels = variables))
 
-## ----------------------------------------------------------------------------
-## Per-variable group comparisons
-##   Non-parametric (bounded indices / counts): Kruskal-Wallis omnibus
-##     + Dunn post-hoc (Bonferroni)         -> Ave_GIUR, N_Scar, Ave_RG
-##   Unequal-variance continuous metrics: Welch's ANOVA omnibus
-##     + pairwise Welch t-tests (Bonferroni) -> Retouch_length_index,
-##                                              Thickness, Edge_Angle
-##   (3 groups, so the omnibus for the Welch set is Welch's ANOVA, not a t-test.)
-## ----------------------------------------------------------------------------
+# --- Per-variable tests: KW + Dunn (indices/counts); Welch ANOVA + t (continuous) ---
 kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")
 welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")
 
@@ -461,7 +305,7 @@ variable_boxplots <- ggplot(
     x = NULL,
     y = NULL
   ) +
-  ordination_theme +
+  plot_theme +
   theme(
     panel.grid.major = element_blank(),
     axis.text.x = element_text(angle = 20, hjust = 1),

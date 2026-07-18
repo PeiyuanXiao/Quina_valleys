@@ -1,36 +1,27 @@
-## QV_clast_size_by_material.R
-## ============================================================================
-## Question: are TRACHYTE river clasts larger than SANDSTONE clasts? (supports the
-## Results claim "粗面岩砾石显著大于砂岩", U = 16356.00, p = 0.003).
-##
-## SIZE METRIC: per-clast geometric mean of the three orthogonal dimensions,
-##   size_gm = (Length * Breadth * Thickness)^(1/3)   [mm].
-## The geometric mean is the natural single-number size for a 3-axis measurement
-## (scale-consistent, less outlier-driven than the arithmetic mean, and defined
-## only for positive dimensions -> clasts with a missing/non-positive axis drop).
-##
-## TEST: Mann-Whitney U (Wilcoxon rank-sum), two-sided, Trachyte vs Sandstone,
-##   with the rank-biserial correlation r as the effect size. Direction is read
-##   from the group medians / geometric means (rank test alone is symmetric).
-##
-## DATA: Raw_mat_basin.xlsx, "Sheet1" (469 river-gravel clasts; the same survey
-##   used by QV_raw_material_electivity.R / QV_raw_material_permanova.R).
-##
-## ----------------------------------------------------------------------------
-## SANDSTONE DEFINITION (read before citing the U statistic)
-##  The sibling scripts harmonise  "Quartz sandstone" + "Coarse sandstone" ->
-##  "Sandstone".  This script uses that HARMONISED definition as the PRIMARY test
-##  (internally consistent with the composition / electivity / PERMANOVA results).
-##  It ALSO re-runs the test against "Quartz sandstone" ONLY, because that
-##  narrower definition is what reproduces the number currently in the manuscript
-##  (U = 16356.00, p = 0.003; see the MANUSCRIPT RECONCILIATION block below).
-##  Decide which definition the paper should report and align the two.
-##
-## DATA-QUALITY REPAIR
-##  One Breadth cell is the typo "69..5" (Loc 2, a Trachyte clast). It is repaired
-##  in-script to 69.5 (NOT in the source file); without the repair that clast
-##  drops and Trachyte n = 128 instead of 129.
-## ============================================================================
+# QV_clast_size_by_material.R
+# Are Trachyte river clasts larger than Sandstone clasts?
+#
+# Size metric: per-clast geometric mean (Length*Breadth*Thickness)^(1/3) [mm].
+# Test: two-sided Mann-Whitney U (Trachyte vs Sandstone) + rank-biserial r;
+# direction is read from the group geometric means. The test is run for two
+# Sandstone definitions: harmonised (Quartz + Coarse; sibling-script convention)
+# and Quartz-sandstone-only.
+#
+# Pipeline:
+#   1. Load clasts, repair the "69..5" Breadth typo, compute geometric-mean size.
+#   2. Descriptives by material.
+#   3. Mann-Whitney U: Trachyte vs Sandstone (both definitions).
+#   4. Boxplot (Trachyte vs harmonised Sandstone).
+#
+# Input:
+#   - data/Raw_mat_basin.xlsx (Sheet1, 469 river-gravel clasts)
+#
+# Output:
+#   - output/01_landscape_raw_material/clast_size_by_material/clast_size_by_material.png
+
+# ==============================================================================
+# Setup
+# ==============================================================================
 
 required_packages <- c("readxl", "dplyr", "tidyr", "ggplot2", "rstatix")
 missing_packages <- required_packages[
@@ -47,13 +38,16 @@ library(rstatix)
 
 set.seed(123)
 
-## ---- paths -----------------------------------------------------------------
-proj_dir   <- "H:/Quina_valleys"
+# ==============================================================================
+# Global parameters
+# ==============================================================================
+
+proj_dir   <- here::here()
 basin_path <- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
 out_dir    <- file.path(proj_dir, "output", "01_landscape_raw_material", "clast_size_by_material")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-## ---- shared levels / palette (matches the other 01_ scripts) ---------------
+# --- Raw-material levels + palette ---
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone", "Andesite")
 material_colors <- c(Trachyte = "#D55E00", Sandstone = "#E69F00",
                      Quartz = "#56B4E9", Mudstone = "#0072B2", Andesite = "#009E73")
@@ -77,11 +71,14 @@ base_theme <- theme_minimal(base_size = 13) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-## ---- load + repair + compute the geometric-mean size -----------------------
+# ==============================================================================
+# 1. Load + repair + geometric-mean size
+# ==============================================================================
+
 raw <- read_excel(basin_path, sheet = "Sheet1")
 names(raw) <- trimws(names(raw))
 
-## repair the "69..5" Breadth typo (character column -> would otherwise be NA)
+# Repair the "69..5" Breadth typo in-script (else that clast drops to NA).
 breadth_chr <- trimws(as.character(raw$Breadth))
 n_repaired  <- sum(breadth_chr == "69..5", na.rm = TRUE)
 breadth_chr[breadth_chr == "69..5"] <- "69.5"
@@ -104,7 +101,10 @@ cat("Loaded", n_total, "clasts | Breadth typos repaired:", n_repaired,
     "| dropped (missing/non-positive dimension):", n_dropped,
     "| valid size_gm:", nrow(clasts_ok), "\n")
 
-## ---- descriptives by material (geometric mean = exp(mean(log(size)))) ------
+# ==============================================================================
+# 2. Descriptives by material
+# ==============================================================================
+
 geom_mean <- function(x) exp(mean(log(x)))
 desc <- clasts_ok |>
   group_by(Material) |>
@@ -120,9 +120,12 @@ desc <- clasts_ok |>
   arrange(match(Material, material_levels))
 cat("\n== size_gm descriptives by material (mm) ==\n"); print(as.data.frame(desc), digits = 4)
 
-## ---- Mann-Whitney U engine (Trachyte vs a given sandstone set) --------------
-## Reports U in the conventional (smaller) form to match SPSS/JASP-style output;
-## direction is carried by the group geometric means / medians + effect size.
+# ==============================================================================
+# 3. Mann-Whitney U: Trachyte vs Sandstone
+# ==============================================================================
+
+# U is reported in the conventional (smaller) form; direction comes from the
+# group geometric means, not the U statistic alone.
 run_mw <- function(data, sand_label, sand_lithologies, tag) {
   d <- data |>
     filter(Lithology == "Trachyte" |
@@ -131,7 +134,7 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
                         levels = c("Trachyte", "Sandstone")))
   nT <- sum(d$Grp == "Trachyte"); nS <- sum(d$Grp == "Sandstone")
 
-  ## base wilcox.test for the exact U (W = U for the FIRST group, Trachyte)
+  # base wilcox.test for the exact U (W = U for the FIRST group, Trachyte)
   wt   <- suppressWarnings(wilcox.test(size_gm ~ Grp, data = d))          # two-sided
   wt_g <- suppressWarnings(wilcox.test(size_gm ~ Grp, data = d,
                                        alternative = "greater"))          # Trachyte > Sandstone
@@ -139,7 +142,7 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
   U_ST <- nT * nS - U_TS
   U_report <- min(U_TS, U_ST)           # conventional Mann-Whitney U (manuscript form)
 
-  ## rank-biserial effect size (rstatix), project idiom
+  # rank-biserial effect size (rstatix), project idiom
   eff <- d |> rstatix::wilcox_effsize(size_gm ~ Grp)
 
   gm_T <- geom_mean(d$size_gm[d$Grp == "Trachyte"])
@@ -167,18 +170,16 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
     stringsAsFactors = FALSE)
 }
 
-## ============================================================================
-## PRIMARY TEST -- harmonised Sandstone (Quartz sandstone + Coarse sandstone)
-## ============================================================================
+# ==============================================================================
+# 3a. Primary test: harmonised Sandstone (Quartz + Coarse)
+# ==============================================================================
 cat("\n########## PRIMARY: Trachyte vs harmonised Sandstone (Q + Coarse) ##########")
 primary <- run_mw(clasts_ok, "Sandstone (Quartz + Coarse)",
                   c("Quartz sandstone", "Coarse sandstone"), "PRIMARY / harmonised")
 
-## ============================================================================
-## MANUSCRIPT RECONCILIATION -- "Sandstone" = Quartz sandstone ONLY
-##   This narrower set reproduces the figure now in the manuscript:
-##   U = 16356.00, p = 0.003 (two-sided).
-## ============================================================================
+# ==============================================================================
+# 3b. Secondary test: Quartz sandstone only
+# ==============================================================================
 cat("\n########## RECONCILIATION: Trachyte vs Quartz sandstone ONLY ##########")
 manuscript <- run_mw(clasts_ok, "Quartz sandstone only",
                      "Quartz sandstone", "manuscript reconciliation")
@@ -192,9 +193,10 @@ cat("\nNote: the manuscript's 'U = 16356.00, p = 0.003' corresponds to the\n",
     "Quartz-sandstone-only row. The harmonised-Sandstone row is the definition\n",
     "used by every other 01_landscape_raw_material script.\n", sep = "")
 
-## ============================================================================
-## FIGURE -- size_gm by material, Trachyte vs harmonised Sandstone (log y)
-## ============================================================================
+# ==============================================================================
+# 4. Figure: clast size by material (Trachyte vs harmonised Sandstone)
+# ==============================================================================
+
 plot_df <- clasts_ok |>
   filter(Material %in% c("Trachyte", "Sandstone")) |>
   mutate(Material = factor(Material, levels = c("Trachyte", "Sandstone")))
@@ -217,7 +219,7 @@ p <- ggplot(plot_df, aes(Material, size_gm)) +
 ggsave(file.path(out_dir, "clast_size_by_material.png"), p,
        width = 5.4, height = 5.2, dpi = 300)
 
-## ---- guardrails note --------------------------------------------------------
+# --- Guardrails note (written to _GUARDRAILS.txt) ---
 writeLines(c(
   "GUARDRAILS -- clast size (geometric mean) by raw material",
   "* size_gm = (Length * Breadth * Thickness)^(1/3); defined only for clasts with",
