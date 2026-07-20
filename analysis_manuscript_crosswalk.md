@@ -12,6 +12,21 @@ Last reconciled: 2026-07-16; script tree reorganized/renamed 2026-07-17 (folders
 `QV_analysis.R` + `QV_dispersion_LT_vs_SC.R` merged into `surface_vs_longtan.R`). The trachyte
 "xx%" Results number is still a placeholder.
 
+> **Landscape-variable change (2026-07-19).** In `landscape_structure.R`, the landscape-level test of
+> technological variation now uses **height above the present-day channel (`h_river_m`, continuous)**
+> in place of the former categorical **terrace level / geomorphic position** (T2/T3/T4/hilltop).
+> Height is the continuous quantity of which terrace level is a discretisation, and being measured
+> from the local channel it is free of the basin base-level difference that makes absolute elevation
+> (`elev_m`) unsuitable here — Spearman ρ vs basin = −0.03, against 0.18 for elevation. Analysis 2 is
+> therefore a gradient analysis (Spearman + site-level PERMANOVA) with coarse height bands
+> (≤40 / 40–60 / >60 m; n = 9/11/6) as a robustness check, and its output folder is
+> `analysis2_height/` (was `analysis2_landform/`). The Results R² for this variable changed from
+> 0.073 (landform) to 0.036 (height; bands 0.061, p = 0.641). Caveat carried in the guardrails:
+> height is strongly right-skewed, the 3 hilltop sites (150–187 m) sitting far above the terrace
+> sites (25–73 m), so the rank-based Spearman and the banded check are read alongside the linear
+> PERMANOVA term. Terrace level is still used descriptively elsewhere (site distribution, maps,
+> elevation profile).
+
 > **Output format change (2026-07-16).** The analysis scripts **no longer write CSV files.**
 > Each script now prints its numbers to the **console** when run, and saves **figures (PNG)**
 > only. The "Key output" column below therefore lists the PNG figure(s) for each claim; the
@@ -45,7 +60,7 @@ Last reconciled: 2026-07-16; script tree reorganized/renamed 2026-07-17 (folders
 |---|---|---|
 | **Specimen level**: SC vs LT Quina not different (R²=0.004); both differ from ordinary scrapers (pairwise R²=0.29–0.36); per-variable tests | `technological_consistency/surface_vs_longtan.R` (Part 1, location) | `variable_boxplots.png`; PERMANOVA / Kruskal / Welch printed to console |
 | **Specimen level**: dispersion equal between the two Quina groups, PERMDISP p=0.53 | `technological_consistency/surface_vs_longtan.R` (Part 2, dispersion) | `dispersion_LT_vs_SC/multivariate_permdisp/*.png`; PERMDISP p printed to console |
-| **Site–landscape level**: technical variation not structured by basin (R²=0.011), landform (0.073), distance (0.031), site size (0.006) | `technological_consistency/landscape_structure.R` | `analysis1_basin/…analysis4_size/*.png`; multivariate R²/p printed to console |
+| **Site–landscape level**: technical variation not structured by basin (R²=0.011), height above channel (0.036; bands 0.061), distance (0.031), site size (0.006) | `technological_consistency/landscape_structure.R` | `analysis1_basin/…analysis4_size/*.png`; multivariate R²/p printed to console |
 
 ---
 
@@ -59,9 +74,10 @@ pipeline.
    headline, the whole per-variable dispersion machinery is unreported: CV family
    (`cv_dimensional/`), robust-reduction family (`robust_reduction/`), the Krishnamoorthy–Lee
    MSLRT CV-equality test, and the independence sensitivity forests (`sensitivity/`).
-2. **`technological_consistency/landscape_structure.R`** — only the four R² headlines are cited. The
-   per-variable Kruskal/Welch tests, PCA ordinations, boxplots, the `cross_analysis/` collinearity
-   check, the Heqing-composition diagnostic, and the sensitivity summary are all unreported.
+2. **`technological_consistency/landscape_structure.R`** — only the four R² headlines and the
+   elevation-band robustness check are cited. The per-variable Kruskal/Welch tests, PCA ordinations,
+   boxplots, the `cross_analysis/` collinearity check, the Heqing-composition diagnostic, and the
+   sensitivity summary are all unreported.
 3. **`scraper_analysis/attribute_correlations.R`** — the `Ave_RG` and
    `Section_asymmetric` Spearman sets (`spearman_AveRG_scatter.png`,
    `spearman_Section_asymmetric_scatter.png`) are not cited; only the `Edge_Angle` set is.

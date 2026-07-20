@@ -2,7 +2,7 @@
 # Site-level landscape triage of surface-collected (SC) Quina scrapers.
 #
 # Unit = the site: each site enters once as the MEDIAN of its scrapers on the 6
-# technical variables. Exploratory (few sites, unbalanced, basin/landform
+# technical variables. Exploratory (few sites, unbalanced, basin/landscape
 # confounded) -> rank by effect size (R2 / rho / median spread), not p<0.05. SC
 # only, one retouch tool-class: this is the landscape distribution of reduction
 # intensity, not a provisioning system. Full guardrails -> _GUARDRAILS.txt.
@@ -11,7 +11,9 @@
 #
 # Pipeline:
 #   1. Basin (Binchuan vs Heqing)      -- categorical: PERMANOVA + PERMDISP + PCA.
-#   2. Landform / geomorphic position  -- categorical: PERMANOVA + PERMDISP + PCA.
+#   2. Height above river (m)          -- gradient + coarse-bin robustness.
+#      (= the continuous form of terrace level; unlike absolute elevation it is
+#       measured from the local channel, so basin base level cancels out.)
 #   3. Distance to nearest river       -- gradient: Spearman (wtd) + site db-RDA.
 #   4. Site size (per-site SC count)   -- gradient + coarse-bin robustness.
 #   + cross-analysis: marginal models + collinearity (all site-level).
@@ -63,8 +65,12 @@ guardrails <- c(
   "  (weight = n scrapers per site) down-weights singleton sites -- read both.",
   "* Significant PERMANOVA + small R^2 = overlapping groups; read with PERMDISP",
   "  (if dispersion differs, the difference is spread, not centroid location).",
-  "* Basin x Landform is confounded (empty cells; Heqing has few sites) -> marginal",
-  "  models rank RELATIVE structure only; terms are NOT independent effects.",
+  "* Height above river is the CONTINUOUS form of terrace level (measured from the",
+  "  local channel, so basin base level cancels out; Spearman vs basin ~ 0). But it",
+  "  is strongly right-skewed: the 3 hilltop sites (150-187 m) sit far above the",
+  "  terrace sites (25-73 m) and carry high leverage in the linear PERMANOVA term",
+  "  -> read the rank-based Spearman and the banded check alongside it.",
+  "* Marginal models rank RELATIVE structure only; terms are NOT independent effects.",
   "* SC only, one retouch tool-class: this is the landscape distribution of",
   "  reduction intensity, NOT evidence of a provisioning system."
 )
@@ -110,9 +116,12 @@ corr_theme <- theme_minimal(base_size = 13) +
 
 # categorical palettes (muted, low-saturation, in the QV idiom)
 basin_colors    <- c(Binchuan = "#C9603F", Heqing = "#3F7CAC")
-landform_colors <- c(T2 = "#6BA8CE", T3 = "#7FB069",
-                     T4 = "#E6C25C", hilltop = "#E07C90")
+hbin_colors     <- c(`<=40` = "#7FB069", `40-60` = "#E6C25C", `>60` = "#E07C90")
 sizebin_colors  <- c(`1` = "#C9D6DF", `2-3` = "#6BA8CE", `4+` = "#2C5F7C")
+
+# coarse height-above-river bands (m); sites span 25-187 m, tertile-like 9/11/6
+h_breaks <- c(-Inf, 40, 60, Inf)
+h_labels <- c("<=40", "40-60", ">60")
 
 fmt_p <- function(p) ifelse(is.na(p), "NA",
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3))))
@@ -395,7 +404,7 @@ sc <- sc_raw |>
 site_raw <- read_excel(site_path)
 names(site_raw) <- trimws(names(site_raw))           # headers carry trailing spaces
 cat("\nSite file columns (Site_information.xlsx, trimmed):\n"); print(names(site_raw))
-req_site <- c("Code", "basin", "geomorph", "d_river_m")
+req_site <- c("Code", "basin", "h_river_m", "d_river_m")
 miss_site <- setdiff(req_site, names(site_raw))
 if (length(miss_site) > 0)
   stop("Missing required site-level fields in Site_information.xlsx: ",
@@ -405,9 +414,8 @@ site_land <- site_raw |>
   transmute(
     Site_ID  = trimws(as.character(Code)),
     Basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
-    Landform = factor(trimws(geomorph), levels = c("T2", "T3", "T4", "hilltop")),
     Distance_to_water = as.numeric(d_river_m),
-    elev_m   = as.numeric(elev_m),
+    Height_above_river = as.numeric(h_river_m),
     n_Quina_scraper_col = as.numeric(n_Quina_scraper)
   )
 
@@ -439,11 +447,11 @@ site_df <- sc_cc |>
   summarise(n_art = n(),
             across(all_of(variables), ~ median(.x, na.rm = TRUE)),
             Basin    = dplyr::first(Basin),
-            Landform = dplyr::first(Landform),
             Distance_to_water = dplyr::first(Distance_to_water),
-            elev_m    = dplyr::first(elev_m),
+            Height_above_river = dplyr::first(Height_above_river),
             Site_size = dplyr::first(Site_size),
-            .groups = "drop")
+            .groups = "drop") |>
+  mutate(H_bin = cut(Height_above_river, breaks = h_breaks, labels = h_labels))
 
 cat("\nSITE-LEVEL analysis frame: n sites =", nrow(site_df),
     "(aggregated from", nrow(sc_cc), "complete-case scrapers)\n")
@@ -451,9 +459,10 @@ cat("Scrapers per site (site-median reliability):\n"); print(summary(site_df$n_a
 cat("Sites resting on <3 scrapers (median ~= a single piece):",
     sum(site_df$n_art < 3), "of", nrow(site_df), "\n")
 cat("\nN sites by Basin:\n");    print(table(site_df$Basin))
-cat("\nN sites by Landform:\n"); print(table(site_df$Landform))
-cat("\nBasin x Landform contingency (site-level; empty cells => confounded):\n")
-print(table(site_df$Basin, site_df$Landform))
+cat("\nHeight above river (m):\n"); print(summary(site_df$Height_above_river))
+cat("\nN sites by height band:\n"); print(table(site_df$H_bin))
+cat("\nBasin x height band contingency (site-level; empty cells => confounded):\n")
+print(table(site_df$Basin, site_df$H_bin))
 
 # accumulator for the cross-analysis triage summary
 summary_rows <- list()
@@ -508,26 +517,39 @@ sens_tbl <- data.frame(
 cat("\nBasin sensitivity (with vs without THC/LT in Heqing):\n"); print(sens_tbl, row.names = FALSE)
 
 # ==============================================================================
-# 2. Landform (geomorphic position; categorical, site-level)
+# 2. Height above river (continuous gradient, site-level) + height-band robustness
+#    Continuous form of terrace level; basin base level cancels out.
 # ==============================================================================
-a2_dir <- file.path(out_root, "analysis2_landform")
-a2 <- run_categorical(site_df, "Landform", c("T2", "T3", "T4", "hilltop"), landform_colors,
-                      a2_dir, "a2_landform", "Analysis 2: technical metrics ~ Landform (site-level)")
-push_cat("2_landform", a2)
+a2_dir <- file.path(out_root, "analysis2_height")
+a2 <- run_gradient(site_df, "Height_above_river", "Height above river (m)",
+                   a2_dir, "a2_height")
+push_grad("2_height_continuous", a2)
+
+# bin robustness: does a continuous height trend survive coarse banding of SITES?
+cat("\nHeight-above-river bands (site-level N):\n"); print(table(site_df$H_bin))
+a2b <- run_categorical(site_df, "H_bin", h_labels, hbin_colors,
+                       a2_dir, "a2_heightbin",
+                       "Analysis 2 robustness: technical metrics ~ height band (site-level)")
+push_cat("2_height_bands", a2b)
 
 # ---- 2a. collinearity with Basin: marginal (Type-III-like) PERMANOVA ----
 mat2 <- scale(as.matrix(site_df[, variables]))
 d2   <- dist(mat2, method = "euclidean")
-margin_BL <- tryCatch(
-  adonis2(d2 ~ Basin + Landform, data = site_df, by = "margin", permutations = 999),
-  error = function(e) { message("marginal Basin+Landform failed (confounded design): ",
+margin_BH <- tryCatch(
+  adonis2(d2 ~ Basin + Height_above_river, data = site_df, by = "margin", permutations = 999),
+  error = function(e) { message("marginal Basin+Height failed (collinear design): ",
                                 conditionMessage(e)); NULL })
-if (!is.null(margin_BL)) {
-  cat("\nMarginal PERMANOVA dist ~ Basin + Landform (site-level, by='margin'):\n"); print(margin_BL)
-  cat("Reading: Landform's marginal R2/p = its contribution AFTER Basin is controlled.\n")
+if (!is.null(margin_BH)) {
+  cat("\nMarginal PERMANOVA dist ~ Basin + Height above river (site-level, by='margin'):\n")
+  print(margin_BH)
+  cat("Reading: Height's marginal R2/p = its contribution AFTER Basin is controlled.\n")
 }
-cat("\nBasin x Landform (site-level; flag small/empty cells):\n")
-print(as.data.frame.matrix(table(site_df$Basin, site_df$Landform)))
+cat("\nHeight above river by basin (site-level; should be comparable -- unlike",
+    "\nabsolute elevation, height is measured from the local channel):\n")
+print(site_df |> group_by(Basin) |>
+        summarise(n = n(), min = min(Height_above_river),
+                  median = median(Height_above_river),
+                  max = max(Height_above_river), .groups = "drop") |> as.data.frame())
 
 # ==============================================================================
 # 3. Distance to water (continuous gradient, site-level)
@@ -571,11 +593,12 @@ print(summary_tbl, row.names = FALSE)
 
 # per-analysis multivariate headline (which grouping/gradient structures most?)
 mv_head <- bind_rows(
-  data.frame(analysis = "1_basin",          mv_R2 = a1$R2,    mv_p = a1$p,    permdisp_p = a1$disp_p),
-  data.frame(analysis = "2_landform",       mv_R2 = a2$R2,    mv_p = a2$p,    permdisp_p = a2$disp_p),
-  data.frame(analysis = "3_distance",       mv_R2 = a3$mv_R2, mv_p = a3$mv_p, permdisp_p = NA_real_),
-  data.frame(analysis = "4_size_continuous",mv_R2 = a4$mv_R2, mv_p = a4$mv_p, permdisp_p = NA_real_),
-  data.frame(analysis = "4_size_bins",      mv_R2 = a4b$R2,   mv_p = a4b$p,   permdisp_p = a4b$disp_p)
+  data.frame(analysis = "1_basin",           mv_R2 = a1$R2,    mv_p = a1$p,    permdisp_p = a1$disp_p),
+  data.frame(analysis = "2_height_continuous", mv_R2 = a2$mv_R2, mv_p = a2$mv_p, permdisp_p = NA_real_),
+  data.frame(analysis = "2_height_bands",      mv_R2 = a2b$R2,   mv_p = a2b$p,   permdisp_p = a2b$disp_p),
+  data.frame(analysis = "3_distance",        mv_R2 = a3$mv_R2, mv_p = a3$mv_p, permdisp_p = NA_real_),
+  data.frame(analysis = "4_size_continuous", mv_R2 = a4$mv_R2, mv_p = a4$mv_p, permdisp_p = NA_real_),
+  data.frame(analysis = "4_size_bins",       mv_R2 = a4b$R2,   mv_p = a4b$p,   permdisp_p = a4b$disp_p)
 ) |> arrange(desc(mv_R2))
 cat("\nMultivariate R2 ranking (site-level; largest = most structured; all exploratory):\n")
 print(mv_head, row.names = FALSE)
@@ -584,13 +607,14 @@ print(mv_head, row.names = FALSE)
 cross_dir <- file.path(out_root, "cross_analysis")
 dir.create(cross_dir, showWarnings = FALSE, recursive = TRUE)
 writeLines(c(guardrails, "",
-  "COMBINED MARGINAL MODEL: Basin, Landform, Distance, Size are STRONGLY COLLINEAR",
-  "(basin ~ landform ~ distance ~ elevation) and the site-level design has empty",
-  "Basin x Landform cells. Marginal R2 only ranks RELATIVE structure; do not read",
-  "the terms as independent effects."),
+  "COMBINED MARGINAL MODEL: Basin, Height above river, Distance and Size are",
+  "INTERCORRELATED (Site_size tracks Basin; height and distance both index",
+  "position within the terrace staircase). Height above river is by construction",
+  "free of basin base level, but the model is still exploratory: marginal R2 only",
+  "ranks RELATIVE structure; do not read the terms as independent effects."),
   file.path(cross_dir, "_COLLINEARITY_WARNING.txt"))
 combo <- tryCatch(
-  adonis2(d2 ~ Basin + Landform + Distance_to_water + Site_size,
+  adonis2(d2 ~ Basin + Height_above_river + Distance_to_water + Site_size,
           data = site_df, by = "margin", permutations = 999),
   error = function(e) { message("combined marginal model failed (rank-deficient): ",
                                 conditionMessage(e)); NULL })
@@ -600,14 +624,16 @@ if (!is.null(combo)) {
 
 # collinearity panel: site-level predictor correlations + basin association
 num_pred <- site_df |>
-  transmute(Distance_to_water, Site_size, elev_m, Basin_num = as.integer(Basin))
+  transmute(Distance_to_water, Site_size, Height_above_river, Basin_num = as.integer(Basin))
 pred_cor <- cor(num_pred, use = "pairwise.complete.obs", method = "spearman")
 cat("\nSite-level predictor Spearman matrix (collinearity check):\n"); print(round(pred_cor, 3))
-# Cramer's V for Basin x Landform (site-level)
-bl <- table(site_df$Basin, site_df$Landform)
+cat("Note: Height_above_river vs Basin_num should be ~0 -- that is the point of using\n",
+    "height above the local channel rather than absolute elevation.\n", sep = "")
+# Cramer's V for Basin x height band (site-level)
+bl <- table(site_df$Basin, site_df$H_bin)
 chi <- suppressWarnings(chisq.test(bl))
 cramers_v <- sqrt(as.numeric(chi$statistic) / (sum(bl) * (min(dim(bl)) - 1)))
-cat(sprintf("Basin x Landform association (site-level): Cramer's V = %.2f\n", cramers_v))
+cat(sprintf("Basin x height-band association (site-level): Cramer's V = %.2f\n", cramers_v))
 
 cat("\n########## DONE. Site-level outputs under ", out_root,
     " (analysis1_basin/ ... analysis4_size/, cross_analysis/). ##########\n", sep = "")
