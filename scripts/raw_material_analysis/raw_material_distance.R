@@ -2,15 +2,14 @@
 # Site distance-to-river (d_river_m) by basin and by river.
 #
 # One value per site (clean 27) -> site-level, no pseudoreplication. Rank-based
-# tests are primary (small, unbalanced N; right-skew with outliers THC, DPD_1).
-# river_ID nests in basin (Caifeng = Heqing); a nested adonis2 separates the two.
+# tests only (small, unbalanced N; right-skew with outliers THC, DPD_1).
+# river_ID nests in basin (Caifeng = Heqing), so the two contrasts overlap.
 #
 # Pipeline:
 #   1. Load one d_river_m per clean site; descriptives + assumption checks.
-#   2. Basin contrast: Mann-Whitney U (+ Welch t, effect sizes).
-#   3. River contrast: Kruskal-Wallis + Dunn (+ Welch ANOVA, Games-Howell).
-#   4. Permutational ANOVA on Euclidean distance + PERMDISP + nested model.
-#   5. Boxplots (log10 y) by basin and river.
+#   2. Basin contrast: Mann-Whitney U + rank-biserial r.
+#   3. River contrast: Kruskal-Wallis + epsilon^2.
+#   4. Boxplots (log10 y) by basin and river.
 #
 # Input:
 #   - data/Site_information.xlsx
@@ -18,11 +17,11 @@
 # Output:
 #   - output/raw_material_analysis/dist_river_by_group/dist_river_by_group.png
 
-required <- c("readxl", "dplyr", "tidyr", "ggplot2", "vegan", "rstatix", "ggpubr", "patchwork")
+required <- c("readxl", "dplyr", "ggplot2", "rstatix", "patchwork")
 miss <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
 if (length(miss)) stop("Install first: ", paste(miss, collapse = ", "))
-library(readxl); library(dplyr); library(tidyr); library(ggplot2)
-library(vegan); library(rstatix); library(ggpubr); library(patchwork)
+library(readxl); library(dplyr); library(ggplot2)
+library(rstatix); library(patchwork)
 set.seed(123)
 
 # ==============================================================================
@@ -33,7 +32,6 @@ proj_dir  <- here::here()
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-perm <- 999
 drop_sites <- c("PJDD", "ZKZ")
 
 basin_levels <- c("Binchuan", "Heqing")
@@ -88,58 +86,27 @@ cat("Levene (variance homogeneity): basin p =", signif(lev_basin$p, 3),
     "| river p =", signif(lev_river$p, 3), "\n")
 
 # ==============================================================================
-# 2. Basin: Mann-Whitney U (primary) + Welch t
+# 2. Basin: Mann-Whitney U
 # ==============================================================================
 
 mw_basin  <- dat |> wilcox_test(d ~ basin) |> add_significance()
 eff_basin <- dat |> wilcox_effsize(d ~ basin)                       # rank-biserial r
-t_basin   <- dat |> t_test(d ~ basin, var.equal = FALSE)            # Welch
-cd_basin  <- dat |> cohens_d(d ~ basin, var.equal = FALSE)
 cat("\n########## (1) BASIN ##########\n")
 cat(sprintf("Mann-Whitney U: p %s | rank-biserial r = %.2f (%s)\n",
             fmt_p(mw_basin$p), eff_basin$effsize, eff_basin$magnitude))
-cat(sprintf("Welch t: t = %.2f, df = %.1f, p %s | Cohen's d = %.2f (%s)\n",
-            t_basin$statistic, t_basin$df, fmt_p(t_basin$p), cd_basin$effsize, cd_basin$magnitude))
 
 # ==============================================================================
-# 3. River: Kruskal-Wallis + Dunn + Welch ANOVA + Games-Howell
+# 3. River: Kruskal-Wallis
 # ==============================================================================
 
 kw      <- dat |> kruskal_test(d ~ river_ID)
 kw_eff  <- dat |> kruskal_effsize(d ~ river_ID)                     # epsilon^2
-dunn    <- dat |> dunn_test(d ~ river_ID, p.adjust.method = "bonferroni")
-welch_a <- dat |> welch_anova_test(d ~ river_ID)
-gh      <- dat |> games_howell_test(d ~ river_ID)
 cat("\n########## (2) RIVER ##########\n")
 cat(sprintf("Kruskal-Wallis: chi2 = %.2f, df = %d, p %s | epsilon^2 = %.2f (%s)\n",
             kw$statistic, kw$df, fmt_p(kw$p), kw_eff$effsize, kw_eff$magnitude))
-cat(sprintf("Welch ANOVA:    F = %.2f, p %s\n", welch_a$statistic, fmt_p(welch_a$p)))
-cat("Dunn post-hoc (Bonferroni):\n")
-print(dunn |> select(group1, group2, n1, n2, statistic, p.adj, p.adj.signif))
-cat("Games-Howell post-hoc:\n")
-print(gh |> select(group1, group2, estimate, conf.low, conf.high, p.adj, p.adj.signif))
 
 # ==============================================================================
-# 4. Permutational ANOVA on Euclidean distance + PERMDISP
-# ==============================================================================
-
-D <- dist(dat$d, method = "euclidean")
-run_perm <- function(fac) {
-  ad <- adonis2(as.formula(paste("D ~", fac)), data = dat, permutations = perm)
-  disp_p <- NA_real_
-  tryCatch({ pt <- permutest(betadisper(D, dat[[fac]]), permutations = perm)
-             disp_p <- pt$tab$`Pr(>F)`[1] }, error = function(e) {})
-  cat(sprintf("adonis2(d ~ %-8s): R2 = %.3f, F = %.2f, p %s | PERMDISP p %s\n",
-              fac, ad$R2[1], ad$F[1], fmt_p(ad$`Pr(>F)`[1]), fmt_p(disp_p)))
-  data.frame(term = fac, R2 = ad$R2[1], F = ad$F[1], p = ad$`Pr(>F)`[1], permdisp_p = disp_p)
-}
-cat("\n########## (3) permutational ANOVA (Euclidean, 1 var) + PERMDISP ##########\n")
-pm <- bind_rows(run_perm("basin"), run_perm("river_ID"))
-nested <- adonis2(D ~ basin / river_ID, data = dat, permutations = perm, by = "terms")
-cat("\nNested d ~ basin/river_ID (between-basin vs river-within-basin):\n"); print(nested)
-
-# ==============================================================================
-# 5. Visualisation: boxplots (log10 y) by basin and river
+# 4. Visualisation: boxplots (log10 y) by basin and river
 # ==============================================================================
 
 lab_out <- dat |> filter(d >= 1200)                          # THC, DPD_1
@@ -165,7 +132,7 @@ p_basin <- ggplot(dat, aes(basin, d)) + box_layer("basin", basin_colors) +
 
 p_river <- ggplot(dat, aes(river_ID, d)) + box_layer("river_ID", river_colors) +
   labs(title = "By river",
-       subtitle = sprintf("Kruskal-Wallis p %s;  epsilon^2 = %.2f;  pairwise ns",
+       subtitle = sprintf("Kruskal-Wallis p %s;  epsilon^2 = %.2f",
                           fmt_p(kw$p), kw_eff$effsize),
        x = NULL, y = NULL) + base_theme
 
@@ -182,11 +149,11 @@ ggsave(file.path(out_dir, "dist_river_by_group.png"), combined, width = 9.6, hei
 writeLines(c(
   "GUARDRAILS -- d_river_m by basin/river",
   "* Small, unbalanced N (basin 20/5; river 6/14/5) + right-skew with outliers",
-  "  (THC 2690 m, DPD_1 1390 m). Rank-based tests (Mann-Whitney, Kruskal-Wallis,",
-  "  Dunn) are primary; read MEDIANS not means; Welch is a cross-check only.",
-  "* river_ID nests in basin (Caifeng = Heqing). The basin contrast and the river",
-  "  contrast overlap; the nested adonis2(d ~ basin/river_ID) separates them.",
-  "* PERMDISP flags whether a 'difference' is really a SPREAD difference (outliers)."),
+  "  (THC 2690 m, DPD_1 1390 m). Mann-Whitney / Kruskal-Wallis only; read MEDIANS",
+  "  not means. Shapiro + Levene are reported as the basis for that choice.",
+  "* river_ID nests in basin (Caifeng = Heqing), so the basin contrast and the",
+  "  river contrast are not independent of one another.",
+  "* Both omnibus tests are non-significant, so no post-hoc comparisons are made."),
   file.path(out_dir, "_GUARDRAILS.txt"))
 
 cat("\n########## DONE. Outputs under", out_dir, "##########\n")

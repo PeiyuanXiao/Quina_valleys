@@ -1,17 +1,20 @@
 # Quina_scraper_statistic.R
 # Spearman rank correlations among Quina-scraper technical variables.
 #
+# Edge angle is read as an index of cumulative reduction, so it is correlated
+# against the three other reduction measures: proportion of the perimeter
+# retouched, GIUR, and the mean number of retouch generations.
+#
 # Pipeline:
 #   1. Load the Quina-scraper surface assemblage.
-#   2. Spearman correlations (BH-adjusted) for three focal variables, each drawn
-#      as a faceted scatter with an lm trend and rho / p labels:
-#        (1) Ave_RG  (2) Section_asymmetric  (3) Edge_Angle.
+#   2. Spearman correlations with Edge_Angle (BH-adjusted over the three tests),
+#      drawn as a faceted scatter with an lm trend and rho / p labels.
 #
 # Input:
 #   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
 #
 # Output:
-#   - output/scraper_analysis/spearman_*_scatter.png
+#   - output/scraper_analysis/spearman_EdgeAngle_scatter.png
 
 # ==============================================================================
 # Setup
@@ -130,31 +133,10 @@ run_spearman_analysis <- function(data, focal_var, corr_vars,
 }
 
 # ==============================================================================
-# 3. Correlations by focal variable
+# 3. Correlations with edge angle
 # ==============================================================================
+# One focal variable, so BH adjusts over a single family of three tests.
 
-# --- (1) Ave_RG ---
-run_spearman_analysis(
-  quina,
-  focal_var = "Ave_RG",
-  corr_vars = c("Edge_Angle", "Thickness", "Ave_GIUR", "Retouch_length_index"),
-  csv_name  = "spearman_AveRG_correlations.csv",
-  png_name  = "spearman_AveRG_scatter.png",
-  ncol = 2, width = 7.6, height = 6.0
-)
-
-# --- (2) Section_asymmetric ---
-run_spearman_analysis(
-  quina,
-  focal_var = "Section_asymmetric",
-  corr_vars = c("Edge_Angle", "Ave_GIUR", "Retouch_length_index",
-                "Ave_RG", "Thickness", "Invasive_index"),
-  csv_name  = "spearman_Section_asymmetric_correlations.csv",
-  png_name  = "spearman_Section_asymmetric_scatter.png",
-  ncol = 3, width = 9.2, height = 6.0
-)
-
-# --- (3) Edge_Angle ---
 run_spearman_analysis(
   quina,
   focal_var = "Edge_Angle",

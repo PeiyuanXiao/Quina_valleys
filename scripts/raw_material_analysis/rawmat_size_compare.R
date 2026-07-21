@@ -3,15 +3,14 @@
 #
 # Size metric: per-clast geometric mean (Length*Breadth*Thickness)^(1/3) [mm].
 # Test: two-sided Mann-Whitney U (Trachyte vs Sandstone) + rank-biserial r;
-# direction is read from the group geometric means. The test is run for two
-# Sandstone definitions: harmonised (Quartz + Coarse; sibling-script convention)
-# and Quartz-sandstone-only.
+# direction is read from the group geometric means. Sandstone = Quartz sandstone
+# + Coarse sandstone, the harmonised definition used by the sibling scripts.
 #
 # Pipeline:
 #   1. Load clasts, repair the "69..5" Breadth typo, compute geometric-mean size.
 #   2. Descriptives by material.
-#   3. Mann-Whitney U: Trachyte vs Sandstone (both definitions).
-#   4. Boxplot (Trachyte vs harmonised Sandstone).
+#   3. Mann-Whitney U: Trachyte vs Sandstone.
+#   4. Boxplot.
 #
 # Input:
 #   - data/Raw_mat_basin.xlsx (Sheet1, 469 river-gravel clasts)
@@ -170,28 +169,9 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
     stringsAsFactors = FALSE)
 }
 
-# ==============================================================================
-# 3a. Primary test: harmonised Sandstone (Quartz + Coarse)
-# ==============================================================================
-cat("\n########## PRIMARY: Trachyte vs harmonised Sandstone (Q + Coarse) ##########")
+cat("\n########## Trachyte vs harmonised Sandstone (Quartz + Coarse) ##########")
 primary <- run_mw(clasts_ok, "Sandstone (Quartz + Coarse)",
-                  c("Quartz sandstone", "Coarse sandstone"), "PRIMARY / harmonised")
-
-# ==============================================================================
-# 3b. Secondary test: Quartz sandstone only
-# ==============================================================================
-cat("\n########## RECONCILIATION: Trachyte vs Quartz sandstone ONLY ##########")
-manuscript <- run_mw(clasts_ok, "Quartz sandstone only",
-                     "Quartz sandstone", "manuscript reconciliation")
-
-mw_tbl <- bind_rows(primary, manuscript)
-
-cat("\n== Mann-Whitney summary (both sandstone definitions) ==\n")
-print(mw_tbl[, c("sandstone_definition", "n_sandstone", "direction",
-                 "U", "p_two_sided", "effsize_r")], row.names = FALSE, digits = 4)
-cat("\nNote: the manuscript's 'U = 16356.00, p = 0.003' corresponds to the\n",
-    "Quartz-sandstone-only row. The harmonised-Sandstone row is the definition\n",
-    "used by every other raw_material_analysis script.\n", sep = "")
+                  c("Quartz sandstone", "Coarse sandstone"), "harmonised")
 
 # ==============================================================================
 # 4. Figure: clast size by material (Trachyte vs harmonised Sandstone)
@@ -228,11 +208,8 @@ writeLines(c(
   "  medians (Trachyte larger), NOT from the U statistic alone.",
   "* U is reported in the conventional (smaller) form to match the manuscript;",
   "  W_trachyte_vs_sandstone is the raw wilcox.test statistic (Trachyte first).",
-  "* SANDSTONE DEFINITION drives the exact number:",
-  "    - harmonised (Quartz + Coarse sandstone) = consistent with sibling scripts;",
-  "    - Quartz sandstone only = reproduces the manuscript's U = 16356.00, p = 0.003.",
-  "  Both give the same conclusion (Trachyte significantly larger). Pick one and",
-  "  align the manuscript.",
+  "* Sandstone = Quartz sandstone + Coarse sandstone, the harmonised definition",
+  "  used by every other raw_material_analysis script.",
   "* One Breadth typo ('69..5') is repaired to 69.5 in-script, not in the file."),
   file.path(out_dir, "_GUARDRAILS.txt"))
 

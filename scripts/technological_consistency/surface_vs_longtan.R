@@ -356,7 +356,7 @@ guardrails <- c(
   "* Dispersion depends on the mean -> every spread stat is reported next to the mean;",
   "  if SC and LT_Quina means differ, 'spread difference' is confounded with location.",
   "* CV only for ratio/dimensional vars (+Edge_Angle by convention; interval scale).",
-  "  Bounded [0,1] indices -> empirical-logit; counts -> Fano + sqrt scale; robust spread+Fligner.",
+  "  Bounded [0,1] indices and counts -> robust spread (MAD/IQR, Fano) + Fligner-Killeen.",
   "* Reduction-indicator dispersion = range of reduction stages sampled; SC>LT is",
   "  consistent with time-averaging but is NOT transmission-fidelity evidence.",
   "* Focus = SC_Quina vs LT_Quina; LT_Ordinary is a yardstick only.",
@@ -404,7 +404,6 @@ finite <- function(x) x[is.finite(x)]
 cv_raw    <- function(x) { x <- finite(x); sd(x) / mean(x) }
 cv_corr   <- function(x) { x <- finite(x); n <- length(x); (sd(x) / mean(x)) * (1 + 1 / (4 * n)) }  # Sokal-Rohlf
 fano      <- function(x) { x <- finite(x); var(x) / mean(x) }
-emp_logit <- function(x) qlogis(pmin(pmax(x, 1e-3), 1 - 1e-3))  # 0/1 clamped to (1e-3, 1-1e-3)
 
 # bootstrap percentile CI of a one-sample statistic
 boot_stat_ci <- function(x, FUN, B = B_BOOT) {
@@ -523,6 +522,9 @@ run_permdisp <- function(df, outdir, prefix, title) {
   pca <- prcomp(mat, center = TRUE, scale. = FALSE)
   vexp <- pca$sdev^2 / sum(pca$sdev^2) * 100
   scores <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2], Group = mvd$Group)
+  loadings <- data.frame(Variable = rownames(pca$rotation),
+                         PC1 = pca$rotation[, 1], PC2 = pca$rotation[, 2],
+                         row.names = NULL)
   cent <- make_centroids(scores); hull <- make_hulls(scores)
   p2 <- ggplot(scores, aes(PC1, PC2, color = Group)) +
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.4) +
@@ -540,7 +542,10 @@ run_permdisp <- function(df, outdir, prefix, title) {
   ggsave(file.path(outdir, paste0(prefix, "_pca_ordination.png")), p2, width = 7.6, height = 5.8, dpi = 300)
 
   list(means = means, overall_p = overall_p, pairwise = pw,
-       ratio_SC_LT = unname(means["SC_Quina"] / means["LT_Quina"]))
+       ratio_SC_LT = unname(means["SC_Quina"] / means["LT_Quina"]),
+       # tidy data behind the ordination, for the figure scripts (see saveRDS below)
+       n_by_group = table(mvd$Group),
+       pca_scores = scores, pca_loadings = loadings, var_explained = vexp)
 }
 
 cat("\n########## BLOCK A: MULTIVARIATE PERMDISP ##########\n")
@@ -611,23 +616,18 @@ ggsave(file.path(sub$cv, "cv_ratio_forest.png"), cvr_p, width = 7.2, height = 4.
 # B2. Robust family (reduction indicators)
 # ==============================================================================
 cat("\n########## BLOCK B2: robust (reduction indicators) ##########\n")
-# overall (3-group) + SC-vs-LT_Quina pairwise dispersion tests on a given scale
+# overall (3-group) + SC-vs-LT_Quina pairwise Fligner-Killeen dispersion tests
 disp_tests <- function(value, group) {
   ok <- is.finite(value)
   value <- value[ok]; group <- droplevels(factor(group[ok]))
   d3 <- data.frame(Value = value, Group = group)
   fl_all <- fligner.test(Value ~ Group, data = d3)$p.value
-  lv_all <- tryCatch(rstatix::levene_test(d3, Value ~ Group, center = median)$p,
-                     error = function(e) NA_real_)
   pair <- d3 |> filter(Group %in% c("SC_Quina", "LT_Quina")) |> mutate(Group = droplevels(Group))
   fl_pr <- fligner.test(Value ~ Group, data = pair)$p.value
-  lv_pr <- tryCatch(rstatix::levene_test(pair, Value ~ Group, center = median)$p,
-                    error = function(e) NA_real_)
-  c(fligner_overall = fl_all, levene_overall = lv_all,
-    fligner_SC_LTq = fl_pr, levene_SC_LTq = lv_pr)
+  c(fligner_overall = fl_all, fligner_SC_LTq = fl_pr)
 }
 
-rob_group <- list(); rob_ratio <- list(); rob_extra <- list()
+rob_group <- list(); rob_ratio <- list()
 for (v in robust_vars) {
   fam <- if (v %in% bounded_vars) "bounded" else "count"
   x_sc <- finite(dat[[v]][dat$Group == "SC_Quina"])
@@ -649,38 +649,12 @@ for (v in robust_vars) {
     MAD_ratio_SC_LT = mad_r, MAD_lo = mad_ci[1], MAD_hi = mad_ci[2],
     IQR_ratio_SC_LT = iqr_r, IQR_lo = iqr_ci[1], IQR_hi = iqr_ci[2],
     fligner_overall_p = tests_raw["fligner_overall"], fligner_SC_LTq_p = tests_raw["fligner_SC_LTq"],
-    levene_overall_p = tests_raw["levene_overall"], levene_SC_LTq_p = tests_raw["levene_SC_LTq"],
     mean_SC = mean(x_sc), mean_LT = mean(x_lt), row.names = NULL)
   rob_ratio[[length(rob_ratio) + 1]] <- row
-
-  # family-specific extra scale
-  if (fam == "bounded") {
-    # empirical-logit: variance not mechanically compressed near 0/1
-    ls <- emp_logit(x_sc); ll <- emp_logit(x_lt)
-    tl <- disp_tests(emp_logit(dat[[v]]), dat$Group)
-    rob_extra[[length(rob_extra) + 1]] <- data.frame(
-      variable = v, scale = "empirical_logit",
-      SD_SC = sd(ls), SD_LT = sd(ll), MAD_SC = mad(ls), MAD_LT = mad(ll),
-      SD_ratio_SC_LT = sd(ls) / sd(ll), MAD_ratio_SC_LT = mad(ls) / mad(ll),
-      fligner_overall_p = tl["fligner_overall"], fligner_SC_LTq_p = tl["fligner_SC_LTq"],
-      Fano_ratio_SC_LT = NA_real_,
-      note = "raw [0,1] compresses variance near boundaries; logit more comparable", row.names = NULL)
-  } else {
-    # counts: Fano = var/mean (count analogue of CV); sqrt = variance-stabilizing
-    ts <- disp_tests(sqrt(pmax(dat[[v]], 0)), dat$Group)
-    rob_extra[[length(rob_extra) + 1]] <- data.frame(
-      variable = v, scale = "sqrt_variance_stabilizing",
-      SD_SC = sd(sqrt(x_sc)), SD_LT = sd(sqrt(x_lt)), MAD_SC = mad(sqrt(x_sc)), MAD_LT = mad(sqrt(x_lt)),
-      SD_ratio_SC_LT = sd(sqrt(x_sc)) / sd(sqrt(x_lt)), MAD_ratio_SC_LT = mad(sqrt(x_sc)) / mad(sqrt(x_lt)),
-      fligner_overall_p = ts["fligner_overall"], fligner_SC_LTq_p = ts["fligner_SC_LTq"],
-      Fano_ratio_SC_LT = fano(x_sc) / fano(x_lt),
-      note = "N_Scar integer counts; Ave_RG small positive mean (treated as count-like)", row.names = NULL)
-  }
 }
-rob_group <- bind_rows(rob_group); rob_ratio <- bind_rows(rob_ratio); rob_extra <- bind_rows(rob_extra)
+rob_group <- bind_rows(rob_group); rob_ratio <- bind_rows(rob_ratio)
 cat("\nRobust group stats (dispersion next to mean):\n"); print(rob_group, row.names = FALSE)
 cat("\nRobust ratios + dispersion-equality tests (SC vs LT_Quina):\n"); print(rob_ratio, row.names = FALSE)
-cat("\nRobust extra-scale (logit / sqrt+Fano):\n"); print(rob_extra, row.names = FALSE)
 
 # plot: per-variable distributions by group + Fligner pairwise p
 rob_long <- dat |> select(Group, all_of(robust_vars)) |>
@@ -787,6 +761,42 @@ permdisp_headline <- data.frame(
 cat("\n--- PERMDISP HEADLINE (multivariate) ---\n"); print(permdisp_headline, row.names = FALSE)
 cat("\n--- dispersion_summary.csv (sorted by ratio magnitude) ---\n"); print(summary_tbl, row.names = FALSE)
 
+# ==============================================================================
+# E. Hand-off to the figure scripts
+# ==============================================================================
+# Tidy DATA ONLY -- never ggplot objects, which serialise their whole build
+# environment and do not survive ggplot2 version changes. scripts/figures/
+# owns every line of plotting code; this file owns every number.
+# Block A (all SC) is what the paper figure uses; Block C is the sensitivity run.
+
+cache_dir <- file.path(proj_dir, "output", "cache", "analysis")
+dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
+
+saveRDS(
+  list(
+    # --- panel a: PCA ordination of the technical space (z-scored tech6) ---
+    pca_scores    = permA$pca_scores,      # PC1, PC2, Group (one row per specimen)
+    pca_loadings  = permA$pca_loadings,    # Variable, PC1, PC2
+    var_explained = permA$var_explained,   # % variance per PC
+    n_by_group    = permA$n_by_group,
+    # --- panel c: per-variable distributions + post-hoc brackets ---
+    variable_long     = variable_long,     # Group, Variable, Value
+    posthoc_brackets  = posthoc_brackets,  # incl. y.position for free_y facets
+    # --- statistics quoted in panel subtitles / the figure caption ---
+    permanova_overall  = as.data.frame(permanova_result),
+    permanova_pairwise = posthoc_result,
+    permdisp = list(means = permA$means, overall_p = permA$overall_p,
+                    pairwise = permA$pairwise),
+    # --- provenance ---
+    meta = list(variables = variables, group_levels = grp_levels,
+                source_script = "scripts/technological_consistency/surface_vs_longtan.R",
+                r_version = as.character(getRversion()),
+                built_at = Sys.time())
+  ),
+  file.path(cache_dir, "surface_vs_longtan.rds")
+)
+
 cat("\n########## DONE -> ", base_dir,
     "\n  figures in: multivariate_permdisp/  cv_dimensional/  robust_reduction/  sensitivity/",
-    "\n  all statistics are printed to the console above (no CSV written). ##########\n", sep = "")
+    "\n  all statistics are printed to the console above (no CSV written).",
+    "\n  figure data -> output/cache/analysis/surface_vs_longtan.rds ##########\n", sep = "")

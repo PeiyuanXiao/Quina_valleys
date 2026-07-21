@@ -1,10 +1,9 @@
 # QV_raw_material_permanova.R
 # Variation in raw-material composition explained by basin vs river_ID.
 #
-# PERMANOVA (vegan::adonis2) + PERMDISP on three datasets:
-#   A. Used tools (Quina scrapers, artifact level) -- Bray-Curtis.
-#   B. Available clasts (locality level, n = 5)     -- Aitchison/CLR biplot.
-#   C. Available clasts (clast level, n = 469)      -- spatial heterogeneity.
+# PERMANOVA (vegan::adonis2) + PERMDISP on two datasets, both Bray-Curtis:
+#   A. Used tools (Quina scrapers, artifact level).
+#   C. Available clasts (clast level, n = 469) -- spatial heterogeneity.
 # river_ID nests in basin, so one-way river R2 >= basin R2 by construction; the
 # nested model D ~ basin/river_ID separates between-basin vs river-within-basin.
 # Dataset A is ~96% Trachyte, so a tiny R2 is the finding (uniform selection).
@@ -12,7 +11,7 @@
 #
 # Pipeline:
 #   1. Dataset A -- used tools: one-way + nested PERMANOVA + composition figures.
-#   2. Dataset B -- available clasts (locality, Aitchison): PERMANOVA + CLR biplot.
+#   2. Available clasts: load + composition figures (descriptive).
 #   3. Dataset C -- available clasts (clast level): D ~ Loc heterogeneity + viz.
 #   4. Combined summary of variance explained.
 #
@@ -173,65 +172,6 @@ pcoa_plot <- function(D, meta, title, subtitle, file, label_col = NULL) {
   invisible(sc)
 }
 
-# ---- compositional (Aitchison) helpers -------------------------------------
-# Count-zero multiplicative replacement (Martin-Fernandez et al. 2003): impute
-# each zero at a per-row detection limit (frac of one count) and rescale the
-# observed parts so the row still closes to 1 -> preserves ratios among the
-# non-zero parts (subcompositional coherence). A transparent, dependency-free
-# stand-in for zCompositions::cmultRepl(method = "CZM").
-czm_replace <- function(counts, frac = 0.65) {
-  N <- rowSums(counts)
-  P <- sweep(counts, 1, N, "/")
-  DL <- frac / N
-  for (i in seq_len(nrow(P))) {
-    z <- P[i, ] == 0
-    if (any(z)) {
-      P[i, z]  <- DL[i]
-      P[i, !z] <- P[i, !z] * (1 - sum(z) * DL[i])
-    }
-  }
-  P
-}
-# centred log-ratio (row-wise): clr(x) = log(x) - mean(log(x))
-clr_rows <- function(P) { L <- log(P); sweep(L, 1, rowMeans(L), "-") }
-
-# CLR "form" biplot: PCA of the clr matrix -> sample scores + raw-material arrows.
-# Aitchison distance = Euclidean on clr, so this biplot is the ordination that
-# matches the adonis2 dissimilarity. Arrow directions/lengths show which parts
-# drive each axis; links between arrow tips approximate pairwise log-ratio spread.
-clr_biplot <- function(clr_mat, meta, title, subtitle, file, label_col = "Loc") {
-  pca <- prcomp(clr_mat, center = TRUE, scale. = FALSE)
-  ve  <- pca$sdev^2 / sum(pca$sdev^2) * 100
-  sco <- as.data.frame(pca$x[, 1:2]); names(sco) <- c("PC1", "PC2"); sco <- cbind(sco, meta)
-  ld  <- as.data.frame(pca$rotation[, 1:2]); names(ld) <- c("PC1", "PC2")
-  ld$Material <- factor(rownames(ld), levels = material_levels)
-  mult <- 0.85 * min(max(abs(sco$PC1)) / max(abs(ld$PC1)),
-                     max(abs(sco$PC2)) / max(abs(ld$PC2)))
-  lda <- transform(ld, PC1 = PC1 * mult, PC2 = PC2 * mult)
-  p <- ggplot(sco, aes(PC1, PC2)) +
-    geom_hline(yintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey55") +
-    geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey55") +
-    geom_segment(data = lda, aes(x = 0, y = 0, xend = PC1, yend = PC2, color = Material),
-                 arrow = grid::arrow(length = grid::unit(0.22, "cm")), linewidth = 0.75,
-                 inherit.aes = FALSE, show.legend = FALSE) +
-    geom_text(data = lda, aes(PC1, PC2, label = Material, color = Material),
-              fontface = "bold", size = 3.4, vjust = -0.5, inherit.aes = FALSE, show.legend = FALSE) +
-    geom_point(aes(fill = basin, shape = river_ID), size = 3.6, color = "grey20", stroke = 0.4) +
-    geom_text(aes(label = .data[[label_col]]), vjust = -1.15, size = 3, show.legend = FALSE) +
-    scale_color_manual(values = material_colors, drop = FALSE) +
-    scale_fill_manual(values = basin_colors, drop = FALSE) +
-    scale_shape_manual(values = c(Sangyuan = 21, Liandong = 24, Caifeng = 22), drop = FALSE) +
-    scale_x_continuous(expand = expansion(mult = 0.12)) +
-    scale_y_continuous(expand = expansion(mult = 0.12)) +
-    labs(title = title, subtitle = subtitle,
-         x = sprintf("PC1 (%.1f%%)", ve[1]), y = sprintf("PC2 (%.1f%%)", ve[2]),
-         fill = "Basin", shape = "River") +
-    coord_equal(clip = "off") + base_theme +
-    guides(fill = guide_legend(override.aes = list(shape = 21)))
-  ggsave(file, p, width = 7.2, height = 5.8, dpi = 300)
-  invisible(list(scores = sco, loadings = ld, var_explained = ve))
-}
-
 summary_rows <- list()
 push <- function(x) summary_rows[[length(summary_rows) + 1]] <<- x
 
@@ -302,10 +242,10 @@ pcoa_plot(site_D, site_meta,
           file.path(out_dir, "A_tools_pcoa_site.png"), label_col = "Site_ID")
 
 # ==============================================================================
-# 2. Dataset B -- available clasts (locality level, n = 5)
+# 2. Available clasts -- load + composition figures (descriptive)
 # ==============================================================================
 
-cat("\n################## DATASET B: AVAILABLE CLASTS (locality level) ##################\n")
+cat("\n################## AVAILABLE CLASTS: COMPOSITION ##################\n")
 
 clasts <- read_excel(basin_path, sheet = "Sheet1")
 names(clasts) <- trimws(names(clasts))
@@ -319,38 +259,6 @@ clasts <- clasts |>
 cat("\nClast N =", nrow(clasts), " across", dplyr::n_distinct(clasts$Loc), "localities\n")
 cat("Lithology x Loc (counts):\n"); print(table(clasts$Material, clasts$Loc))
 
-# aggregate to Loc x material COUNT matrix (5 rows), then Bray-Curtis on it
-B_wide <- clasts |> count(Loc, basin, river_ID, Material, name = "n") |>
-  tidyr::complete(tidyr::nesting(Loc, basin, river_ID), Material, fill = list(n = 0)) |>
-  pivot_wider(names_from = Material, values_from = n, values_fill = 0) |>
-  arrange(Loc)
-B_meta <- B_wide |> transmute(Loc, basin = factor(basin, basin_levels),
-                              river_ID = factor(river_ID, river_levels))
-B_M <- B_wide |> select(-Loc, -basin, -river_ID) |> as.matrix()
-rownames(B_M) <- B_wide$Loc
-B_M <- B_M[, colSums(B_M) > 0, drop = FALSE]     # drop all-zero parts (Andesite: absent in survey)
-
-# Aitchison geometry: count-zero multiplicative replacement -> CLR -> Euclidean
-B_prop <- czm_replace(B_M)
-B_clr  <- clr_rows(B_prop)
-B_D    <- dist(B_clr, method = "euclidean")      # Aitchison distance
-
-cat("\nParts used (Andesite dropped -- absent in the availability survey):",
-    paste(colnames(B_M), collapse = ", "), "\n")
-cat("Locality composition (%):\n")
-print(round(100 * prop.table(B_M, 1), 1))
-cat("\nCLR-transformed localities (zeros multiplicatively replaced):\n")
-print(round(B_clr, 3))
-
-push(run_oneway(B_D, B_meta, "basin",    "B_avail", "available-material"))
-push(run_oneway(B_D, B_meta, "river_ID", "B_avail", "available-material"))
-push(run_nested(B_D, B_meta, "B_avail", "available-material"))
-
-# CLR biplot of the 5 localities (arrows = raw materials) + composition bars
-clr_biplot(B_clr, B_meta,
-           "Dataset B: raw-material availability -- CLR biplot (Aitchison)",
-           "n = 5 localities; points fill = basin, shape = river; arrows = raw materials",
-           file.path(out_dir, "B_avail_clr_biplot.png"), label_col = "Loc")
 loc_long <- clasts |> transmute(Group = factor(Loc), Material)
 composition_bar(loc_long, levels(loc_long$Group), "Locality",
                 "Available raw material by locality (basin survey)",
@@ -369,8 +277,9 @@ composition_bar(transmute(clasts, Group = river_ID, Material), river_levels, "Ri
 # 3. Dataset C -- availability spatial heterogeneity (clast level, n = 469)
 # ==============================================================================
 # Bray-Curtis (CLR undefined for single-category rows). Only D ~ Loc is a valid,
-# powered test (Loc = sampling unit); basin/river tests are pseudoreplicated
-# (R2 = effect size; honest p = dataset B).
+# powered test (Loc = sampling unit); the basin/river one-way tests are
+# pseudoreplicated -- read their R2 as effect size and take the spatial-scale
+# decomposition from the hierarchical model below.
 
 cat("\n################## DATASET C: AVAILABILITY, CLAST LEVEL (spatial heterogeneity) ##################\n")
 
@@ -387,7 +296,8 @@ print(table(C_meta$Loc, C_meta$Material))
 C_loc <- run_oneway(C_D, C_meta, "Loc", "C_clast", "avail-clast"); push(C_loc)
 # (2),(3) basin / river at clast level -- R2 = effect size; p PSEUDOREPLICATED
 cat("\n  NOTE: the two tests below are pseudoreplicated (basin/river are Loc-level\n",
-    "  properties); read R2 only. Honest basin/river significance = dataset B.\n", sep = "")
+    "  properties); read R2 as effect size, not p. The hierarchical model below\n",
+    "  separates between-valley from within-valley variation.\n", sep = "")
 push(run_oneway(C_D, C_meta, "basin",    "C_clast", "avail-clast"))
 push(run_oneway(C_D, C_meta, "river_ID", "C_clast", "avail-clast"))
 
@@ -509,17 +419,12 @@ writeLines(c(
   "  (D ~ basin/river_ID) to split between-basin vs river-within-basin variation.",
   "* Dataset A (used tools) is ~96% Trachyte -> tiny R2 is the finding (uniform",
   "  selection). Artifact-level test is pseudoreplicated; R2 = effect size, p exploratory.",
-  "* Dataset B has only n=5 localities -> permutation p has almost no power",
-  "  (basin min p=0.1; river_ID min p~0.033). Read R2 as a descriptive effect size.",
-  "* Dataset B uses the Aitchison distance (CLR). CLR up-weights RARE parts, so",
-  "  the tiny Quartz/Mudstone counts (0-1 per locality) and the zero-replacement",
-  "  choice (CZM, frac=0.65) can move the result more than the abundant Trachyte/",
-  "  Sandstone signal. Andesite is dropped (absent from the survey). Treat the",
-  "  CLR ordering as sensitive; cross-read against the raw composition bars.",
   "* Dataset C (clast level, n=469) answers 'is availability spatially heterogeneous?'",
   "  ONLY via D ~ Loc (valid: Loc is the sampling unit, clasts are within-Loc",
-  "  replicates). C's basin/river tests are pseudoreplicated (clasts nested in Loc):",
-  "  use their R2 as effect size but take significance from dataset B (locality level).",
+  "  replicates). C's one-way basin/river tests are pseudoreplicated (clasts nested",
+  "  in Loc): read their R2 as effect size, not their p. The hierarchical model",
+  "  (D ~ basin/river_ID/Loc) is what separates between-valley from within-valley",
+  "  variation; only its Loc-level term has clast replication.",
   "  Clast rows are single-category -> Bray-Curtis, NOT Aitchison/CLR."),
   file.path(out_dir, "_GUARDRAILS.txt"))
 
