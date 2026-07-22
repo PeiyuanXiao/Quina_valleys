@@ -1,22 +1,22 @@
-# QV_clast_size_by_material.R
-# Are Trachyte river clasts larger than Sandstone clasts?
+# QV_cobble_size_by_material.R
+# Are Trachyte river cobbles larger than Sandstone cobbles?
 #
-# Size metric: per-clast geometric mean (Length*Breadth*Thickness)^(1/3) [mm].
+# Size metric: per-cobble geometric mean (Length*Breadth*Thickness)^(1/3) [mm].
 # Test: two-sided Mann-Whitney U (Trachyte vs Sandstone) + rank-biserial r;
 # direction is read from the group geometric means. Sandstone = Quartz sandstone
 # + Coarse sandstone, the harmonised definition used by the sibling scripts.
 #
 # Pipeline:
-#   1. Load clasts, repair the "69..5" Breadth typo, compute geometric-mean size.
+#   1. Load cobbles, repair the "69..5" Breadth typo, compute geometric-mean size.
 #   2. Descriptives by material.
 #   3. Mann-Whitney U: Trachyte vs Sandstone.
 #   4. Boxplot.
 #
 # Input:
-#   - data/Raw_mat_basin.xlsx (Sheet1, 469 river-gravel clasts)
+#   - data/Raw_mat_basin.xlsx (Sheet1, 469 river-gravel cobbles)
 #
 # Output:
-#   - output/raw_material_analysis/clast_size_by_material/clast_size_by_material.png
+#   - output/raw_material_analysis/cobble_size_by_material/cobble_size_by_material.png
 
 # ==============================================================================
 # Setup
@@ -34,6 +34,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(rstatix)
+library(here)
 
 set.seed(2226)
 
@@ -41,9 +42,9 @@ set.seed(2226)
 # Global parameters
 # ==============================================================================
 
-proj_dir   <- here::here()
+proj_dir   <- here()
 basin_path <- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
-out_dir    <- file.path(proj_dir, "output", "raw_material_analysis", "clast_size_by_material")
+out_dir    <- file.path(proj_dir, "output", "raw_material_analysis", "cobble_size_by_material")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- Raw-material levels + palette ---
@@ -53,7 +54,7 @@ material_colors <- c(Trachyte = "#D55E00", Sandstone = "#E69F00",
 
 harmonise_lithology <- function(x) {
   x <- trimws(as.character(x))
-  dplyr::recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
+  recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
 }
 fmt_p <- function(p) ifelse(is.na(p), "NA",
   ifelse(p < 0.001, "< 0.001", paste0("= ", formatC(p, format = "f", digits = 3))))
@@ -77,12 +78,12 @@ base_theme <- theme_minimal(base_size = 13) +
 raw <- read_excel(basin_path, sheet = "Sheet1")
 names(raw) <- trimws(names(raw))
 
-# Repair the "69..5" Breadth typo in-script (else that clast drops to NA).
+# Repair the "69..5" Breadth typo in-script (else that cobble drops to NA).
 breadth_chr <- trimws(as.character(raw$Breadth))
 n_repaired  <- sum(breadth_chr == "69..5", na.rm = TRUE)
 breadth_chr[breadth_chr == "69..5"] <- "69.5"
 
-clasts <- raw |>
+cobbles <- raw |>
   transmute(
     Lithology = trimws(as.character(Lithology)),
     Material  = factor(harmonise_lithology(Lithology), levels = material_levels),
@@ -92,20 +93,20 @@ clasts <- raw |>
   ) |>
   mutate(size_gm = (L * B * Th)^(1 / 3))
 
-n_total    <- nrow(clasts)
-clasts_ok  <- clasts |> filter(is.finite(size_gm), L > 0, B > 0, Th > 0)
-n_dropped  <- n_total - nrow(clasts_ok)
+n_total    <- nrow(cobbles)
+cobbles_ok  <- cobbles |> filter(is.finite(size_gm), L > 0, B > 0, Th > 0)
+n_dropped  <- n_total - nrow(cobbles_ok)
 
-cat("Loaded", n_total, "clasts | Breadth typos repaired:", n_repaired,
+cat("Loaded", n_total, "cobbles | Breadth typos repaired:", n_repaired,
     "| dropped (missing/non-positive dimension):", n_dropped,
-    "| valid size_gm:", nrow(clasts_ok), "\n")
+    "| valid size_gm:", nrow(cobbles_ok), "\n")
 
 # ==============================================================================
 # 2. Descriptives by material
 # ==============================================================================
 
 geom_mean <- function(x) exp(mean(log(x)))
-desc <- clasts_ok |>
+desc <- cobbles_ok |>
   group_by(Material) |>
   summarise(n = n(),
             geom_mean_mm = geom_mean(size_gm),
@@ -142,7 +143,7 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
   U_report <- min(U_TS, U_ST)           # conventional Mann-Whitney U (manuscript form)
 
   # rank-biserial effect size (rstatix), project idiom
-  eff <- d |> rstatix::wilcox_effsize(size_gm ~ Grp)
+  eff <- d |> wilcox_effsize(size_gm ~ Grp)
 
   gm_T <- geom_mean(d$size_gm[d$Grp == "Trachyte"])
   gm_S <- geom_mean(d$size_gm[d$Grp == "Sandstone"])
@@ -170,14 +171,14 @@ run_mw <- function(data, sand_label, sand_lithologies, tag) {
 }
 
 cat("\n########## Trachyte vs harmonised Sandstone (Quartz + Coarse) ##########")
-primary <- run_mw(clasts_ok, "Sandstone (Quartz + Coarse)",
+primary <- run_mw(cobbles_ok, "Sandstone (Quartz + Coarse)",
                   c("Quartz sandstone", "Coarse sandstone"), "harmonised")
 
 # ==============================================================================
-# 4. Figure: clast size by material (Trachyte vs harmonised Sandstone)
+# 4. Figure: cobble size by material (Trachyte vs harmonised Sandstone)
 # ==============================================================================
 
-plot_df <- clasts_ok |>
+plot_df <- cobbles_ok |>
   filter(Material %in% c("Trachyte", "Sandstone")) |>
   mutate(Material = factor(Material, levels = c("Trachyte", "Sandstone")))
 
@@ -191,18 +192,18 @@ p <- ggplot(plot_df, aes(Material, size_gm)) +
   scale_x_discrete(labels = function(x) {
     n <- table(plot_df$Material)[x]; sprintf("%s\n(n = %d)", x, n) }) +
   scale_y_log10() +
-  labs(title = "River-clast size by raw material",
+  labs(title = "River-cobble size by raw material",
        subtitle = sprintf("Geometric-mean size (L×B×Th)^(1/3);  Mann-Whitney U = %.0f, p %s, r = %.2f",
                           primary$U, fmt_p(primary$p_two_sided), primary$effsize_r),
-       x = NULL, y = "Geometric-mean clast size (mm, log scale)") +
+       x = NULL, y = "Geometric-mean cobble size (mm, log scale)") +
   base_theme
-ggsave(file.path(out_dir, "clast_size_by_material.png"), p,
+ggsave(file.path(out_dir, "cobble_size_by_material.png"), p,
        width = 5.4, height = 5.2, dpi = 300)
 
 # --- Guardrails note (written to _GUARDRAILS.txt) ---
 writeLines(c(
-  "GUARDRAILS -- clast size (geometric mean) by raw material",
-  "* size_gm = (Length * Breadth * Thickness)^(1/3); defined only for clasts with",
+  "GUARDRAILS -- cobble size (geometric mean) by raw material",
+  "* size_gm = (Length * Breadth * Thickness)^(1/3); defined only for cobbles with",
   "  all three dimensions present and > 0 (others dropped).",
   "* Mann-Whitney is symmetric: direction is read from the group geometric means /",
   "  medians (Trachyte larger), NOT from the U statistic alone.",

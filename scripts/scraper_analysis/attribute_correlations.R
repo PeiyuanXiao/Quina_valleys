@@ -35,13 +35,15 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(here)
+library(grid)
 
 # ==============================================================================
 # Global parameters
 # ==============================================================================
 
-sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "scraper_analysis")
+sc_path    <- here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here("output", "scraper_analysis")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 fmt_p <- function(p) {
@@ -54,7 +56,7 @@ corr_theme <- theme_minimal(base_size = 13) +
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     axis.title = element_text(size = 12),
     axis.text = element_text(color = "#303238"),
     strip.text = element_text(face = "bold", color = "#202124"),

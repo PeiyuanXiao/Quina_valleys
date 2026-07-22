@@ -21,14 +21,14 @@ required <- c("readxl", "dplyr", "ggplot2", "rstatix", "patchwork")
 miss <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
 if (length(miss)) stop("Install first: ", paste(miss, collapse = ", "))
 library(readxl); library(dplyr); library(ggplot2)
-library(rstatix); library(patchwork)
+library(rstatix); library(patchwork); library(here)
 set.seed(2226)
 
 # ==============================================================================
 # Global parameters
 # ==============================================================================
 
-proj_dir  <- here::here()
+proj_dir  <- here()
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

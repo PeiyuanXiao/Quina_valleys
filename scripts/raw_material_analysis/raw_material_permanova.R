@@ -1,9 +1,9 @@
 # QV_raw_material_permanova.R
 # Variation in raw-material composition explained by basin vs river_ID.
 #
-# PERMANOVA (vegan::adonis2) + PERMDISP on two datasets, both Bray-Curtis:
+# PERMANOVA (adonis2) + PERMDISP on two datasets, both Bray-Curtis:
 #   A. Used tools (Quina scrapers, artifact level).
-#   C. Available clasts (clast level, n = 469) -- spatial heterogeneity.
+#   C. Available cobbles (cobble level, n = 469) -- spatial heterogeneity.
 # river_ID nests in basin, so one-way river R2 >= basin R2 by construction; the
 # nested model D ~ basin/river_ID separates between-basin vs river-within-basin.
 # Dataset A is ~96% Trachyte, so a tiny R2 is the finding (uniform selection).
@@ -11,8 +11,8 @@
 #
 # Pipeline:
 #   1. Dataset A -- used tools: one-way + nested PERMANOVA + composition figures.
-#   2. Available clasts: load + composition figures (descriptive).
-#   3. Dataset C -- available clasts (clast level): D ~ Loc heterogeneity + viz.
+#   2. Available cobbles: load + composition figures (descriptive).
+#   3. Dataset C -- available cobbles (cobble level): D ~ Loc heterogeneity + viz.
 #   4. Combined summary of variance explained.
 #
 # Input:
@@ -35,6 +35,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(vegan)
+library(here)
+library(grid)
 
 set.seed(2226)
 
@@ -42,7 +44,7 @@ set.seed(2226)
 # Global parameters
 # ==============================================================================
 
-proj_dir  <- here::here()
+proj_dir  <- here()
 sc_path   <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 basin_path<- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
@@ -67,7 +69,7 @@ base_theme <- theme_minimal(base_size = 13) +
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.title = element_text(hjust = 0.5, face = "bold", size = 15, margin = margin(b = 4)),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649", margin = margin(b = 8)),
     axis.title = element_text(size = 12), axis.text = element_text(color = "#303238"),
@@ -85,13 +87,13 @@ fmt_p <- function(p) ifelse(is.na(p), "NA",
 
 harmonise_lithology <- function(x) {
   x <- trimws(as.character(x))
-  dplyr::recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
+  recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
 }
 strip_basin <- function(x) sub(" basin$", "", trimws(as.character(x)))
 
 # one-way PERMANOVA + PERMDISP for a single grouping factor
 run_oneway <- function(D, meta, fac, prefix, label) {
-  form <- stats::as.formula(paste("D ~", fac))
+  form <- as.formula(paste("D ~", fac))
   ad <- adonis2(form, data = meta, permutations = perm)
   disp_p <- NA_real_
   tryCatch({
@@ -135,7 +137,7 @@ pcoa_scores <- function(D) {
 composition_bar <- function(df, group_levels, group_lab, title, subtitle, file, width = 5.6) {
   comp <- df |>
     count(Group, Material, name = "n") |>
-    tidyr::complete(Group, Material, fill = list(n = 0)) |>
+    complete(Group, Material, fill = list(n = 0)) |>
     group_by(Group) |> mutate(percent = 100 * n / sum(n)) |> ungroup()
   totals <- df |> count(Group, name = "N")
   labs_x <- setNames(sprintf("%s\n(n = %d)", totals$Group, totals$N), as.character(totals$Group))
@@ -202,7 +204,7 @@ if (nrow(unmatched) > 0) {
 }
 sc <- sc |> mutate(Material = factor(Material, levels = material_levels))
 
-cat("\nArtifact-level N =", nrow(sc), " across", dplyr::n_distinct(sc$Site_ID), "sites\n")
+cat("\nArtifact-level N =", nrow(sc), " across", n_distinct(sc$Site_ID), "sites\n")
 cat("Raw material x basin (counts):\n");    print(table(sc$Material, sc$basin))
 cat("\nRaw material x river_ID (counts):\n"); print(table(sc$Material, sc$river_ID))
 
@@ -229,7 +231,7 @@ composition_bar(transmute(sc, Group = river_ID, Material),
 
 # site-level PCoA (exploratory; most sites are pure Trachyte -> they overlap)
 site_comp <- sc |> count(Site_ID, basin, river_ID, Material, name = "n") |>
-  tidyr::complete(tidyr::nesting(Site_ID, basin, river_ID), Material, fill = list(n = 0))
+  complete(nesting(Site_ID, basin, river_ID), Material, fill = list(n = 0))
 site_mat <- site_comp |>
   pivot_wider(names_from = Material, values_from = n, values_fill = 0)
 site_meta <- site_mat |> transmute(Site_ID, basin = factor(basin, basin_levels),
@@ -242,69 +244,69 @@ pcoa_plot(site_D, site_meta,
           file.path(out_dir, "A_tools_pcoa_site.png"), label_col = "Site_ID")
 
 # ==============================================================================
-# 2. Available clasts -- load + composition figures (descriptive)
+# 2. Available cobbles -- load + composition figures (descriptive)
 # ==============================================================================
 
-cat("\n################## AVAILABLE CLASTS: COMPOSITION ##################\n")
+cat("\n################## AVAILABLE COBBLES: COMPOSITION ##################\n")
 
-clasts <- read_excel(basin_path, sheet = "Sheet1")
-names(clasts) <- trimws(names(clasts))
-clasts <- clasts |>
+cobbles <- read_excel(basin_path, sheet = "Sheet1")
+names(cobbles) <- trimws(names(cobbles))
+cobbles <- cobbles |>
   transmute(Loc = as.character(Loc),
             basin = factor(strip_basin(basin), levels = basin_levels),
             river_ID = factor(trimws(river_ID), levels = river_levels),
             Material = factor(harmonise_lithology(Lithology), levels = material_levels)) |>
   filter(!is.na(Material))
 
-cat("\nClast N =", nrow(clasts), " across", dplyr::n_distinct(clasts$Loc), "localities\n")
-cat("Lithology x Loc (counts):\n"); print(table(clasts$Material, clasts$Loc))
+cat("\nCobble N =", nrow(cobbles), " across", n_distinct(cobbles$Loc), "localities\n")
+cat("Lithology x Loc (counts):\n"); print(table(cobbles$Material, cobbles$Loc))
 
-loc_long <- clasts |> transmute(Group = factor(Loc), Material)
+loc_long <- cobbles |> transmute(Group = factor(Loc), Material)
 composition_bar(loc_long, levels(loc_long$Group), "Locality",
                 "Available raw material by locality (basin survey)",
-                "Clast lithology composition per sampling point (Loc 1-5)",
+                "Cobble lithology composition per sampling point (Loc 1-5)",
                 file.path(out_dir, "B_avail_composition_by_locality.png"), width = 7.2)
-composition_bar(transmute(clasts, Group = basin, Material), basin_levels, "Basin",
+composition_bar(transmute(cobbles, Group = basin, Material), basin_levels, "Basin",
                 "Available raw material by basin (basin survey)",
-                "Clast lithology pooled to basin",
+                "Cobble lithology pooled to basin",
                 file.path(out_dir, "B_avail_composition_by_basin.png"))
-composition_bar(transmute(clasts, Group = river_ID, Material), river_levels, "River",
+composition_bar(transmute(cobbles, Group = river_ID, Material), river_levels, "River",
                 "Available raw material by river (basin survey)",
-                "Clast lithology pooled to river",
+                "Cobble lithology pooled to river",
                 file.path(out_dir, "B_avail_composition_by_river.png"), width = 6.4)
 
 # ==============================================================================
-# 3. Dataset C -- availability spatial heterogeneity (clast level, n = 469)
+# 3. Dataset C -- availability spatial heterogeneity (cobble level, n = 469)
 # ==============================================================================
 # Bray-Curtis (CLR undefined for single-category rows). Only D ~ Loc is a valid,
 # powered test (Loc = sampling unit); the basin/river one-way tests are
 # pseudoreplicated -- read their R2 as effect size and take the spatial-scale
 # decomposition from the hierarchical model below.
 
-cat("\n################## DATASET C: AVAILABILITY, CLAST LEVEL (spatial heterogeneity) ##################\n")
+cat("\n################## DATASET C: AVAILABILITY, COBBLE LEVEL (spatial heterogeneity) ##################\n")
 
-C_meta <- clasts |> transmute(Loc = factor(Loc),
+C_meta <- cobbles |> transmute(Loc = factor(Loc),
                               basin = droplevels(basin), river_ID = droplevels(river_ID),
                               Material = droplevels(Material))
-C_ind <- table(seq_len(nrow(C_meta)), C_meta$Material)   # clast x material indicator
+C_ind <- table(seq_len(nrow(C_meta)), C_meta$Material)   # cobble x material indicator
 C_D   <- vegdist(as.matrix(unclass(C_ind)), method = "bray")
 
-cat("\nClast N =", nrow(C_meta), " | Loc x lithology:\n")
+cat("\nCobble N =", nrow(C_meta), " | Loc x lithology:\n")
 print(table(C_meta$Loc, C_meta$Material))
 
 # (1) PRIMARY -- spatial heterogeneity among the 5 localities (valid & powered)
-C_loc <- run_oneway(C_D, C_meta, "Loc", "C_clast", "avail-clast"); push(C_loc)
-# (2),(3) basin / river at clast level -- R2 = effect size; p PSEUDOREPLICATED
+C_loc <- run_oneway(C_D, C_meta, "Loc", "C_cobble", "avail-cobble"); push(C_loc)
+# (2),(3) basin / river at cobble level -- R2 = effect size; p PSEUDOREPLICATED
 cat("\n  NOTE: the two tests below are pseudoreplicated (basin/river are Loc-level\n",
     "  properties); read R2 as effect size, not p. The hierarchical model below\n",
     "  separates between-valley from within-valley variation.\n", sep = "")
-push(run_oneway(C_D, C_meta, "basin",    "C_clast", "avail-clast"))
-push(run_oneway(C_D, C_meta, "river_ID", "C_clast", "avail-clast"))
+push(run_oneway(C_D, C_meta, "basin",    "C_cobble", "avail-cobble"))
+push(run_oneway(C_D, C_meta, "river_ID", "C_cobble", "avail-cobble"))
 
 # hierarchical spatial-scale decomposition (basin / river-within-basin / Loc-within-river)
 Chier <- adonis2(C_D ~ basin / river_ID / Loc, data = C_meta, permutations = perm, by = "terms")
-cat("\n[C_clast] hierarchical  D ~ basin/river_ID/Loc  (spatial-scale decomposition;\n",
-    "  higher-level p anticonservative, only Loc-level contrasts have clast replication):\n", sep = "")
+cat("\n[C_cobble] hierarchical  D ~ basin/river_ID/Loc  (spatial-scale decomposition;\n",
+    "  higher-level p anticonservative, only Loc-level contrasts have cobble replication):\n", sep = "")
 print(Chier)
 
 # contingency cross-check: single categorical var -> classic Loc x lithology test
@@ -332,18 +334,18 @@ p_part <- ggplot(part, aes(100 * R2, scale, fill = scale)) +
   scale_fill_manual(values = scale_cols) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.22)), labels = function(x) paste0(x, "%")) +
   labs(title = "Raw-material availability: spatial variance partition",
-       subtitle = sprintf("469 clasts  |  between-locality R2 = %.1f%% (D ~ Loc, p = %.3f)  |  residual %.1f%%",
+       subtitle = sprintf("469 cobbles  |  between-locality R2 = %.1f%% (D ~ Loc, p = %.3f)  |  residual %.1f%%",
                           100 * C_loc$R2, C_loc$p, 100 * Chier$R2[4]),
        x = "Variance explained (R2, PERMANOVA)", y = NULL,
        caption = paste("** p<=0.01  *** p<0.001  ns not significant  (999 permutations -> p floor = 0.001).",
-         "Basin & river p are anticonservative (clasts nested in locality);",
-         "locality-within-river uses valid clast replication -> ns = same-river localities are compositionally alike.",
+         "Basin & river p are anticonservative (cobbles nested in locality);",
+         "locality-within-river uses valid cobble replication -> ns = same-river localities are compositionally alike.",
          sep = "\n")) +
   base_theme +
   theme(legend.position = "none", panel.grid.major.y = element_blank(),
         plot.subtitle = element_text(hjust = 0.5, size = 10, color = "#454649"),
         plot.caption = element_text(hjust = 0, size = 8, color = "#454649"))
-ggsave(file.path(out_dir, "C_clast_variance_partition.png"), p_part, width = 9.2, height = 4.5, dpi = 300)
+ggsave(file.path(out_dir, "C_cobble_variance_partition.png"), p_part, width = 9.2, height = 4.5, dpi = 300)
 
 # ---- viz C.2: PERMDISP -- compositional evenness per locality (mean +/- SE) ----
 # Distance-to-centroid on categorical (Bray-Curtis) data is discrete, so raw
@@ -363,10 +365,10 @@ p_disp <- ggplot(disp_sum, aes(Loc, mean, color = Loc)) +
        x = "Sampling locality (Loc)",
        y = "Mean distance to centroid\n(higher = more even lithology mix)") +
   base_theme + theme(legend.position = "none", plot.title = element_text(size = 13.5))
-ggsave(file.path(out_dir, "C_clast_permdisp_dispersion.png"), p_disp, width = 7.8, height = 4.6, dpi = 300)
+ggsave(file.path(out_dir, "C_cobble_permdisp_dispersion.png"), p_disp, width = 7.8, height = 4.6, dpi = 300)
 
-# ---- viz C.3: clast-level PCoA scatter (Bray-Curtis) + locality centroids -----
-# Single-category rows -> distances are 0/1 -> the 469 clasts collapse onto 4
+# ---- viz C.3: cobble-level PCoA scatter (Bray-Curtis) + locality centroids -----
+# Single-category rows -> distances are 0/1 -> the 469 cobbles collapse onto 4
 # lithology vertices (shown jittered). The 5 locality CENTROIDS (mean positions)
 # are the structure that D ~ Loc tests: their spread = between-locality signal.
 pc  <- cmdscale(C_D, k = 2, eig = TRUE, add = TRUE)
@@ -393,8 +395,8 @@ p_ord <- ggplot(scl, aes(A1j, A2j)) +
   scale_color_manual(values = material_colors, drop = FALSE) +
   scale_fill_manual(values = basin_colors, drop = FALSE) +
   scale_shape_manual(values = c(Sangyuan = 21, Liandong = 24, Caifeng = 22), drop = FALSE) +
-  labs(title = "Dataset C: clast-level PCoA (Bray-Curtis, 469 clasts)",
-       subtitle = "Clasts (small, jittered) collapse to 4 lithology vertices; large points = locality centroids (fill = basin, shape = river)",
+  labs(title = "Dataset C: cobble-level PCoA (Bray-Curtis, 469 cobbles)",
+       subtitle = "Cobbles (small, jittered) collapse to 4 lithology vertices; large points = locality centroids (fill = basin, shape = river)",
        x = sprintf("PCoA axis 1 (%.1f%%)", pct[1]),
        y = sprintf("PCoA axis 2 (%.1f%%)", pct[2]),
        color = "Raw material", fill = "Basin", shape = "River") +
@@ -402,7 +404,7 @@ p_ord <- ggplot(scl, aes(A1j, A2j)) +
   theme(plot.subtitle = element_text(size = 9.5)) +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1)),
          fill = guide_legend(override.aes = list(shape = 21)))
-ggsave(file.path(out_dir, "C_clast_pcoa_scatter.png"), p_ord, width = 8.4, height = 6.0, dpi = 300)
+ggsave(file.path(out_dir, "C_cobble_pcoa_scatter.png"), p_ord, width = 8.4, height = 6.0, dpi = 300)
 
 # ==============================================================================
 # 4. Combined summary (variance explained by each grouping variable)
@@ -419,13 +421,13 @@ writeLines(c(
   "  (D ~ basin/river_ID) to split between-basin vs river-within-basin variation.",
   "* Dataset A (used tools) is ~96% Trachyte -> tiny R2 is the finding (uniform",
   "  selection). Artifact-level test is pseudoreplicated; R2 = effect size, p exploratory.",
-  "* Dataset C (clast level, n=469) answers 'is availability spatially heterogeneous?'",
-  "  ONLY via D ~ Loc (valid: Loc is the sampling unit, clasts are within-Loc",
-  "  replicates). C's one-way basin/river tests are pseudoreplicated (clasts nested",
+  "* Dataset C (cobble level, n=469) answers 'is availability spatially heterogeneous?'",
+  "  ONLY via D ~ Loc (valid: Loc is the sampling unit, cobbles are within-Loc",
+  "  replicates). C's one-way basin/river tests are pseudoreplicated (cobbles nested",
   "  in Loc): read their R2 as effect size, not their p. The hierarchical model",
   "  (D ~ basin/river_ID/Loc) is what separates between-valley from within-valley",
-  "  variation; only its Loc-level term has clast replication.",
-  "  Clast rows are single-category -> Bray-Curtis, NOT Aitchison/CLR."),
+  "  variation; only its Loc-level term has cobble replication.",
+  "  Cobble rows are single-category -> Bray-Curtis, NOT Aitchison/CLR."),
   file.path(out_dir, "_GUARDRAILS.txt"))
 
 cat("\n########## DONE. Outputs under", out_dir, "##########\n")

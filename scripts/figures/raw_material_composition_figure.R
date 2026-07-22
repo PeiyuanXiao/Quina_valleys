@@ -2,7 +2,7 @@
 # Manuscript figure: raw-material composition, available vs used, across valleys.
 #
 # One frame, two rows:
-#   top    -- AVAILABLE: lithology of the river-gravel clasts, by valley;
+#   top    -- AVAILABLE: lithology of the river-gravel cobbles, by valley;
 #   bottom -- USED: lithology of the Quina scrapers, by valley.
 # Each cell is a 100% stacked bar for one valley. The point the figure makes is
 # the contrast between the rows: available composition swings from valley to
@@ -35,8 +35,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(patchwork)
+library(here)
+library(grid)
 
-proj_dir   <- here::here()
+proj_dir   <- here()
 sc_path    <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path  <- file.path(proj_dir, "data", "Site_information.xlsx")
 basin_path <- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
@@ -63,7 +65,7 @@ layer_levels <- c("River cobbles", "Surface Quina scrapers")
 
 harmonise_lithology <- function(x) {
   x <- trimws(as.character(x))
-  dplyr::recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
+  recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
 }
 strip_basin <- function(x) sub(" basin$", "", trimws(as.character(x)))
 
@@ -86,7 +88,7 @@ used <- read_excel(sc_path, sheet = "Quina scraper") |>
   filter(!is.na(river_ID)) |>
   transmute(Layer = layer_levels[2], river_ID, Material)
 
-# AVAILABLE -- basin-survey clasts
+# AVAILABLE -- basin-survey cobbles
 avail <- read_excel(basin_path, sheet = "Sheet1")
 names(avail) <- trimws(names(avail))
 avail <- avail |>
@@ -126,7 +128,7 @@ fig_theme <- theme_minimal(base_size = 9) +
     panel.grid.minor = element_blank(),
     panel.border     = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
     axis.ticks       = element_line(color = "#202124", linewidth = 0.3),
-    axis.ticks.length = grid::unit(2, "pt"),
+    axis.ticks.length = unit(2, "pt"),
     axis.title       = element_text(size = 9),
     axis.text        = element_text(color = "#303238", size = 8),
     strip.text       = element_text(face = "bold", color = "#202124", size = 9),
@@ -134,7 +136,7 @@ fig_theme <- theme_minimal(base_size = 9) +
     legend.title     = element_text(size = 8.5),
     legend.text      = element_text(size = 8.5),
     legend.key       = element_blank(),
-    legend.key.size  = grid::unit(10, "pt"),
+    legend.key.size  = unit(10, "pt"),
     plot.background  = element_rect(color = NA, fill = "white"),
     panel.background = element_rect(color = NA, fill = "white")
   )

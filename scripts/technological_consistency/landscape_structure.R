@@ -41,6 +41,9 @@ library(tidyr)
 library(ggplot2)
 library(vegan)
 library(rstatix)
+library(here)
+library(grid)
+library(ggpubr)
 
 set.seed(2226)
 
@@ -50,7 +53,7 @@ variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
 kw_vars    <- c("Ave_GIUR", "N_Scar", "Ave_RG")                 # KW + Dunn
 welch_vars <- c("Retouch_length_index", "Thickness", "Edge_Angle")  # Welch ANOVA + t
 
-proj_dir   <- here::here()
+proj_dir   <- here()
 sc_path    <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 site_path  <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_root   <- file.path(proj_dir, "output", "technological_consistency")
@@ -82,7 +85,7 @@ ordination_theme <- theme_minimal(base_size = 13) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.title = element_text(hjust = 0.5, face = "bold", size = 15,
                               margin = margin(b = 4)),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649",
@@ -103,7 +106,7 @@ corr_theme <- theme_minimal(base_size = 13) +
     panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.35),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     axis.title = element_text(size = 12),
     axis.text = element_text(color = "#303238"),
     plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
@@ -134,7 +137,7 @@ make_centroids <- function(scores, x_var, y_var) {
               y_centroid = mean(.data[[y_var]], na.rm = TRUE), .groups = "drop")
 }
 make_spokes <- function(scores, centroids) {
-  dplyr::left_join(scores, centroids, by = "Group")
+  left_join(scores, centroids, by = "Group")
 }
 make_convex_hulls <- function(scores, x_var, y_var) {
   scores |>
@@ -268,7 +271,7 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
     brackets <- brackets |> group_by(Variable) |> mutate(step = row_number()) |> ungroup() |>
       left_join(ranges, by = "Variable") |>
       mutate(y.position = ymax + yrange * (0.06 + 0.10 * step))
-    bx <- bx + ggpubr::stat_pvalue_manual(brackets, label = "p.adj.signif",
+    bx <- bx + stat_pvalue_manual(brackets, label = "p.adj.signif",
                                           y.position = "y.position", tip.length = 0.012,
                                           bracket.size = 0.4, label.size = 3, color = "#202124")
   }
@@ -422,7 +425,7 @@ site_land <- site_raw |>
 # Site_size = per-site SC artifact count (preferred), cross-checked vs the column
 sc_count <- sc |> count(Site_ID, name = "Site_size")
 size_check <- site_land |> left_join(sc_count, by = "Site_ID") |>
-  mutate(Site_size = dplyr::coalesce(Site_size, 0L))
+  mutate(Site_size = coalesce(Site_size, 0L))
 mismatch <- size_check |> filter(Site_size != n_Quina_scraper_col)
 cat("\nSite_size cross-check (SC count vs n_Quina_scraper column): ",
     nrow(mismatch), " mismatched site(s)\n", sep = "")
@@ -446,10 +449,10 @@ site_df <- sc_cc |>
   group_by(Site_ID) |>
   summarise(n_art = n(),
             across(all_of(variables), ~ median(.x, na.rm = TRUE)),
-            Basin    = dplyr::first(Basin),
-            Distance_to_water = dplyr::first(Distance_to_water),
-            Height_above_river = dplyr::first(Height_above_river),
-            Site_size = dplyr::first(Site_size),
+            Basin    = first(Basin),
+            Distance_to_water = first(Distance_to_water),
+            Height_above_river = first(Height_above_river),
+            Site_size = first(Site_size),
             .groups = "drop") |>
   mutate(H_bin = cut(Height_above_river, breaks = h_breaks, labels = h_labels))
 

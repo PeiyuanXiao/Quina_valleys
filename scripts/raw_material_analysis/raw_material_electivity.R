@@ -38,14 +38,16 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(here)
+library(grid)
 
 # ==============================================================================
 # Global parameters
 # ==============================================================================
 
-basin_path <- here::here("data", "Raw_mat_basin.xlsx")
-sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "raw_material_analysis")
+basin_path <- here("data", "Raw_mat_basin.xlsx")
+sc_path    <- here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here("output", "raw_material_analysis")
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -69,7 +71,7 @@ base_theme <- theme_minimal(base_size = 13) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.title = element_text(hjust = 0.5, face = "bold", size = 15,
                               margin = margin(b = 4)),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649",
@@ -96,7 +98,7 @@ basin_raw <- read_material(basin_path, "Sheet1", "Lithology")
 sc_raw    <- read_material(sc_path, "Quina scraper", "Raw_material")
 
 # Merge basin sandstone classes to match the tools' "Sandstone".
-basin_raw <- dplyr::recode(
+basin_raw <- recode(
   basin_raw,
   "Quartz sandstone" = "Sandstone",
   "Coarse sandstone" = "Sandstone"
@@ -207,7 +209,7 @@ electivity <- composition |>
   transmute(Assemblage = droplevels(Group), Material, r_used = percent / 100) |>
   left_join(availability, by = "Material") |>
   mutate(
-    p_avail = tidyr::replace_na(p_avail, 0),
+    p_avail = replace_na(p_avail, 0),
     D       = jacobs_D(r_used, p_avail)
   ) |>
   filter(!is.na(D)) |>

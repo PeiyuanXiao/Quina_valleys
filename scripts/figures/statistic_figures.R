@@ -29,8 +29,12 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(patchwork)
+library(here)
+library(grid)
+library(ggrepel)
+library(ggpubr)
 
-proj_dir  <- here::here()
+proj_dir  <- here()
 cache_dir <- file.path(proj_dir, "output", "cache", "analysis")
 fig_dir   <- file.path(proj_dir, "output", "figures")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
@@ -81,7 +85,7 @@ fig_theme <- theme_minimal(base_size = 9) +
     panel.grid.minor = element_blank(),
     panel.border     = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
     axis.ticks       = element_line(color = "#202124", linewidth = 0.3),
-    axis.ticks.length = grid::unit(2, "pt"),
+    axis.ticks.length = unit(2, "pt"),
     axis.title       = element_text(size = 9),
     axis.text        = element_text(color = "#303238", size = 8),
     strip.text       = element_text(face = "bold", color = "#202124", size = 8.5),
@@ -156,10 +160,10 @@ p_a <- ggplot(scores, aes(PC1, PC2, color = Group)) +
   # because the arrows are structure, not data: at any heavier weight they
   # dominate the panel and the specimen cloud reads as their background.
   geom_segment(data = arrows_df, aes(x = 0, y = 0, xend = x, yend = y),
-               arrow = grid::arrow(length = grid::unit(0.075, "cm"),
+               arrow = arrow(length = unit(0.075, "cm"),
                                    type = "open", angle = 22),
                linewidth = 0.22, color = "#5A5F66", inherit.aes = FALSE) +
-  ggrepel::geom_text_repel(
+  geom_text_repel(
     data = arrows_df, aes(x = x, y = y, label = Label),
     size = 2.2, color = "#3A3D42",
     bg.color = "white", bg.r = 0.12,          # halo, so labels stay legible over points
@@ -190,7 +194,7 @@ p_a <- ggplot(scores, aes(PC1, PC2, color = Group)) +
         # row height pulled in to match, so the legend reads as a caption inside
         # the panel rather than a second focal object
         legend.text = element_text(size = 8),
-        legend.key.height = grid::unit(8, "pt")) +
+        legend.key.height = unit(8, "pt")) +
   guides(fill = "none",
          color = guide_legend(override.aes = list(size = 1.6, alpha = 1), ncol = 1))
 
@@ -224,7 +228,7 @@ p_b <- ggplot(tc$variable_long, aes(Group, Value)) +
   geom_jitter(aes(color = Group), width = 0.3, height = 0, size = 0.8, alpha = 0.5, shape = 16) +
   geom_boxplot(color = "black", fill = NA, width = 0.6, linewidth = 0.45, outlier.shape = NA) +
   stat_summary(fun = mean, geom = "point", shape = 16, size = 1.4, color = "black") +
-  ggpubr::stat_pvalue_manual(
+  stat_pvalue_manual(
     tc$posthoc_brackets, label = "p.adj.signif", y.position = "y.position",
     tip.length = 0.012, bracket.size = 0.3, label.size = 2.5, color = "#202124") +
   facet_wrap(~ Variable, scales = "free_y", ncol = 3,
@@ -249,7 +253,7 @@ p_b <- ggplot(tc$variable_long, aes(Group, Value)) +
 # cost is that PC1 and PC2 are not on a common visual scale, so the biplot's
 # arrow ANGLES are stretched horizontally -- read direction, not angle.
 #
-# Row heights are RELATIVE: absolute grid::unit(mm) heights size the panel area
+# Row heights are RELATIVE: absolute unit(mm) heights size the panel area
 # only, so axis text, facet strips and tags are added on top of them and the
 # figure overflows a canvas cut to the same total.
 FIG_H_MM <- 205

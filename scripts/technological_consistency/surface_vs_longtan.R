@@ -41,10 +41,14 @@ library(tidyr)
 library(ggplot2)
 library(vegan)
 library(rstatix)
+library(here)
+library(grid)
+library(ggpubr)
+library(cvequality)
 
 set.seed(2226)
 B_BOOT   <- 5000   # bootstrap / permutation replicates
-MSLR_NR  <- 1e5    # Monte-Carlo iterations for cvequality::mslr_test (Krishnamoorthy-Lee)
+MSLR_NR  <- 1e5    # Monte-Carlo iterations for mslr_test (Krishnamoorthy-Lee)
 # ==============================================================================
 # Part 1 -- Location (parameters + centroid analysis)
 # ==============================================================================
@@ -70,9 +74,9 @@ group_fills <- c(
   LT_Ordinary = "#6BA8CE"
 )
 
-sc_path <- here::here("data", "Quina_scraper_surface.xlsx")
-lt_path <- here::here("data", "Longtan_lithic_tools.xlsx")
-output_dir <- here::here("output", "technological_consistency")
+sc_path <- here("data", "Quina_scraper_surface.xlsx")
+lt_path <- here("data", "Longtan_lithic_tools.xlsx")
+output_dir <- here("output", "technological_consistency")
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -187,7 +191,7 @@ plot_theme <- theme_minimal(base_size = 13) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.title = element_text(hjust = 0.5, face = "bold", size = 15,
                               margin = margin(b = 4)),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649",
@@ -286,7 +290,7 @@ variable_boxplots <- ggplot(
                linewidth = 0.6, outlier.shape = NA) +
   stat_summary(fun = mean, geom = "point", shape = 16, size = 2,
                color = "black") +
-  ggpubr::stat_pvalue_manual(
+  stat_pvalue_manual(
     posthoc_brackets,
     label = "p.adj.signif",
     y.position = "y.position",
@@ -331,7 +335,7 @@ print(variable_boxplots)
 # (Part 1's PERMANOVA permutations above advanced the shared RNG stream).
 set.seed(2226)
 
-proj_dir <- here::here()
+proj_dir <- here()
 out_root <- file.path(proj_dir, "output", "technological_consistency")
 base_dir <- file.path(out_root, "dispersion_LT_vs_SC")
 sub <- list(mv  = file.path(base_dir, "multivariate_permdisp"),
@@ -371,7 +375,7 @@ ordination_theme <- theme_minimal(base_size = 13) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.title = element_text(hjust = 0.5, face = "bold", size = 15, margin = margin(b = 4)),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649", margin = margin(b = 8)),
     plot.caption = element_text(size = 7, color = "#454649", hjust = 0),
@@ -419,7 +423,7 @@ boot_ratio_ci <- function(x_sc, x_lt, FUN, B = B_BOOT, mean_guard = FALSE) {
   unname(quantile(rr, c(0.025, 0.975), na.rm = TRUE))
 }
 # CV-equality test between two groups: Krishnamoorthy & Lee (2014) modified
-# signed-likelihood-ratio test (MSLRT), via cvequality::mslr_test
+# signed-likelihood-ratio test (MSLRT), via mslr_test
 # (Marwick & Krishnamoorthy 2019). Returns the MSLRT statistic + p.
 # mslr_test is Monte-Carlo; its RNG use is INSULATED (save/restore .Random.seed +
 # a fixed local seed) so every bootstrap CI in the rest of the script is unaffected
@@ -432,7 +436,7 @@ cv_equal_test <- function(x_sc, x_lt) {
     get(".Random.seed", envir = .GlobalEnv) else NULL
   on.exit(if (!is.null(old_seed)) assign(".Random.seed", old_seed, envir = .GlobalEnv))
   set.seed(2226)                                                     # local, isolated
-  ml <- cvequality::mslr_test(nr = MSLR_NR, x = vals, y = grp)
+  ml <- mslr_test(nr = MSLR_NR, x = vals, y = grp)
   list(stat = unname(ml$MSLRT), p = unname(ml$p_value))
 }
 # Fligner-Killeen p for a 2-group contrast
@@ -472,7 +476,7 @@ n_tbl <- dat |>
   pivot_wider(names_from = Group, values_from = n, values_fill = 0) |>
   mutate(Variable = factor(Variable, levels = need_vars)) |> arrange(Variable)
 cat("\nPer-variable complete-case n by group:\n"); print(as.data.frame(n_tbl), row.names = FALSE)
-cat(sprintf(paste0("\nCV-equality significance test: cvequality::mslr_test",
+cat(sprintf(paste0("\nCV-equality significance test: mslr_test",
                    " (Krishnamoorthy-Lee 2014 MSLRT, nr = %g)\n"), MSLR_NR))
 
 # focus / proximal-exclusion masks (Block C)

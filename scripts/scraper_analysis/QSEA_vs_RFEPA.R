@@ -36,6 +36,9 @@ library(readxl)
 library(dplyr)
 library(ggplot2)
 library(rstatix)
+library(here)
+library(grid)
+library(ggpubr)
 
 set.seed(2226)
 
@@ -43,8 +46,8 @@ set.seed(2226)
 # Global parameters
 # ==============================================================================
 
-sc_path    <- here::here("data", "Quina_scraper_surface.xlsx")
-output_dir <- here::here("output", "scraper_analysis")
+sc_path    <- here("data", "Quina_scraper_surface.xlsx")
+output_dir <- here("output", "scraper_analysis")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- Group labels, colours, theme ---
@@ -63,7 +66,7 @@ angle_theme <- theme_minimal(base_size = 13) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.65),
     axis.ticks = element_line(color = "#202124", linewidth = 0.35),
-    axis.ticks.length = grid::unit(2.5, "pt"),
+    axis.ticks.length = unit(2.5, "pt"),
     plot.subtitle = element_text(hjust = 0.5, size = 11, color = "#454649",
                                  margin = margin(b = 8)),
     axis.title = element_text(size = 12),
@@ -98,12 +101,12 @@ data_a <- bind_rows(
   filter(!is.na(Value)) |>
   mutate(Group = factor(Group, levels = c("edge", "epa")))
 
-welch_t <- rstatix::t_test(data_a, Value ~ Group,
+welch_t <- t_test(data_a, Value ~ Group,
                            var.equal = FALSE, detailed = TRUE)
 
 # --- Effect size: Cohen's d (unequal variance, matches the Welch test) + bootstrap 95% CI ---
 set.seed(2226)
-effsize <- rstatix::cohens_d(data_a, Value ~ Group,
+effsize <- cohens_d(data_a, Value ~ Group,
                              var.equal = FALSE, ci = TRUE, nboot = 1000)
 
 welch_summary <- welch_t |>
@@ -125,7 +128,7 @@ print(as.data.frame(effsize))
 # ==============================================================================
 
 stat_a <- welch_t |>
-  rstatix::add_xy_position(x = "Group") |>
+  add_xy_position(x = "Group") |>
   mutate(p.label = paste0("Welch t, p = ", formatC(p, format = "f", digits = 3)))
 
 subtitle_a <- sprintf(
@@ -141,7 +144,7 @@ edge_epa_boxplot <- ggplot(data_a, aes(x = Group, y = Value)) +
                linewidth = 0.6, outlier.shape = NA) +
   stat_summary(fun = mean, geom = "point", shape = 16, size = 2.4,
                color = "black") +
-  ggpubr::stat_pvalue_manual(
+  stat_pvalue_manual(
     stat_a, label = "p.label",
     tip.length = 0.012, bracket.size = 0.4, label.size = 3.3,
     color = "#202124"

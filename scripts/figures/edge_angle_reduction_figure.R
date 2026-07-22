@@ -30,10 +30,12 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(here)
+library(grid)
 
 set.seed(2226)
 
-proj_dir <- here::here()
+proj_dir <- here()
 sc_path  <- file.path(proj_dir, "data", "Quina_scraper_surface.xlsx")
 fig_dir  <- file.path(proj_dir, "output", "figures")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
@@ -51,7 +53,7 @@ fig_theme <- theme_minimal(base_size = 9) +
     panel.grid.minor = element_blank(),
     panel.border     = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
     axis.ticks       = element_line(color = "#202124", linewidth = 0.3),
-    axis.ticks.length = grid::unit(2, "pt"),
+    axis.ticks.length = unit(2, "pt"),
     axis.title       = element_text(size = 9),
     axis.text        = element_text(color = "#303238", size = 8),
     strip.text       = element_text(face = "bold", color = "#202124", size = 8.5),
@@ -81,7 +83,7 @@ quina <- read_excel(sc_path, sheet = "Quina scraper") |>
   mutate(across(all_of(c(focal, corr_vars)), as.numeric))
 
 spearman_one <- function(v) {
-  pair <- quina |> select(all_of(c(focal, v))) |> tidyr::drop_na()
+  pair <- quina |> select(all_of(c(focal, v))) |> drop_na()
   ct <- suppressWarnings(cor.test(pair[[focal]], pair[[v]],
                                   method = "spearman", exact = FALSE))
   data.frame(Variable = v, n = nrow(pair), rho = unname(ct$estimate),
