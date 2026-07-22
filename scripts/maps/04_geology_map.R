@@ -265,6 +265,5 @@ p <- p +
         plot.caption = element_text(size = 7, hjust = 0))
 
 ## ---- export ----------------------------------------------------------------
-ggsave(file.path(output_dir, "map_geology.pdf"), p, width = 9.3, height = 8)
 ggsave(file.path(output_dir, "map_geology.png"), p, width = 9.3, height = 8, dpi = 300)
 message("04_geology_map.R done -> output/map_geology.(pdf|png)")

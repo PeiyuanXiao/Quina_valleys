@@ -53,6 +53,5 @@ p <- ggplot() +
   theme(plot.title = element_text(face = "bold", hjust = 0.02))
 
 ggsave(file.path(out_dir, "map_geology_extracted_over_dem.png"), p, width = 8, height = 9.5, dpi = 300)
-ggsave(file.path(out_dir, "map_geology_extracted_over_dem.pdf"), p, width = 8, height = 9.5)
 
 message("Wrote output/map_geology_extracted_over_dem.(png|pdf)")

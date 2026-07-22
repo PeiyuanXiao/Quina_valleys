@@ -174,6 +174,5 @@ p <- p +
         plot.caption = element_text(size = 7, hjust = 0))
 
 ## ---- export (no inset) ---------------------------------------------------
-ggsave(file.path(output_dir, "map_quina_sites.pdf"), p, width = 9, height = 8)
 ggsave(file.path(output_dir, "map_quina_sites.png"), p, width = 9, height = 8, dpi = 300)
 message("01_map.R done -> output/map_quina_sites.(pdf|png)")

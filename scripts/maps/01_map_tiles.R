@@ -120,7 +120,6 @@ if (!is.null(china)) {
 }
 
 ## ---- export (separate names so the DEM-hillshade map is not overwritten) ----
-ggsave(file.path(output_dir, "map_quina_sites_terrain.pdf"), final, width = 9, height = 9)
 ggsave(file.path(output_dir, "map_quina_sites_terrain.png"), final, width = 9, height = 9,
        dpi = 300)
 message("01_map_tiles.R done -> output/map_quina_sites_terrain.(pdf|png)")

@@ -42,7 +42,7 @@ library(ggplot2)
 library(vegan)
 library(rstatix)
 
-set.seed(123)
+set.seed(2226)
 B_BOOT   <- 5000   # bootstrap / permutation replicates
 MSLR_NR  <- 1e5    # Monte-Carlo iterations for cvequality::mslr_test (Krishnamoorthy-Lee)
 # ==============================================================================
@@ -120,7 +120,7 @@ euclidean_distance <- dist(analysis_matrix, method = "euclidean")
 permanova_result <- adonis2(
   euclidean_distance ~ Group,
   data = complete_data,
-  permutations = 999
+  permutations = 9999
 )
 
 cat("\nOverall PERMANOVA result:\n")
@@ -129,7 +129,7 @@ print(permanova_result)
 
 # --- Pairwise post-hoc PERMANOVA (Benjamini-Hochberg) ---
 pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
-                               permutations = 999,
+                               permutations = 9999,
                                p_adjust_method = "BH") {
   groups <- levels(droplevels(data[[group_col]]))
   group_pairs <- combn(groups, 2, simplify = FALSE)
@@ -165,7 +165,7 @@ pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
 posthoc_result <- pairwise_permanova(
   complete_data,
   analysis_matrix,
-  permutations = 999,
+  permutations = 9999,
   p_adjust_method = "BH"
 )
 
@@ -329,7 +329,7 @@ print(variable_boxplots)
 
 # Re-seed so Part 2's permutations / bootstraps reproduce the standalone run
 # (Part 1's PERMANOVA permutations above advanced the shared RNG stream).
-set.seed(123)
+set.seed(2226)
 
 proj_dir <- here::here()
 out_root <- file.path(proj_dir, "output", "technological_consistency")
@@ -431,7 +431,7 @@ cv_equal_test <- function(x_sc, x_lt) {
   old_seed <- if (exists(".Random.seed", envir = .GlobalEnv))
     get(".Random.seed", envir = .GlobalEnv) else NULL
   on.exit(if (!is.null(old_seed)) assign(".Random.seed", old_seed, envir = .GlobalEnv))
-  set.seed(20240517)                                                 # local, isolated
+  set.seed(2226)                                                     # local, isolated
   ml <- cvequality::mslr_test(nr = MSLR_NR, x = vals, y = grp)
   list(stat = unname(ml$MSLRT), p = unname(ml$p_value))
 }
@@ -493,7 +493,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
   mat <- scale(as.matrix(mvd[, tech6]))
   d   <- dist(mat, method = "euclidean")
   bd  <- betadisper(d, mvd$Group)
-  pt  <- permutest(bd, permutations = 999, pairwise = TRUE)
+  pt  <- permutest(bd, permutations = 9999, pairwise = TRUE)
 
   means <- tapply(bd$distances, mvd$Group, mean)
   dist_df <- data.frame(Group = mvd$Group, DistanceToCentroid = bd$distances)

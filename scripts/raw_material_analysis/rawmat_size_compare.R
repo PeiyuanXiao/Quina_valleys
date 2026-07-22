@@ -35,7 +35,7 @@ library(tidyr)
 library(ggplot2)
 library(rstatix)
 
-set.seed(123)
+set.seed(2226)
 
 # ==============================================================================
 # Global parameters

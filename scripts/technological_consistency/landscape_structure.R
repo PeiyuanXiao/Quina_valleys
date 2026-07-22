@@ -42,7 +42,7 @@ library(ggplot2)
 library(vegan)
 library(rstatix)
 
-set.seed(123)
+set.seed(2226)
 
 # ---- constants -------------------------------------------------------------
 variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
@@ -281,7 +281,7 @@ per_variable_tests <- function(dd, colors, outdir, prefix) {
 # ---- categorical analysis driver (PERMANOVA + PERMDISP + PCA + per-var) -----
 # `dat` is the SITE-LEVEL frame; each row is one site.
 run_categorical <- function(dat, group_col, group_levels, colors, outdir, prefix,
-                            title, perm = 999) {
+                            title, perm = 9999) {
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   writeLines(guardrails, file.path(outdir, "_GUARDRAILS.txt"))
 
@@ -327,7 +327,7 @@ weighted_spearman <- function(x, y, w) {
 
 # ---- continuous-gradient analysis driver (SITE-LEVEL only) -----------------
 # `site_df` is one row per site; gradient is a site attribute.
-run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 999) {
+run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9999) {
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   writeLines(guardrails, file.path(outdir, "_GUARDRAILS.txt"))
 
@@ -536,7 +536,7 @@ push_cat("2_height_bands", a2b)
 mat2 <- scale(as.matrix(site_df[, variables]))
 d2   <- dist(mat2, method = "euclidean")
 margin_BH <- tryCatch(
-  adonis2(d2 ~ Basin + Height_above_river, data = site_df, by = "margin", permutations = 999),
+  adonis2(d2 ~ Basin + Height_above_river, data = site_df, by = "margin", permutations = 9999),
   error = function(e) { message("marginal Basin+Height failed (collinear design): ",
                                 conditionMessage(e)); NULL })
 if (!is.null(margin_BH)) {
@@ -615,7 +615,7 @@ writeLines(c(guardrails, "",
   file.path(cross_dir, "_COLLINEARITY_WARNING.txt"))
 combo <- tryCatch(
   adonis2(d2 ~ Basin + Height_above_river + Distance_to_water + Site_size,
-          data = site_df, by = "margin", permutations = 999),
+          data = site_df, by = "margin", permutations = 9999),
   error = function(e) { message("combined marginal model failed (rank-deficient): ",
                                 conditionMessage(e)); NULL })
 if (!is.null(combo)) {

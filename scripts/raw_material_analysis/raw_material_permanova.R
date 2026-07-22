@@ -36,7 +36,7 @@ library(tidyr)
 library(ggplot2)
 library(vegan)
 
-set.seed(123)
+set.seed(2226)
 
 # ==============================================================================
 # Global parameters
@@ -50,7 +50,7 @@ out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "raw_materia
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 drop_sites <- c("PJDD", "ZKZ")                    # -> the analysed "clean 27"
-perm       <- 999
+perm       <- 9999
 
 # ---- shared levels / palettes (project idiom) ------------------------------
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone", "Andesite")
@@ -374,7 +374,7 @@ evp <- pc$eig[pc$eig > 0]; pct <- round(100 * evp[1:2] / sum(evp), 1)
 scl <- data.frame(A1 = pc$points[, 1], A2 = pc$points[, 2],
                   Loc = C_meta$Loc, basin = C_meta$basin,
                   river_ID = C_meta$river_ID, Material = C_meta$Material)
-set.seed(123)
+set.seed(2226)
 scl$A1j <- scl$A1 + rnorm(nrow(scl), 0, 0.045 * diff(range(scl$A1)))
 scl$A2j <- scl$A2 + rnorm(nrow(scl), 0, 0.045 * diff(range(scl$A2)))
 cen <- scl |> group_by(Loc, basin, river_ID) |>

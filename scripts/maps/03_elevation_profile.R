@@ -63,5 +63,4 @@ p <- ggplot(sites, aes(x = lat, y = elev_m, group = transect, color = transect))
 
 ggsave(file.path(output_dir, "elevation_profile.png"), p, width = 9, height = 5,
        dpi = 300)
-ggsave(file.path(output_dir, "elevation_profile.pdf"), p, width = 9, height = 5)
-message("03_elevation_profile.R done -> output/elevation_profile.(png|pdf)")
+message("03_elevation_profile.R done -> output/elevation_profile.png")

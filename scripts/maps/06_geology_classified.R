@@ -227,6 +227,5 @@ p <- p +
         plot.subtitle = element_text(size = 9, color = "grey25"),
         plot.caption  = element_text(size = 7, hjust = 0))
 
-ggsave(file.path(output_dir, "map_geology_scan6.pdf"), p, width = 9.3, height = 8)
 ggsave(file.path(output_dir, "map_geology_scan6.png"), p, width = 9.3, height = 8, dpi = 320)
 message("06_geology_classified.R done -> output/map_geology_scan6.(pdf|png)")

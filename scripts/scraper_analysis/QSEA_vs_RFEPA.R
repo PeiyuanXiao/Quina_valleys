@@ -37,7 +37,7 @@ library(dplyr)
 library(ggplot2)
 library(rstatix)
 
-set.seed(123)
+set.seed(2226)
 
 # ==============================================================================
 # Global parameters
@@ -102,7 +102,7 @@ welch_t <- rstatix::t_test(data_a, Value ~ Group,
                            var.equal = FALSE, detailed = TRUE)
 
 # --- Effect size: Cohen's d (unequal variance, matches the Welch test) + bootstrap 95% CI ---
-set.seed(123)
+set.seed(2226)
 effsize <- rstatix::cohens_d(data_a, Value ~ Group,
                              var.equal = FALSE, ci = TRUE, nboot = 1000)
 

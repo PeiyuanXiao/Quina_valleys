@@ -22,7 +22,7 @@ miss <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)
 if (length(miss)) stop("Install first: ", paste(miss, collapse = ", "))
 library(readxl); library(dplyr); library(ggplot2)
 library(rstatix); library(patchwork)
-set.seed(123)
+set.seed(2226)
 
 # ==============================================================================
 # Global parameters
