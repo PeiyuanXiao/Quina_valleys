@@ -10,7 +10,7 @@
 # re-styling never re-runs a test -- the statistics here are three Spearman
 # correlations with no permutation step, so they are recomputed inline (instant)
 # rather than cached. The rho / p shown are the raw (unadjusted) values that the
-# manuscript text quotes; BH-adjusted p are printed to the console for the record.
+# manuscript text quotes; Bonferroni-adjusted p are printed to the console for the record.
 #
 # Input:
 #   - data/Quina_scraper_surface.xlsx (sheet "Quina scraper")
@@ -90,7 +90,7 @@ spearman_one <- function(v) {
              p_value = ct$p.value)
 }
 results <- do.call(rbind, lapply(corr_vars, spearman_one))
-results$p_adjusted <- p.adjust(results$p_value, method = "BH")
+results$p_adjusted <- p.adjust(results$p_value, method = "bonferroni")
 cat("Spearman correlations with", focal, "(raw p shown on figure; BH for the record):\n")
 print(results, row.names = FALSE)
 

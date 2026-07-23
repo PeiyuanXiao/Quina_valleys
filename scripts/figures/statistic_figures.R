@@ -286,7 +286,7 @@ cat(sprintf("  n = %d surface Quina, %d Longtan Quina, %d Longtan non-Quina\n",
             tc$n_by_group[["SC_Quina"]], tc$n_by_group[["LT_Quina"]],
             tc$n_by_group[["LT_Ordinary"]]))
 cat(sprintf("  PC1 = %.1f%%, PC2 = %.1f%% of variance\n", vexp[1], vexp[2]))
-cat("  PERMANOVA (pairwise, BH-adjusted):\n")
+cat("  PERMANOVA (pairwise, Bonferroni-adjusted):\n")
 print(pw |> transmute(Comparison, R2 = round(R2, 3), F = round(F, 2),
                       p_adj = p_adjusted), row.names = FALSE)
 cat(sprintf("  PERMDISP mean distance to centroid: %s\n",

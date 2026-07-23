@@ -7,7 +7,7 @@
 #
 # Pipeline:
 #   1. Load the Quina-scraper surface assemblage.
-#   2. Spearman correlations with Edge_Angle (BH-adjusted over the three tests),
+#   2. Spearman correlations with Edge_Angle (Bonferroni-adjusted over the three tests),
 #      drawn as a faceted scatter with an lm trend and rho / p labels.
 #
 # Input:
@@ -95,7 +95,7 @@ run_spearman_analysis <- function(data, focal_var, corr_vars,
   }
 
   results <- do.call(rbind, lapply(corr_vars, spearman_one))
-  results$p_adjusted <- p.adjust(results$p_value, method = "BH")
+  results$p_adjusted <- p.adjust(results$p_value, method = "bonferroni")
 
   cat("\nSpearman correlations with", focal_var, ":\n")
   print(results)

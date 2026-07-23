@@ -131,10 +131,10 @@ cat("\nOverall PERMANOVA result:\n")
 print(permanova_result)
 
 
-# --- Pairwise post-hoc PERMANOVA (Benjamini-Hochberg) ---
+# --- Pairwise post-hoc PERMANOVA (Bonferroni) ---
 pairwise_permanova <- function(data, scaled_matrix, group_col = "Group",
                                permutations = 9999,
-                               p_adjust_method = "BH") {
+                               p_adjust_method = "bonferroni") {
   groups <- levels(droplevels(data[[group_col]]))
   group_pairs <- combn(groups, 2, simplify = FALSE)
 
@@ -170,7 +170,7 @@ posthoc_result <- pairwise_permanova(
   complete_data,
   analysis_matrix,
   permutations = 9999,
-  p_adjust_method = "BH"
+  p_adjust_method = "bonferroni"
 )
 
 cat("\nPairwise post-hoc PERMANOVA result:\n")
@@ -480,9 +480,9 @@ cat(sprintf(paste0("\nCV-equality significance test: mslr_test",
                    " (Krishnamoorthy-Lee 2014 MSLRT, nr = %g)\n"), MSLR_NR))
 
 # focus / proximal-exclusion masks (Block C)
-proximal_ids <- c("LT", "THC")
+proximal_ids <- c("LT")
 n_prox <- sum(dat$Group == "SC_Quina" & dat$Site_ID %in% proximal_ids)
-cat(sprintf("SC_Quina proximal to LT/THC: %d of %d (%.0f%% of all SC); SC excl-proximal n = %d\n",
+cat(sprintf("SC_Quina proximal to LT: %d of %d (%.0f%% of all SC); SC excl-proximal n = %d\n",
             n_prox, sum(dat$Group == "SC_Quina"), 100 * n_prox / sum(dat$Group == "SC_Quina"),
             sum(dat$Group == "SC_Quina") - n_prox))
 
@@ -504,9 +504,24 @@ run_permdisp <- function(df, outdir, prefix, title) {
   overall_p <- pt$tab$`Pr(>F)`[1]
   pw <- pt$pairwise$permuted
 
+  # F and p for each pair, so that the two are matched: permutest() returns
+  # pairwise p-values but no pairwise F. The pair is subset from the distance
+  # matrix of the whole set rather than re-scaled on its own, keeping the
+  # technical space fixed; with Euclidean distances the mean distances to
+  # centroid do not depend on which other groups are present.
+  pair_tab <- bind_rows(lapply(combn(levels(mvd$Group), 2, simplify = FALSE), function(pr) {
+    rows <- mvd$Group %in% pr
+    set.seed(2226); b2 <- betadisper(dist(mat[rows, ]), droplevels(mvd$Group[rows]))
+    set.seed(2226); p2 <- permutest(b2, permutations = 9999)
+    data.frame(Comparison = paste(pr, collapse = "-"),
+               F = p2$tab$F[1], p = p2$tab$`Pr(>F)`[1])
+  }))
+
   cat("Mean distance to centroid (= dispersion size):\n"); print(round(means, 3))
   cat("permutest overall p =", signif(overall_p, 3), "\n")
-  cat("pairwise permuted p:\n"); print(round(pw, 3))
+  cat("pairwise permuted p (3-group permutest):\n"); print(round(pw, 3))
+  cat("per-pair F and p (2-group betadisper on the same space):\n")
+  print(pair_tab, row.names = FALSE)
 
   # plot 1: distance-to-centroid box + violin
   p1 <- ggplot(dist_df, aes(Group, DistanceToCentroid, fill = Group, color = Group)) +
@@ -545,7 +560,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
     coord_equal() + ordination_theme + guides(fill = "none")
   ggsave(file.path(outdir, paste0(prefix, "_pca_ordination.png")), p2, width = 7.6, height = 5.8, dpi = 300)
 
-  list(means = means, overall_p = overall_p, pairwise = pw,
+  list(means = means, overall_p = overall_p, pairwise = pw, pair_tab = pair_tab,
        ratio_SC_LT = unname(means["SC_Quina"] / means["LT_Quina"]),
        # tidy data behind the ordination, for the figure scripts (see saveRDS below)
        n_by_group = table(mvd$Group),
@@ -685,10 +700,20 @@ rob_p <- ggplot(rob_long, aes(Group, Value, fill = Group, color = Group)) +
 ggsave(file.path(sub$rob, "robust_boxplots.png"), rob_p, width = 8.6, height = 7.0, dpi = 300)
 
 # ==============================================================================
-# C. Independence sensitivity (drop SC pieces proximal to LT/THC)
+# C. Independence sensitivity (drop SC pieces proximal to LT)
 # ==============================================================================
-cat("\n########## BLOCK C: sensitivity (SC excl. LT/THC-proximal) ##########\n")
+cat("\n########## BLOCK C: sensitivity (SC excl. LT-proximal) ##########\n")
 dat_excl <- dat |> filter(!(Group == "SC_Quina" & Site_ID %in% proximal_ids))
+
+# centroid position re-tested on the reduced set, so that the sensitivity check
+# covers both halves of Part 1 / Part 2 rather than dispersion alone. The reduced
+# set is z-scored on its own, as the full set was.
+mv_excl  <- dat_excl |> filter(if_all(all_of(tech6), is.finite)) |> mutate(Group = droplevels(Group))
+mat_excl <- scale(as.matrix(mv_excl[, tech6]))
+set.seed(2226)
+posthoc_excl <- pairwise_permanova(mv_excl, mat_excl, permutations = 9999, p_adjust_method = "bonferroni")
+cat("\nPairwise PERMANOVA on the SC-excl set (centroid position):\n")
+print(posthoc_excl, row.names = FALSE)
 
 # headline dispersion ratio (SC:LT_Quina) by family -- reused for all/excl
 headline_ratio <- function(d, v) {
@@ -713,7 +738,7 @@ excl_h <- bind_rows(lapply(need_vars, function(v) headline_ratio(dat_excl, v)))
 
 # PERMDISP re-run on SC-excl
 permC <- run_permdisp(dat_excl, sub$sen, "permdisp_excl",
-                      "PERMDISP sensitivity: SC (excl. LT/THC) vs Longtan")
+                      "PERMDISP sensitivity: SC (excl. LT) vs Longtan")
 
 sens_tbl <- all_h |>
   transmute(variable, family, metric,
@@ -730,13 +755,13 @@ cat("\nSensitivity side-by-side (each relative to LT_Quina):\n"); print(sens_tbl
 sens_long <- sens_tbl |> filter(family != "multivariate") |>
   select(variable, ratio_SCall_LT, ratio_SCexcl_LT) |>
   pivot_longer(c(ratio_SCall_LT, ratio_SCexcl_LT), names_to = "SC_set", values_to = "ratio") |>
-  mutate(SC_set = recode(SC_set, ratio_SCall_LT = "SC all", ratio_SCexcl_LT = "SC excl. LT/THC"))
+  mutate(SC_set = recode(SC_set, ratio_SCall_LT = "SC all", ratio_SCexcl_LT = "SC excl. LT"))
 sens_p <- ggplot(sens_long, aes(ratio, factor(variable, levels = rev(need_vars)),
                                 color = SC_set, shape = SC_set)) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "#202124") +
   geom_point(size = 3, position = position_dodge(width = 0.5)) +
   scale_x_continuous(trans = "log2") +
-  scale_color_manual(values = c("SC all" = "#E07C90", "SC excl. LT/THC" = "#9B4A5C")) +
+  scale_color_manual(values = c("SC all" = "#E07C90", "SC excl. LT" = "#9B4A5C")) +
   labs(title = "Dispersion ratio SC:LT_Quina -- all vs proximal-excluded",
        subtitle = "log2 x; >1 = SC more variable; shift on exclusion = composition confound",
        x = "Dispersion ratio (SC : LT_Quina)", y = NULL, color = NULL, shape = NULL,

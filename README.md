@@ -29,9 +29,17 @@ manuscript's **Results** section, so each analysis folder maps to a Results subs
   re-running the scripts). The scripts no longer write CSV tables; results are printed
   to the console when a script runs. **`output/` mirrors `scripts/`**: each script writes
   into the matching `output/<same-subfolder>/`.
-- `paper/` — manuscript (`manuscript.qmd`, `references.bib`).
+- `paper/` — manuscript (`manuscript.qmd`), supplementary material
+  (`supplementary.qmd`), the shared analysis (`_analysis.R`) and `references.bib`.
+  **`_analysis.R` computes every statistical result reported in either document**,
+  loading the packages, setting the seed (2226) and the permutation counts, reading
+  the data and leaving its results in the environment; both `.qmd` files source it,
+  so a number cannot differ between the paper and its supplement. Render either
+  document on its own with `quarto render paper/manuscript.qmd` /
+  `quarto render paper/supplementary.qmd`.
 - `templates/` — Quarto/Pandoc templates and reference files used by the manuscript
-  (`template.docx`, `.lua` filters, `.csl` style).
+  (`template.docx`, `.lua` filters, `.csl` style). `supplement-numbering.lua` closes
+  up the supplementary cross-reference labels ("Table S1" rather than "Table S 1").
 - `analysis_manuscript_crosswalk.md` — maps each Results paragraph to the script/output
   that produces it, and lists analyses not yet reported and reported results not yet
   scripted.
@@ -45,7 +53,9 @@ manuscript's **Results** section, so each analysis folder maps to a Results subs
    (see each script's header for details; the geology-scan Python helpers are optional).
 2. **Analyses** — each script is self-contained and reads only from `data/`, so the three
    analysis folders (`raw_material_analysis/`, `scraper_analysis/`, `technological_consistency/`)
-   and the scripts within them can be run in any order.
+   and the scripts within them can be run in any order. These scripts mirror
+   `paper/_analysis.R`: they produce the same numbers plus their diagnostic figures.
+   The reported values come from `_analysis.R` when the documents are rendered.
 
 Paths are resolved with `here::here()` from the project root (the folder holding `.Rproj` /
 `.git`), so the scripts run as-is wherever the compendium is checked out.
