@@ -59,6 +59,23 @@ basin_levels    <- c("Binchuan", "Heqing")
 variables       <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                      "N_Scar", "Ave_RG", "Edge_Angle")
 
+# ---- display labels for those six variables -------------------------------
+# The one canonical set, used by every table and figure in both documents, so
+# that a variable is never named two ways. The bare form drops the unit and is
+# for places too tight to carry it, such as the loading arrows of an
+# ordination. disp_labels extends the set with the three raw dimensions that
+# enter the dispersion comparison but no other analysis.
+variable_labels <- c(Thickness            = "Thickness (mm)",
+                     Retouch_length_index = "Retouched perimeter",
+                     Ave_GIUR             = "GIUR",
+                     N_Scar               = "Total scars",
+                     Ave_RG               = "Retouch generations",
+                     Edge_Angle           = "Edge angle (°)")
+variable_labels_bare <- sub(" \\(.*\\)$", "", variable_labels)
+names(variable_labels_bare) <- names(variable_labels)
+disp_labels <- c(Length = "Length (mm)", Width = "Width (mm)",
+                 Mass = "Mass (g)", variable_labels)
+
 harmonise_lithology <- function(x) {
   x <- trimws(as.character(x))
   recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
@@ -342,7 +359,7 @@ kw_eff  <- variable_long |> filter(Variable %in% kw_vars) |> mutate(Variable = d
 we_omni <- variable_long |> filter(Variable %in% welch_vars) |> mutate(Variable = droplevels(Variable)) |>
   group_by(Variable) |> welch_anova_test(Value ~ Group) |> ungroup()
 
-# PERMDISP (Block A) on the z-scored technical space -> means, pairwise, PCA
+# PERMDISP (Block A) on the z-scored technological space -> means, pairwise, PCA
 run_permdisp <- function(df) {
   mvd <- df |> filter(if_all(all_of(variables), is.finite)) |> mutate(Group = droplevels(Group))
   mat <- scale(as.matrix(mvd[, variables])); d <- dist(mat)
@@ -352,7 +369,7 @@ run_permdisp <- function(df) {
   # F and p for each pair, so that the two are matched: permutest() returns
   # pairwise p-values but no pairwise F. The pair is subset from the distance
   # matrix of the whole set rather than re-scaled on its own, keeping the
-  # technical space fixed; with Euclidean distances the mean distances to
+  # technological space fixed; with Euclidean distances the mean distances to
   # centroid do not depend on which other groups are present.
   pair_tab <- bind_rows(lapply(combn(levels(mvd$Group), 2, simplify = FALSE), function(pr) {
     rows <- mvd$Group %in% pr

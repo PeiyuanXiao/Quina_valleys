@@ -7,7 +7,7 @@
 # script first; every number shown here is computed there, not here.
 #
 # Figures:
-#   Fig. TC -- Technological consistency: (A) PCA biplot of the technical space,
+#   Fig. TC -- Technological consistency: (A) PCA biplot of the technological space,
 #              with marginal histograms of the PC1 and PC2 scores by group,
 #              (B) per-variable distributions with post-hoc brackets.
 #              <- output/cache/analysis/surface_vs_longtan.rds
@@ -65,7 +65,7 @@ group_labels <- c(SC_Quina    = "Surface Quina",
                   LT_Quina    = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
 
-# manuscript wording for the six technical variables. Units belong on the
+# manuscript wording for the six technological variables. Units belong on the
 # measurement axes of panel C; a PCA loading is unitless, so panel B uses the
 # bare names.
 variable_labels <- c(

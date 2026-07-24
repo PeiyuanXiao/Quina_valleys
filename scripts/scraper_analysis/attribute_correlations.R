@@ -1,5 +1,5 @@
 # Quina_scraper_statistic.R
-# Spearman rank correlations among Quina-scraper technical variables.
+# Spearman rank correlations among Quina-scraper technological variables.
 #
 # Edge angle is read as an index of cumulative reduction, so it is correlated
 # against the three other reduction measures: proportion of the perimeter

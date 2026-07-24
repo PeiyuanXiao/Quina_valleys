@@ -325,7 +325,7 @@ retouch_products_tbl <- bind_rows(
   row_num("Platform width (mm)", q$Platform_width, 1),
   row_num("IPA (°)",             q$IPA,            1),
   row_num("Retouch generations", q$Ave_RG,    2),
-  row_num("Retouch scars",       q$N_Scar,    1, ds = 0),
+  row_num(variable_labels[["N_Scar"]], q$N_Scar, 1, ds = 0),
   row_num("GIUR",                q$Ave_GIUR,  2),
   row_num("Edge angle (°)",      q$Edge_Angle, 1),
   row_num("Retouched perimeter", q$Retouch_length_index, 2),
@@ -491,11 +491,9 @@ Ramification extends beyond the maintenance of edges. Resharpening flakes carry 
 group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
 group_labels <- c(SC_Quina = "Surface Quina", LT_Quina = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
-variable_labels <- c(Thickness = "Thickness (mm)", Retouch_length_index = "Retouched perimeter",
-                     Ave_GIUR = "GIUR", N_Scar = "Total scars",
-                     Ave_RG = "Retouch generations", Edge_Angle = "Edge angle (°)")
-variable_labels_bare <- sub(" \\(.*\\)$", "", variable_labels)
-names(variable_labels_bare) <- names(variable_labels)
+# variable_labels and variable_labels_bare come from _analysis.R, so that the
+# six variables are named the same way here, in the tables below and in the
+# supplementary material
 
 fig_theme <- theme_minimal(base_size = 9) +
   theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
@@ -594,11 +592,8 @@ Consistency of this concerns the position of group centroids, and two assemblage
 #| label: tbl-dispersion-tests
 #| tbl-cap: "Univariate dispersion of the surface Quina scrapers against the Longtan Quina scrapers. Each family is summarised by the dispersion measure appropriate to its scale of measurement and tested by the corresponding procedure; the ratio is surface over Longtan, so that one denotes equal dispersion, and its interval is a bootstrap percentile interval. The statistic is the MSLRT for the coefficient of variation and the Fligner–Killeen chi-squared elsewhere."
 
-disp_labels <- c(Length = "Length (mm)", Width = "Width (mm)",
-                 Thickness = "Thickness (mm)", Mass = "Mass (g)",
-                 Edge_Angle = "Edge angle (°)", Ave_GIUR = "GIUR",
-                 Retouch_length_index = "Retouched perimeter",
-                 N_Scar = "Retouch scars", Ave_RG = "Retouch generations")
+# disp_labels comes from _analysis.R: the six variable_labels plus the three
+# raw dimensions that enter this comparison alone
 disp_heads <- c(CV      = "Coefficient of variation (CV\\*), KL-MSLRT",
                 bounded = "Median absolute deviation, Fligner–Killeen",
                 count   = "Fano factor, Fligner–Killeen")
@@ -633,12 +628,8 @@ One weak pattern nevertheless runs in a direction worth noting. All six technolo
 #| label: tbl-distance-correlations
 #| tbl-cap: "Spearman rank correlation of each technological measure with distance to the nearest present-day channel. The unit is the locality, not the specimen: each locality that yielded measurable Quina scrapers is represented by the median of those scrapers, and the count of localities is given in the text. The interval on ρ is a bootstrap percentile interval over localities; adjusted *p* is the Bonferroni adjustment across the six tests."
 
-ls_labels <- c(Thickness = "Thickness", Retouch_length_index = "Retouched perimeter",
-               Ave_GIUR = "GIUR", N_Scar = "Retouch scars",
-               Ave_RG = "Retouch generations", Edge_Angle = "Edge angle")
-
 ls_fmt <- data.frame(
-  Measure = unname(ls_labels[ls_dist_cor$variable]),
+  Measure = unname(variable_labels[ls_dist_cor$variable]),
   rho = f(ls_dist_cor$rho, 2),
   ci  = sprintf("%s to %s", f(ls_dist_cor$lo, 2), f(ls_dist_cor$hi, 2)),
   p   = sub("^= ", "", vapply(ls_dist_cor$p, fp, character(1))),

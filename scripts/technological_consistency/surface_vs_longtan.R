@@ -1,8 +1,8 @@
 # surface_vs_longtan.R
-# Technical consistency of surface-collected (SC) Quina scrapers vs excavated
+# Technological consistency of surface-collected (SC) Quina scrapers vs excavated
 # Longtan (LT) Quina scrapers, with LT ordinary scrapers as a yardstick.
 #
-# Two complementary questions on the technical variables:
+# Two complementary questions on the technological variables:
 #   Part 1 LOCATION   -- are the group centroids different?  (PERMANOVA)
 #   Part 2 DISPERSION -- are the within-group spreads different?  (PERMDISP + CV/robust)
 # Exploratory: rank by effect size, not p<0.05. Merged from the former QV_analysis.R
@@ -351,7 +351,7 @@ count_vars   <- c("N_Scar", "Ave_RG")                                       # co
 robust_vars  <- c(bounded_vars, count_vars)
 need_vars    <- c(cv_vars, robust_vars)
 tech6        <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
-                  "N_Scar", "Ave_RG", "Edge_Angle")  # the established technical space (Block A)
+                  "N_Scar", "Ave_RG", "Edge_Angle")  # the established technological space (Block A)
 grp_levels   <- c("SC_Quina", "LT_Quina", "LT_Ordinary")
 
 guardrails <- c(
@@ -507,7 +507,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
   # F and p for each pair, so that the two are matched: permutest() returns
   # pairwise p-values but no pairwise F. The pair is subset from the distance
   # matrix of the whole set rather than re-scaled on its own, keeping the
-  # technical space fixed; with Euclidean distances the mean distances to
+  # technological space fixed; with Euclidean distances the mean distances to
   # centroid do not depend on which other groups are present.
   pair_tab <- bind_rows(lapply(combn(levels(mvd$Group), 2, simplify = FALSE), function(pr) {
     rows <- mvd$Group %in% pr
@@ -569,7 +569,7 @@ run_permdisp <- function(df, outdir, prefix, title) {
 
 cat("\n########## BLOCK A: MULTIVARIATE PERMDISP ##########\n")
 permA <- run_permdisp(dat, sub$mv, "permdisp_all",
-                      "Technical-space dispersion (PERMDISP): SC vs Longtan")
+                      "Technological-space dispersion (PERMDISP): SC vs Longtan")
 
 # ==============================================================================
 # B1. CV family (ratio / dimensional variables)
@@ -803,7 +803,7 @@ dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
 
 saveRDS(
   list(
-    # --- panel a: PCA ordination of the technical space (z-scored tech6) ---
+    # --- panel a: PCA ordination of the technological space (z-scored tech6) ---
     pca_scores    = permA$pca_scores,      # PC1, PC2, Group (one row per specimen)
     pca_loadings  = permA$pca_loadings,    # Variable, PC1, PC2
     var_explained = permA$var_explained,   # % variance per PC

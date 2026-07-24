@@ -2,12 +2,12 @@
 # Site-level landscape triage of surface-collected (SC) Quina scrapers.
 #
 # Unit = the site: each site enters once as the MEDIAN of its scrapers on the 6
-# technical variables. Exploratory (few sites, unbalanced, basin/landscape
+# technological variables. Exploratory (few sites, unbalanced, basin/landscape
 # confounded) -> rank by effect size (R2 / rho / median spread), not p<0.05. SC
 # only, one retouch tool-class: this is the landscape distribution of reduction
 # intensity, not a provisioning system. Full guardrails -> _GUARDRAILS.txt.
 #
-# Question: are the 6 technical-consistency metrics structured by landscape?
+# Question: are the 6 technological-consistency metrics structured by landscape?
 #
 # Pipeline:
 #   1. Basin (Binchuan vs Heqing)      -- categorical: PERMANOVA + PERMDISP + PCA.
@@ -339,7 +339,7 @@ run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9
     filter(if_all(all_of(variables), ~ !is.na(.x))) |>
     mutate(grad = as.numeric(.data[[grad_col]]))
 
-  cat("\n==== Technical metrics ~ ", grad_label, " (site-level gradient) ====\n", sep = "")
+  cat("\n==== Technological metrics ~ ", grad_label, " (site-level gradient) ====\n", sep = "")
   cat("N sites =", nrow(dd), " | scrapers behind medians: min =", min(dd$n_art),
       ", median =", median(dd$n_art), ", max =", max(dd$n_art), "\n")
   cat("Sites resting on <3 scrapers (noisy medians):", sum(dd$n_art < 3), "of", nrow(dd), "\n")
@@ -381,7 +381,7 @@ run_gradient <- function(site_df, grad_col, grad_label, outdir, prefix, perm = 9
                labeller = as_labeller(function(x) gsub("_", " ", x))) +
     scale_color_manual(values = basin_colors) +
     scale_size_continuous(range = c(1.6, 6), name = "n scrapers") +
-    labs(title = paste0("Technical metrics vs ", grad_label, " (site-level)"),
+    labs(title = paste0("Technological metrics vs ", grad_label, " (site-level)"),
          subtitle = "one point per site; point size = n scrapers behind the median; line = lm",
          x = grad_label, y = NULL, color = "Basin") +
     corr_theme
@@ -495,7 +495,7 @@ push_grad <- function(tag, res) {
 # ==============================================================================
 a1_dir <- file.path(out_root, "analysis1_basin")
 a1 <- run_categorical(site_df, "Basin", c("Binchuan", "Heqing"), basin_colors,
-                      a1_dir, "a1_basin", "Analysis 1: technical metrics ~ Basin (site-level)")
+                      a1_dir, "a1_basin", "Analysis 1: technological metrics ~ Basin (site-level)")
 push_cat("1_basin", a1)
 
 # ---- 1a. composition diagnostic: is "Heqing" really "Tianhua/Longtan area"? ----
@@ -532,7 +532,7 @@ push_grad("2_height_continuous", a2)
 cat("\nHeight-above-river bands (site-level N):\n"); print(table(site_df$H_bin))
 a2b <- run_categorical(site_df, "H_bin", h_labels, hbin_colors,
                        a2_dir, "a2_heightbin",
-                       "Analysis 2 robustness: technical metrics ~ height band (site-level)")
+                       "Analysis 2 robustness: technological metrics ~ height band (site-level)")
 push_cat("2_height_bands", a2b)
 
 # ---- 2a. collinearity with Basin: marginal (Type-III-like) PERMANOVA ----
@@ -584,7 +584,7 @@ site_bin <- site_df |>
 cat("\nSite_size bins (site-level N):\n"); print(table(site_bin$Size_bin))
 a4b <- run_categorical(site_bin, "Size_bin", c("1", "2-3", "4+"), sizebin_colors,
                        a4_dir, "a4_sizebin",
-                       "Analysis 4 robustness: technical metrics ~ site-size bin (site-level)")
+                       "Analysis 4 robustness: technological metrics ~ site-size bin (site-level)")
 push_cat("4_size_bins", a4b)
 
 # ==============================================================================

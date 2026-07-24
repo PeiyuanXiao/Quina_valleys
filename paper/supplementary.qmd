@@ -1,6 +1,48 @@
 ---
 title: "Supplementary material"
 subtitle: "The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
+author:
+  - Peiyuan Xiao:
+      correspondence: "no"
+      orcid: 0009-0000-9733-5875
+      institute:
+        - ALPHA
+        - UCAS
+        - UW
+  - Qijun Ruan:
+      correspondence: "yes"
+      orcid: 0009-0000-2143-5335
+      institute:
+        - YPICRA
+  - Zhenxiu Jia:
+      correspondence: "no"
+      orcid: 0000-0002-7514-4514
+      institute:
+        - ALPHA
+  - Marco Peresani:
+      correspondence: "no"
+      orcid: 0000-0001-6562-6336
+      institute:
+        - FERRARA
+        - IGAG
+  - Davide Delpiano:
+      correspondence: "yes"
+      institute:
+        - FERRARA
+  - Ben Marwick:
+      correspondence: "yes"
+      email: bmarwick@uw.edu
+      orcid: 0000-0001-7879-4531
+      institute:
+        - UW
+# <!-- the author list mirrors paper/manuscript.qmd; update both together -->
+institute:
+  - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
+  - UCAS: University of Chinese Academy of Sciences, Beijing, China
+  - UW: Department of Anthropology, University of Washington, Seattle, WA, USA
+  - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, China
+  - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
+  - IGAG: Consiglio Nazionale delle Ricerche-Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
 date: now
 date-format: long
 format:
@@ -19,6 +61,8 @@ execute:
   comment: "#>"
   fig-dpi: 600
 filters:
+  - ../templates/scholarly-metadata.lua
+  - ../templates/author-info-blocks.lua
   - ../templates/pagebreak.lua
   - quarto
   # runs after the crossref filter, so that "Table S 1" reads "Table S1"
@@ -35,8 +79,12 @@ editor_options:
 # the manuscript sources, so the two cannot disagree. The few quantities needed
 # only here -- the dispersion tests that accompany the raw-material PERMANOVAs,
 # the omnibus statistics behind the per-variable post-hoc comparisons, and the
-# banded landscape checks -- are computed in the next chunk from the objects it
-# leaves behind.
+# two further correlation families of the landscape figure -- are computed in
+# the next chunk from the objects it leaves behind.
+#
+# Apart from the note that opens it, this document carries no running text: it
+# is the tables and figures with their captions alone, each caption written to
+# stand on its own.
 source(here::here("paper", "_analysis.R"))
 
 # p-value formatter for table cells: fp() with its leading "= " removed
@@ -45,16 +93,14 @@ fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
 group_labels <- c(SC_Quina = "Surface Quina", LT_Quina = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
-variable_labels <- c(Thickness = "Thickness (mm)", Retouch_length_index = "Retouched perimeter",
-                     Ave_GIUR = "GIUR", N_Scar = "Total scars",
-                     Ave_RG = "Retouch generations", Edge_Angle = "Edge angle (°)")
-variable_labels_bare <- sub(" \\(.*\\)$", "", variable_labels)
-names(variable_labels_bare) <- names(variable_labels)
-material_colors <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
-                     Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
-basin_colors   <- c(Binchuan = "#C9603F", Heqing = "#3F7CAC")
-hbin_colors    <- c(`≤40` = "#7FB069", `40–60` = "#E6C25C", `>60` = "#E07C90")
-sizebin_colors <- c(`1` = "#C9D6DF", `2–3` = "#6BA8CE", `4+` = "#2C5F7C")
+# variable_labels and variable_labels_bare come from _analysis.R, the same set
+# the manuscript uses, so that no variable is named two ways across the two
+# documents
+# the blue and the pink of the shared palette, which are also the two ends of
+# the gradient used for the continuous landscape variables
+basin_colors   <- c(Binchuan = "#6BA8CE", Heqing = "#E07C90")
+grad_low       <- "#6BA8CE"
+grad_high      <- "#E07C90"
 
 fig_theme <- theme_minimal(base_size = 9) +
   theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
@@ -108,41 +154,79 @@ we_ph_full <- we_ph |> select(Variable, group1, group2, p.adj, p.adj.signif) |>
             by = c("Variable", "group1", "group2"))
 stopifnot(isTRUE(all.equal(we_ph_full$p.adj, we_ph_full$p.adj.t)))
 
-# ---- 3. Landscape: coarse bands and dispersion ----------------------------
-# The bands are the robustness check on the two continuous gradients: height
-# above the channel discretised as terrace level would be, and assemblage size
-# split at the singleton and the small-assemblage thresholds.
-h_breaks <- c(-Inf, 40, 60, Inf); h_labels <- c("≤40", "40–60", ">60")
-s_breaks <- c(-Inf, 1, 3, Inf);   s_labels <- c("1", "2–3", "4+")
-site_bands <- site_df |>
-  mutate(H_bin = cut(Height_above_river, h_breaks, labels = h_labels),
-         S_bin = cut(Site_size, s_breaks, labels = s_labels))
-band_permanova <- function(col) {
-  set.seed(2226); a <- adonis2(dL ~ site_bands[[col]], permutations = PERM)
-  c(R2 = a$R2[1], F = a$F[1], p = a$`Pr(>F)`[1], Df = a$Df[1], Df_res = a$Df[2],
-    SumOfSqs = a$SumOfSqs[1], SumOfSqs_res = a$SumOfSqs[2])
-}
-ls_hbin <- band_permanova("H_bin")
-ls_sbin <- band_permanova("S_bin")
+# ---- 3. Landscape: dispersion between the basins --------------------------
+# Basin is the one categorical landscape variable and so the only one for which
+# a test of dispersion is defined. The other three enter every analysis at
+# their measured values; they are nowhere discretised.
 ls_basin_pd <- permdisp_one(dL, site_df$Basin)
-n_hbin <- table(site_bands$H_bin); n_sbin <- table(site_bands$S_bin)
 n_basin_site <- table(droplevels(site_df$Basin))
 
 # ---- 4. Locality-level ordination ----------------------------------------
 site_pca <- prcomp(scale(as.matrix(site_df[, variables])), center = TRUE, scale. = FALSE)
 site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
-site_scores <- bind_cols(site_bands, as.data.frame(site_pca$x[, 1:2]))
+site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
+
+# ---- 5. Each measure against each continuous landscape variable -----------
+# The distance family is the one the paper reports; the other two are given
+# here so that every panel of the scatter figure carries its coefficient. Each
+# is one family of six tests and carries its own Bonferroni adjustment, exactly
+# as the distance family does in _analysis.R. The check below fails the render
+# if the distance rows ever depart from the values reported in the paper.
+land_vars <- c(Height_above_river = "Height above channel (m)",
+               Site_size          = "Assemblage size (n specimens)",
+               Distance_to_water  = "Distance to channel (m)")
+land_cor <- bind_rows(lapply(names(land_vars), function(lv) {
+  fam <- bind_rows(lapply(variables, function(v) {
+    d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df[[lv]]), ]
+    ct <- suppressWarnings(cor.test(d[[v]], d[[lv]], method = "spearman", exact = FALSE))
+    data.frame(Landscape = lv, variable = v, n = nrow(d),
+               rho = unname(ct$estimate), p = ct$p.value)
+  }))
+  fam$p_adj <- p.adjust(fam$p, "bonferroni")
+  fam
+}))
+stopifnot(isTRUE(all.equal(land_cor$rho[land_cor$Landscape == "Distance_to_water"],
+                           ls_dist_cor$rho)),
+          isTRUE(all.equal(land_cor$p_adj[land_cor$Landscape == "Distance_to_water"],
+                           ls_dist_cor$p_adj)))
+
+# ---- 6. Each landscape variable as a surface over the ordination ----------
+# A thin-plate spline fitted over the ordination plane, as ordisurf fits one,
+# and drawn as the background of the locality-level figure. select = TRUE lets
+# the smooth be shrunk out of the model altogether, so a flat surface is a
+# conclusion the fit reached rather than one imposed on it. The grid is clipped
+# to the convex hull of the localities: colour would be an extrapolation
+# anywhere else.
+hull_i  <- chull(site_scores$PC1, site_scores$PC2)
+hull_xy <- as.matrix(site_scores[c(hull_i, hull_i[1]), c("PC1", "PC2")])
+# the grid is kept whole and the cells outside the hull set to NA, rather than
+# dropped: a complete grid is what geom_raster needs, and it draws the missing
+# cells as nothing at all
+surf_one <- function(v, n = 250) {
+  y <- site_scores[[v]]
+  g <- mgcv::gam(y ~ s(PC1, PC2, k = 10), data = site_scores,
+                 method = "REML", select = TRUE)
+  s <- summary(g)
+  rx <- range(site_scores$PC1); ry <- range(site_scores$PC2)
+  grd <- expand.grid(
+    PC1 = seq(rx[1] - 0.08 * diff(rx), rx[2] + 0.08 * diff(rx), length.out = n),
+    PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
+  grd$fit <- as.numeric(predict(g, newdata = grd))
+  grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
+  dev <- 100 * s$dev.expl; pv <- s$s.table[1, "p-value"]
+  list(grid = grd, dev = dev, p = pv,
+       label = sprintf("'Deviance explained %.1f%%, '*italic(p)==%.2f", dev, pv))
+}
+surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
+surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
+surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
 ```
 
-This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and code needed to regenerate this document are deposited with the research compendium.
+This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and the code needed to regenerate this document are deposited with the research compendium.
 
-The four sections follow the order of the Results. Within each, the complete test tables come first, then the diagnostics, then the sensitivity analyses.
+The tables and figures follow the order of the Results: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Within each of these, the complete test tables come first, then the diagnostics, then the sensitivity analyses. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
 
 \newpage
-
-# S1. Landscape distribution and raw material economy
-
-@tbl-composition gives the counts and percentages behind the composition figure of the main text. Each valley is summarised twice: once for the cobbles recorded on its gravel bars and once for the Quina scrapers collected from its localities. The contrast that the electivity index formalises is already visible here, in that sandstone dominates every set of bars while trachyte dominates every set of artefacts.
 
 ```{r}
 #| label: tbl-composition
@@ -171,7 +255,7 @@ knitr::kable(comp_out, row.names = FALSE,
                            "Mudstone", "Andesite", "*n*"))
 ```
 
-@tbl-electivity sets the two compositions side by side for all five lithologies and gives Jacobs' *D* for each. Andesite is the one value that cannot be read as an index of preference: it is absent from the cobble survey, so its *D* is fixed at +1 by the definition of the index rather than estimated from the data.
+\newpage
 
 ```{r}
 #| label: tbl-electivity
@@ -199,11 +283,11 @@ knitr::kable(elect_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r
                            "Scrapers *n*", "Scrapers %", "*D*"))
 ```
 
-@tbl-rawmat-permanova reports each composition model in full, with the corresponding test of dispersion beside it. The pairing matters for the interpretation given in the main text. On the gravel bars, both the location of the centroid and the spread about it differ between sampling points and between valleys, which is what a genuinely heterogeneous set of bars should produce. Among the artefacts neither is detectable at either scale, so the uniformity reported for raw material selection is a uniformity of composition and not an artefact of unequal dispersion masking a shift in centroid.
+\newpage
 
 ```{r}
 #| label: tbl-rawmat-permanova
-#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second."
+#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second. The two tests are read together: on the gravel bars both the position of the centroid and the spread about it differ between sampling points and between valleys, whereas among the artefacts neither differs at either scale, so the uniformity of raw material selection is not an artefact of unequal dispersion."
 
 perm_row <- function(model, a, pd) {
   data.frame(Model = paste0(IND, model),
@@ -232,11 +316,11 @@ knitr::kable(rawmat_out, row.names = FALSE,
                            "PERMDISP *F*", "PERMDISP *p*"))
 ```
 
-@tbl-clast-size gives the size of the recorded cobbles by lithology. Size is the geometric mean of length, breadth and thickness, and the geometric mean of that quantity is reported as the measure of central tendency, the distribution being right-skewed. The comparison reported in the main text, trachyte against sandstone, gives *U* = `r f(size_U, 0)`, *p* `r fp(size_p)`, with a rank-biserial effect size of *r* = `r f(size_r, 2)`. Quartz and mudstone are present in numbers too small to support a comparison and are listed for completeness only; andesite does not occur in the survey.
+\newpage
 
 ```{r}
 #| label: tbl-clast-size
-#| tbl-cap: "Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology. Sandstone is the harmonised category used throughout the paper, combining the quartz sandstone and coarse sandstone of the field record."
+#| tbl-cap: !expr 'sprintf("Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology. Sandstone is the harmonised category used throughout the paper, combining the quartz sandstone and coarse sandstone of the field record. Trachyte and sandstone, the two lithologies present in quantity, were compared with a Mann–Whitney rank sum test: *U* = %s, *p* %s, rank-biserial *r* = %s. Quartz and mudstone occur in numbers too small to support a comparison and are listed for completeness; andesite does not occur in the survey.", f(size_U, 0), fp(size_p), f(size_r, 2))'
 
 size_row <- function(m) {
   x <- cl$size[cl$Material == m]
@@ -256,52 +340,67 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 \newpage
 
-# S2. Techno-typological features
-
-@fig-categorical-attributes gives the distribution of the four categorical attributes recorded on the Quina scrapers. Cortex is retained on most specimens and, where it survives, lies most often on a lateral margin, opposite the retouched edge; retouch is almost always obverse; and among the minority that retain the platform of the blank, plain platforms predominate. The denominator differs between panels and is given in each panel heading, platform type being recorded only on the specimens that preserve a platform.
-
 ```{r}
 #| label: fig-categorical-attributes
-#| fig-cap: "Categorical attributes of the surface Quina scrapers: proportion of the dorsal face covered by cortex, position of that cortex, platform type, and the direction from which retouch was struck. Bars give counts, with the percentage of the panel denominator in parentheses. Platform type is recorded only on the specimens retaining the platform of the blank."
+#| fig-cap: !expr 'sprintf("Categorical attributes of the surface Quina scrapers: proportion of the dorsal face covered by cortex, position of that cortex, platform type, and the direction from which retouch was struck. Bars run to the percentage of the specimens recorded for that attribute, and the count and percentage are given at the end of each bar. Cortex proportion, cortex position and retouch direction are recorded on all %d scrapers; platform type only on the %d that retain the platform of the blank. Cortex position is taken over the whole assemblage, so that its percentages are of all specimens rather than of the cortex-bearing ones alone as in the main text. Categories are ordered by frequency except in the first panel, where the classes are ordered and the shading runs with them.", n_scraper, plat_n)'
 #| fig-width: 5.9
-#| fig-height: 4.6
+#| fig-height: 4.9
 
-cat_levels <- c("0", "1-25%", "26-50%", "51-75%", "76-99%",
-                "None", "Primary", "Lateral", "Central", "Distal",
-                "Plain", "Natural", "Dihedral",
-                "Obverse", "Inverse", "Alternate", "Bifacial")
-cat_one <- function(x, panel, recode_map = NULL) {
+# one row per category, ordered within its panel: by frequency where the
+# categories are nominal, in their own order where they are not
+cat_panel <- function(x, panel, levels_order = NULL, recode_map = NULL) {
   x <- trimws(as.character(x)); x <- x[!is.na(x)]
   if (!is.null(recode_map)) x <- ifelse(x %in% names(recode_map), recode_map[x], x)
-  tibble(Level = x) |> count(Level, name = "n") |>
-    mutate(pct = 100 * n / sum(n),
-           Panel = sprintf("%s (n = %d)", panel, sum(n)))
+  d <- tibble(Level = x) |> count(Level, name = "n")
+  d <- if (is.null(levels_order)) arrange(d, desc(n)) else
+    d[match(levels_order, d$Level), ] |> filter(!is.na(Level))
+  d |> mutate(pct = 100 * n / sum(n), Panel = panel, rank = row_number())
 }
+cortex_classes <- c("0", "1-25%", "26-50%", "51-75%", "76-99%")
 cat_df <- bind_rows(
-  cat_one(q$Cortex, "Cortex proportion"),
-  cat_one(q$Cortex_position, "Cortex position", c(Non_cortex = "None")),
-  cat_one(q$Platform_type, "Platform type"),
-  cat_one(q$Tot_Direction, "Retouch direction")) |>
-  mutate(Level = factor(Level, levels = cat_levels),
-         Panel = factor(Panel, levels = unique(Panel)))
+  cat_panel(q$Cortex, "Cortex proportion", levels_order = cortex_classes),
+  cat_panel(q$Cortex_position, "Cortex position", recode_map = c(Non_cortex = "None")),
+  cat_panel(q$Platform_type, "Platform type"),
+  cat_panel(q$Tot_Direction, "Retouch direction")) |>
+  mutate(Panel = factor(Panel, levels = unique(Panel)))
+# a discrete axis places its first level at the foot of the panel, so the
+# display order is reversed here to put the leading category at the top
+cat_df$Level <- factor(cat_df$Level,
+                       levels = cat_df |> arrange(Panel, desc(rank)) |> pull(Level))
 
-ggplot(cat_df, aes(Level, n)) +
-  geom_col(width = 0.68, fill = "#6BA8CE", color = "white", linewidth = 0.3) +
-  geom_text(aes(label = sprintf("%d (%.0f%%)", n, pct)),
-            vjust = -0.45, size = 2.2, color = "#303238") +
-  facet_wrap(~ Panel, scales = "free_x", ncol = 2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
-  labs(x = NULL, y = "Count (n)") +
+# colour carries the ordering where there is one: the cortex classes take a
+# light-to-dark ramp, and each nominal panel a single colour of the shared
+# palette, which distinguishes the panels without implying an order within them
+cortex_ramp <- setNames(colorRampPalette(c("#CBDCEA", "#2C5F7C"))(length(cortex_classes)),
+                        cortex_classes)
+panel_flat <- c(`Cortex position` = "#E07C90", `Platform type` = "#E6C25C",
+                `Retouch direction` = "#9B87C4")
+cat_df <- cat_df |>
+  mutate(bar_fill = ifelse(as.character(Panel) == "Cortex proportion",
+                           cortex_ramp[as.character(Level)],
+                           panel_flat[as.character(Panel)]))
+
+ggplot(cat_df, aes(pct, Level)) +
+  geom_col(aes(fill = bar_fill), width = 0.7) +
+  geom_text(aes(label = sprintf("n = %d, %.1f%%", n, pct)),
+            hjust = -0.12, size = 2.2, color = "#303238") +
+  scale_fill_identity() +
+  facet_grid(Panel ~ ., scales = "free_y", space = "free_y") +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 25),
+                     labels = function(z) paste0(z, "%"),
+                     expand = expansion(mult = c(0, 0.24))) +
+  labs(x = "Percentage", y = NULL) +
   fig_theme +
-  theme(panel.grid.major.x = element_blank(),
-        axis.text.x = element_text(angle = 25, hjust = 1, size = 7.5))
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 7.5),
+        strip.text.y = element_text(size = 7.5, angle = -90))
 ```
 
-The choice between rank-based and parametric procedures for the six technical variables, set out in the Materials and methods, rests on the distribution of each variable within each group. @fig-distributions and @fig-qq give those distributions directly. GIUR, total scars and the number of retouch generations are the three that depart most clearly from normality: GIUR is bounded at one and piles up against that bound in both Quina groups, while the two counts are discrete and right-skewed. These three were compared with Kruskal–Wallis and Dunn tests. Thickness, retouched perimeter and edge angle are closer to symmetric within each group and were compared with Welch's ANOVA and Welch's *t*, which does not require the group variances to be equal, and the variances here are visibly unequal.
+\newpage
 
 ```{r}
-#| label: fig-distributions
-#| fig-cap: "Distribution of each of the six technical variables within each group, on the specimens complete for all six. Panels are free on both axes; bar width is set separately for each panel."
+#| label: fig-qq
+#| fig-cap: "Normal quantile–quantile plots of the six technological variables, on the specimens complete for all six, with one row per variable, named at the left of the row, and one column per group in the order of the legend. In every panel the horizontal axis is the theoretical normal quantile and the vertical axis the sample quantile, and the dashed line passes through the first and third sample quartiles. Inset at the upper left of each panel is a histogram of the same values, plotted in its own right but with its axes suppressed, to give the shape of the distribution alongside its departure from normality. The insets occupy the same corner of every panel at the same size, so their outlines may be compared with one another; their bar heights are scaled within each inset and may not. These are the distributions on which the choice of test set out in the Materials and methods rests: departures from normality are most pronounced for GIUR, which is bounded at one, and for the two count variables, and these three were compared with Kruskal–Wallis and Dunn tests, while thickness, retouched perimeter and edge angle, closer to normal within each group but unequal in variance between groups, were compared with Welch's procedures."
 #| fig-width: 5.9
 #| fig-height: 8.4
 
@@ -310,45 +409,92 @@ dist_long <- variable_long |>
                            levels = unname(variable_labels_bare)),
          Group = factor(group_labels[as.character(Group)],
                         levels = unname(group_labels)))
+lab_colors <- setNames(unname(group_colors), unname(group_labels))
 
-ggplot(dist_long, aes(Value, fill = Group, color = Group)) +
-  geom_histogram(bins = 18, alpha = 0.55, linewidth = 0.25) +
-  facet_wrap(~ Variable + Group, scales = "free", ncol = 3) +
-  scale_fill_manual(values = unname(group_colors)) +
-  scale_color_manual(values = unname(group_colors)) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.08))) +
-  labs(x = NULL, y = "Count (n)") +
-  fig_theme + theme(legend.position = "none",
-                    panel.grid.major = element_blank(),
-                    strip.text = element_text(size = 7))
-```
+# Each cell of the figure is built as its own plot rather than as one facet of
+# a whole, so that a histogram drawn as a plot in its own right can be inset
+# into it. inset_element places the inset as a fraction of the panel, so every
+# one of them lands in the same corner at the same size whatever the scales of
+# the panel it sits in.
+INSET_GAP <- unit(1.4, "mm")     # the same clearance at the left and the top
+inset_theme <- theme_minimal(base_size = 6) +
+  theme(panel.grid = element_blank(),
+        panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.3),
+        axis.title = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.margin = margin(0, 0, 0, 0))
 
-```{r}
-#| label: fig-qq
-#| fig-cap: "Normal quantile–quantile plots for the same variables and groups as the preceding figure. The line passes through the first and third sample quartiles. Departures from it are most pronounced for GIUR, which is bounded at one, and for the two count variables."
-#| fig-width: 5.9
-#| fig-height: 8.4
+# Each cell holds one group only, so a legend built from it has a key for that
+# group and two blank ones, and three such legends would be collected side by
+# side. The legend is therefore carried by a single cell, which is given three
+# fully transparent points, one per group, placed inside its own range so that
+# they move nothing. override.aes makes the keys solid.
+qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
+  d <- dist_long[dist_long$Variable == vlab & dist_long$Group == glab, ]
+  legend_key <- data.frame(
+    x = 0, y = mean(range(d$Value, na.rm = TRUE)),
+    Group = factor(levels(dist_long$Group), levels = levels(dist_long$Group)))
+  p_hist <- ggplot(d, aes(Value)) +
+    geom_histogram(bins = 12, fill = lab_colors[[glab]], alpha = 0.75,
+                   color = "#202124", linewidth = 0.1) +
+    scale_x_continuous(expand = expansion(mult = 0.03)) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.06))) +
+    inset_theme
+  p_qq <- ggplot(d, aes(sample = Value, color = Group)) +
+    stat_qq(size = 0.7, alpha = 0.6, shape = 16, show.legend = FALSE) +
+    stat_qq_line(linewidth = 0.35, color = "#5A5F66", linetype = "dashed",
+                 show.legend = FALSE) +
+    scale_color_manual(values = unname(group_colors),
+                       limits = unname(group_labels), drop = FALSE) +
+    scale_x_continuous(expand = expansion(mult = 0.06)) +
+    # headroom under the inset, which is opaque and would otherwise cover points
+    scale_y_continuous(expand = expansion(mult = c(0.06, 0.34))) +
+    labs(x = NULL, y = ylab) +
+    fig_theme +
+    theme(panel.grid.major = element_blank(),
+          axis.title.y = element_text(size = 8, face = "bold"),
+          axis.text = element_text(size = 6.5)) +
+    guides(color = guide_legend(nrow = 1, override.aes = list(size = 1.8, alpha = 1)))
+  if (carries_legend) {
+    p_qq <- p_qq +
+      geom_point(data = legend_key, aes(x = x, y = y, color = Group),
+                 inherit.aes = FALSE, alpha = 0, size = 0.7, shape = 16,
+                 show.legend = TRUE)
+  }
+  # the gap is given in millimetres rather than as a fraction of the panel, so
+  # that the inset stands the same distance from the left edge as from the top;
+  # the panels are wider than they are tall, and equal fractions would not be
+  # equal distances
+  p_qq + inset_element(p_hist,
+                       left   = INSET_GAP,
+                       bottom = unit(0.63, "npc"),
+                       right  = unit(0.47, "npc"),
+                       top    = unit(1, "npc") - INSET_GAP,
+                       align_to = "panel", ignore_tag = TRUE)
+}
 
-ggplot(dist_long, aes(sample = Value, color = Group)) +
-  stat_qq(size = 0.7, alpha = 0.6, shape = 16) +
-  stat_qq_line(linewidth = 0.35, color = "#5A5F66", linetype = "dashed") +
-  facet_wrap(~ Variable + Group, scales = "free", ncol = 3) +
-  scale_color_manual(values = unname(group_colors)) +
-  labs(x = "Theoretical quantiles", y = "Sample quantiles") +
-  fig_theme + theme(legend.position = "none",
-                    panel.grid.major = element_blank(),
-                    strip.text = element_text(size = 7))
+# the group is carried by the legend along the foot of the figure rather than
+# by a strip over every column, the group names being too long to sit there;
+# the variable names the row from the left
+vars_row <- levels(dist_long$Variable)
+qq_cells <- unlist(lapply(vars_row, function(v) {
+  lapply(seq_along(levels(dist_long$Group)), function(i) {
+    qq_cell(v, levels(dist_long$Group)[i], if (i == 1) v else NULL,
+            carries_legend = (v == vars_row[1] && i == 1))
+  })
+}), recursive = FALSE)
+
+wrap_plots(qq_cells, ncol = 3, guides = "collect") &
+  theme(legend.position = "bottom", legend.margin = margin(0, 0, 0, 0))
 ```
 
 \newpage
 
-# S3. Technological consistency
-
-@tbl-tc-permanova gives the three pairwise comparisons of the technical space in full. The main text quotes the *R*² of each and the range across the two comparisons involving the control group; the sums of squares and degrees of freedom are added here so that the partition of variance can be checked directly. The contrast between the two Quina groups and the two Quina-against-control comparisons is one of nearly two orders of magnitude in explained variance.
-
 ```{r}
 #| label: tbl-tc-permanova
-#| tbl-cap: "Pairwise PERMANOVA on the z-scored six-variable technical space, Euclidean distances, 9,999 permutations. Degrees of freedom are given as model, residual. Adjusted *p* is the Bonferroni adjustment across the three comparisons."
+#| tbl-cap: "Pairwise PERMANOVA on the z-scored six-variable technological space, Euclidean distances, 9,999 permutations. Degrees of freedom are given as model, residual. Adjusted *p* is the Bonferroni adjustment across the three comparisons. The main text quotes the *R*² of each comparison; the sums of squares and degrees of freedom are given here so that the partition of variance can be checked directly."
 
 pw_label <- function(x) {
   parts <- strsplit(x, " vs ", fixed = TRUE)[[1]]
@@ -370,11 +516,11 @@ knitr::kable(tc_perm_out, row.names = FALSE,
                            "pseudo-*F*", "*p*", "Adjusted *p*"))
 ```
 
-@tbl-tc-permdisp reports the accompanying test of dispersion. The upper panel gives the mean distance of each group to its own centroid, the quantity PERMDISP compares, and the lower panel the pairwise tests. Two *p*-values are given for each pair: one from a model fitted to that pair alone, which is the value quoted in the main text, and one from the permutation of the full three-group model. They agree throughout. The two Quina groups are equally dispersed; the control group is appreciably less dispersed than either, which is what establishes that the test can detect a difference in spread on these variables when one is present.
+\newpage
 
 ```{r}
 #| label: tbl-tc-permdisp
-#| tbl-cap: "PERMDISP on the same technical space. Distance to centroid is measured in the z-scored space, so its units are standard deviations. The overall test is the three-group permutation test; the pairwise tests are fitted to each pair in turn, with the *p*-value from the three-group permutation given alongside for comparison."
+#| tbl-cap: "PERMDISP on the same technological space. The upper panel gives the mean distance of each group to its own centroid, the quantity the test compares; distance is measured in the z-scored space, so its units are standard deviations. The lower panel gives the pairwise tests, each fitted to its pair in turn, with the *p*-value from the permutation of the full three-group model alongside for comparison. Columns carry the quantity named first in rows of the upper panel and the quantity named second in rows of the lower."
 
 pdd <- permA$distances |> group_by(Group) |>
   summarise(n = n(), m = mean(distance), s = sd(distance), .groups = "drop") |>
@@ -404,11 +550,11 @@ knitr::kable(pd_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
                            "SE / *p*", "*p* (3-group)"))
 ```
 
-@tbl-tc-univariate gives the univariate tests in full: the omnibus test for each variable, then the three post-hoc comparisons. Every variable separates each Quina group from the control at an adjusted *p* below 0.001, and none separates the two Quina groups from one another. The agreement documented in the main text therefore holds variable by variable and not only in the multivariate space.
+\newpage
 
 ```{r}
 #| label: tbl-tc-univariate
-#| tbl-cap: "Per-variable comparison of the three groups. GIUR, total scars and retouch generations were tested with Kruskal–Wallis and Dunn's post-hoc comparisons, the effect size being epsilon-squared; thickness, retouched perimeter and edge angle with Welch's ANOVA and Welch's *t* post-hoc comparisons. All post-hoc *p*-values carry a Bonferroni adjustment within each variable. ns, not significant."
+#| tbl-cap: "Per-variable comparison of the three groups: the omnibus test for each variable, followed by its three post-hoc comparisons. GIUR, total scars and retouch generations were tested with Kruskal–Wallis and Dunn's post-hoc comparisons, the effect size being epsilon-squared; thickness, retouched perimeter and edge angle with Welch's ANOVA and Welch's *t* post-hoc comparisons. All post-hoc *p*-values carry a Bonferroni adjustment within each variable. ns, not significant."
 
 uni_rows <- function(v) {
   is_kw <- v %in% kw_vars
@@ -449,11 +595,11 @@ knitr::kable(uni_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r")
                            "*p*", "Effect size", ""))
 ```
 
-@tbl-tc-pca gives the full eigenstructure of the ordination shown in the main text, which plots the first two components only. The first component carries `r f(permA$var_explained[1], 1)`% of the variance and loads in the same direction on all six variables, so it is a general axis of reduction intensity: specimens with a high score are thicker, more extensively retouched and carry more scars and more generations of them. The second, at `r f(permA$var_explained[2], 1)`%, separates the extent of retouch around the perimeter from the number of scars, and the remaining four components together account for less than a quarter of the variance.
+\newpage
 
 ```{r}
 #| label: tbl-tc-pca
-#| tbl-cap: "Loadings of all six principal components of the z-scored technical space, with the eigenvalue, the percentage of variance and the cumulative percentage for each. The ordination in the main text plots the first two components."
+#| tbl-cap: "Loadings of all six principal components of the z-scored technological space, with the eigenvalue, the percentage of variance and the cumulative percentage for each. The ordination in the main text plots the first two components. The first loads in the same direction on all six variables and is therefore a general axis of reduction intensity; the remaining four together account for less than a quarter of the variance."
 
 ld <- permA$pca_loadings
 pca_out <- bind_rows(
@@ -470,11 +616,11 @@ knitr::kable(pca_out, row.names = FALSE, align = c("l", rep("r", 6)),
              col.names = c("Variable", paste0("PC", 1:6)))
 ```
 
-The surface collections include pieces recovered from within the area of the Longtan site itself, and their presence could in principle produce the agreement reported here on its own. @tbl-tc-sensitivity repeats both halves of the comparison with those pieces removed. Removing them changes the number of surface specimens from `r permA$n_by_group[["SC_Quina"]]` to `r permC$n_by_group[["SC_Quina"]]` and leaves every conclusion in place: the two Quina groups remain indistinguishable in centroid position and in dispersion, and both remain separated from the control group on both. @fig-sensitivity-pca shows the reduced ordination, which is not visibly different from the full one.
+\newpage
 
 ```{r}
 #| label: tbl-tc-sensitivity
-#| tbl-cap: "Sensitivity of the technological consistency result to the surface specimens collected from within the area of the Longtan site. The full set is the analysis reported in the main text; the reduced set excludes those specimens and is z-scored on its own. PERMANOVA *p*-values carry the Bonferroni adjustment across the three comparisons; PERMDISP rows have no *R*², the test being one of dispersion rather than of explained variance."
+#| tbl-cap: !expr 'sprintf("Sensitivity of the technological consistency result to the surface specimens collected from within the area of the Longtan site. The full set is the analysis reported in the main text, with %d surface specimens; the reduced set excludes those collected within the site area, leaving %d, and is z-scored on its own. PERMANOVA *p*-values carry the Bonferroni adjustment across the three comparisons; PERMDISP rows have no *R*², the test being one of dispersion rather than of explained variance.", permA$n_by_group[["SC_Quina"]], permC$n_by_group[["SC_Quina"]])'
 
 sens_rows <- function(comp_perm, comp_disp) {
   full_p <- tc_pw[tc_pw$Comparison == comp_perm, ]
@@ -503,23 +649,22 @@ knitr::kable(sens_out, row.names = FALSE, align = c("l", "l", rep("r", 6)),
                            "*R*²", "*F*", "*p*"))
 ```
 
+\newpage
+
 ```{r}
 #| label: fig-sensitivity-pca
-#| fig-cap: "Ordination of the technical space with the surface specimens from within the area of the Longtan site removed, to be compared with panel A of the corresponding figure in the main text. Convex hulls enclose each group, filled points mark group centroids, and arrows give the variable loadings."
+#| fig-cap: "Ordination of the technological space with the surface specimens from within the area of the Longtan site removed, to be compared with panel A of the corresponding figure in the main text. (A) Specimen scores, with convex hulls enclosing each group and filled points marking group centroids. (B) Loadings of the six variables on the same two components, drawn on their own axes so that the specimen scores are not overplotted. The dashed circle in (B) is the unit circle: each variable has unit length across all six components, so an arrow reaching the circle would be one accounted for in full by these two."
 #| fig-width: 5.9
-#| fig-height: 4.4
+#| fig-height: 3.7
 
 sc_s <- permC$pca_scores
 ld_s <- permC$pca_loadings
 cent_s <- sc_s |> group_by(Group) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
 hull_s <- sc_s |> group_by(Group) |> filter(n() >= 3) |>
   group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |> ungroup()
-mult_s <- 0.85 * min(max(abs(sc_s$PC1)) / max(abs(ld_s$PC1)),
-                     max(abs(sc_s$PC2)) / max(abs(ld_s$PC2)))
-arr_s <- ld_s |> mutate(x = PC1 * mult_s, y = PC2 * mult_s,
-                        Label = variable_labels_bare[Variable])
+arr_s <- ld_s |> mutate(Label = variable_labels_bare[Variable])
 
-ggplot(sc_s, aes(PC1, PC2, color = Group)) +
+p_scores <- ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
   geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
   geom_polygon(data = hull_s, aes(fill = Group, group = Group), alpha = 0.12, color = NA) +
@@ -527,14 +672,6 @@ ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   geom_point(size = 1.1, alpha = 0.7, shape = 16) +
   geom_point(data = cent_s, aes(cx, cy, fill = Group), shape = 21, color = "#5A5F66",
              size = 2.4, stroke = 0.6, inherit.aes = FALSE) +
-  geom_segment(data = arr_s, aes(x = 0, y = 0, xend = x, yend = y),
-               arrow = arrow(length = unit(0.075, "cm"), type = "open", angle = 22),
-               linewidth = 0.22, color = "#5A5F66", inherit.aes = FALSE) +
-  geom_text_repel(data = arr_s, aes(x = x, y = y, label = Label),
-                  size = 2.2, color = "#3A3D42", bg.color = "white", bg.r = 0.12,
-                  segment.color = "grey55", segment.size = 0.2, min.segment.length = 0.2,
-                  box.padding = 0.35, point.padding = 0.1, max.overlaps = Inf, seed = 2226,
-                  inherit.aes = FALSE) +
   scale_color_manual(values = group_colors, labels = group_labels) +
   scale_fill_manual(values = group_colors, labels = group_labels) +
   scale_x_continuous(expand = expansion(mult = 0.14)) +
@@ -542,22 +679,44 @@ ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   labs(x = sprintf("PC1 (%.1f%%)", permC$var_explained[1]),
        y = sprintf("PC2 (%.1f%%)", permC$var_explained[2])) +
   fig_theme +
-  theme(panel.grid.major = element_blank(), legend.position = "inside",
-        legend.position.inside = c(0.995, 0.995), legend.justification = c(1, 1),
-        legend.background = element_rect(fill = alpha("white", 0.85), color = NA),
-        legend.margin = margin(2, 4, 2, 2)) +
-  guides(fill = "none", color = guide_legend(override.aes = list(size = 1.6, alpha = 1)))
+  theme(panel.grid.major = element_blank(), legend.text = element_text(size = 8)) +
+  guides(fill = "none",
+         color = guide_legend(nrow = 1, override.aes = list(size = 1.8, alpha = 1)))
+
+# the loadings on their own axes, so that the arrows need no arbitrary scaling
+# factor to be readable over the point cloud. Each column of the rotation has
+# unit norm across all six components, so the unit circle is the reference an
+# arrow would reach if these two components accounted for the variable in full.
+circle_ref <- data.frame(theta = seq(0, 2 * pi, length.out = 200)) |>
+  mutate(x = cos(theta), y = sin(theta))
+lim_s <- 1.12
+p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+  geom_path(data = circle_ref, aes(x, y), linewidth = 0.3, color = "grey70",
+            linetype = "dashed", inherit.aes = FALSE) +
+  geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2),
+               arrow = arrow(length = unit(0.075, "cm"), type = "open", angle = 22),
+               linewidth = 0.3, color = "#5A5F66") +
+  geom_text_repel(aes(label = Label), size = 2.2, color = "#3A3D42",
+                  bg.color = "white", bg.r = 0.12, segment.color = "grey55",
+                  segment.size = 0.2, min.segment.length = 0.2, box.padding = 0.35,
+                  point.padding = 0.1, max.overlaps = Inf, seed = 2226) +
+  scale_x_continuous(limits = c(-lim_s, lim_s)) +
+  scale_y_continuous(limits = c(-lim_s, lim_s)) +
+  labs(x = "PC1 loading", y = "PC2 loading") +
+  fig_theme + theme(panel.grid.major = element_blank())
+
+(p_scores + labs(tag = "A")) + (p_loadings + labs(tag = "B")) +
+  plot_layout(widths = c(1.7, 1), guides = "collect") &
+  theme(legend.position = "bottom", legend.margin = margin(0, 0, 0, 0))
 ```
 
 \newpage
 
-# S4. Landscape structure of technological variation
-
-@tbl-locality-matrix is the analysis frame for this section. Each locality enters once, represented by the median of its Quina scrapers on the six technical variables, and the number of specimens behind each median is given in the second column. That column is the main qualification on everything that follows: `r sum(site_df$n_art == 1)` of the `r n_localities` localities are represented by a single specimen, so their medians are single observations, and the locality-level results are correspondingly imprecise. This is the reason the main text reads these analyses from the size of the effects rather than from the significance of the tests.
-
 ```{r}
 #| label: tbl-locality-matrix
-#| tbl-cap: "Locality-level analysis frame. Each row is one locality, with the number of Quina scrapers complete on all six variables and the median of those specimens on each. Distance and height are measured to and above the nearest present-day channel."
+#| tbl-cap: !expr 'sprintf("Locality-level analysis frame. Each row is one locality, with the number of Quina scrapers complete on all six variables and the median of those specimens on each. Distance and height are measured to and above the nearest present-day channel. %d of the %d localities are represented by a single specimen, so their medians are single observations; this is the reason the analyses at this level are read from the size of the effects rather than from the significance of the tests.", sum(site_df$n_art == 1), n_localities)'
 
 loc_out <- site_df |>
   arrange(Basin, desc(n_art), Name) |>
@@ -572,17 +731,14 @@ loc_out <- site_df |>
 knitr::kable(loc_out, row.names = FALSE,
              align = c("l", "l", rep("r", 9)),
              col.names = c("Locality", "Basin", "*n*", "Distance (m)", "Height (m)",
-                           "Thickness (mm)", "Retouched perimeter", "GIUR",
-                           "Total scars", "Retouch generations", "Edge angle (°)"))
+                           unname(variable_labels)))
 ```
 
-@tbl-landscape-permanova gives the landscape models in full. None of the four variables accounts for an appreciable share of the variation in the six technical measures, and the two continuous gradients behave the same way when they are coarsened into bands, which is the check on whether a monotone trend has been obscured by treating a skewed variable linearly. Height above the channel is strongly right-skewed, the three hilltop localities standing far above the terrace sequence, and the banded result confirms that this is not what is suppressing a trend.
-
-One result in this table deserves comment. The two basins do not differ in the position of their centroids (*R*² = `r f(ls_basin["R2"], 3)`, *p* `r fp(ls_basin["p"])`) but do differ in dispersion (*F* = `r f(ls_basin_pd[["F"]], 2)`, *p* `r fp(ls_basin_pd[["p"]])`), the Binchuan localities being the more variable of the two. Given that Heqing contributes only `r n_basin_site[["Heqing"]]` localities against `r n_basin_site[["Binchuan"]]`, and that a dispersion estimate from five points is unstable, we do not read this as evidence of a difference in technological variability between the basins. It is recorded here rather than in the main text because it bears on how the basin *R*² should be read: a small *R*² with unequal dispersion means overlapping groups, not two tight clusters that happen to coincide.
+\newpage
 
 ```{r}
 #| label: tbl-landscape-permanova
-#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored six-variable space with 9,999 permutations, together with the test of dispersion for the one categorical variable. The banded rows repeat the two continuous gradients as ordered categories, as a check on whether a monotone trend has been missed."
+#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored six-variable space with 9,999 permutations, together with the test of dispersion for the one categorical variable. The three continuous variables enter at their measured values and are nowhere discretised, so no cut point of ours affects any result here. The two basins do not differ in the position of their centroids but do differ in dispersion; with only five localities in Heqing a dispersion estimate is unstable, and this is recorded not as a difference in technological variability between the basins but as an indication that the small basin *R*² reflects overlapping groups rather than two coincident clusters."
 
 ls_row <- function(label, v, indent = TRUE) {
   data.frame(Term = if (indent) paste0(IND, label) else sprintf("**%s**", label),
@@ -596,30 +752,27 @@ ls_out <- bind_rows(
                  n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]]), ls_basin),
   data.frame(Term = paste0(IND, "PERMDISP"), Df = "", SS = "", R2 = "",
              F = f(ls_basin_pd[["F"]], 3), p = fpt(ls_basin_pd[["p"]])),
-  data.frame(Term = "**Height above channel**", Df = "", SS = "", R2 = "", F = "", p = ""),
-  ls_row("continuous (m)", ls_height),
-  ls_row(sprintf("bands ≤40 / 40–60 / >60 m (n = %d/%d/%d)",
-                 n_hbin[[1]], n_hbin[[2]], n_hbin[[3]]), ls_hbin),
-  data.frame(Term = "**Distance to channel**", Df = "", SS = "", R2 = "", F = "", p = ""),
-  ls_row("continuous (m)", ls_dist),
-  data.frame(Term = "**Assemblage size**", Df = "", SS = "", R2 = "", F = "", p = ""),
-  ls_row("continuous (n specimens)", ls_size),
-  ls_row(sprintf("classes 1 / 2–3 / 4+ (n = %d/%d/%d)",
-                 n_sbin[[1]], n_sbin[[2]], n_sbin[[3]]), ls_sbin))
+  ls_row("Height above channel (m)", ls_height, indent = FALSE),
+  ls_row("Distance to channel (m)", ls_dist, indent = FALSE),
+  ls_row("Assemblage size (n specimens)", ls_size, indent = FALSE))
 
 knitr::kable(ls_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
              col.names = c("Landscape variable", "*df*", "SS", "*R*²", "pseudo-*F*", "*p*"))
 ```
 
-@fig-site-pca and @fig-site-boxplots show what those *R*² values look like. In the ordination the localities of the two basins, of the three height bands and of the three size classes are thoroughly interleaved, with no separation by any of the three schemes; in the boxplots the distributions overlap on every variable under every scheme. The technological character of a locality's Quina scrapers is, on this evidence, largely independent of where in the landscape the locality sits.
+\newpage
 
 ```{r}
 #| label: fig-site-pca
-#| fig-cap: "Locality-level ordination of the six technical measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel and (C) assemblage size. The three panels are the same ordination and differ only in the grouping shown. Hulls enclose each group and filled points mark group centroids."
+#| fig-cap: !expr 'sprintf("Locality-level ordination of the six technological measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel, (C) assemblage size and (D) distance to the nearest channel. The four panels are the same ordination and differ only in the landscape variable shown, which is named in the legend beneath each. The three continuous variables are carried by the colour gradient at their measured values, the form in which they enter every test reported here; the gradient runs between the two colours that distinguish the basins in (A), the colour scale is square-root, all three being right-skewed, and the legend ticks are in the original units. Behind the localities of (B) to (D), on that same scale, is a thin-plate spline of the variable fitted over the ordination plane and clipped to the area the localities cover. The smooth was free to be shrunk out of the model altogether, and in every case it very nearly was: the surfaces explain at most %.1f%% of the deviance, none of them significant (*p* >= %.2f). A landscape gradient would show as colour running in a direction across a panel, and none does. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids.", surf_dev_max, surf_p_min)'
 #| fig-width: 5.9
-#| fig-height: 2.5
+#| fig-height: 5.8
 
-site_panel <- function(grp, cols, title) {
+# Basin is the only categorical landscape variable; the other three enter the
+# tests at their measured values, so they are shown here as gradients rather
+# than in classes of our own choosing. The landscape variable is named in the
+# legend under each panel rather than in a title over it.
+site_panel <- function(grp, cols, legend_title) {
   d <- site_scores |> mutate(G = .data[[grp]]) |> filter(!is.na(G))
   cen <- d |> group_by(G) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
   hul <- d |> group_by(G) |> filter(n() >= 3) |>
@@ -628,78 +781,104 @@ site_panel <- function(grp, cols, title) {
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_polygon(data = hul, aes(fill = G, group = G), alpha = 0.12, color = NA) +
-    geom_point(size = 1.3, alpha = 0.85, shape = 16) +
+    geom_point(size = 1.5, alpha = 0.85, shape = 16) +
     geom_point(data = cen, aes(cx, cy, fill = G), shape = 21, color = "#5A5F66",
                size = 2.2, stroke = 0.5, inherit.aes = FALSE) +
-    scale_color_manual(values = cols) + scale_fill_manual(values = cols) +
+    scale_color_manual(values = cols, name = legend_title) +
+    scale_fill_manual(values = cols, name = legend_title) +
     labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
-         y = sprintf("PC2 (%.1f%%)", site_vexp[2]), title = title) +
+         y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
     fig_theme +
     theme(panel.grid.major = element_blank(), legend.position = "bottom",
-          plot.title = element_text(size = 8.5, face = "bold"),
+          legend.title.position = "top",
+          legend.title = element_text(size = 7.5, hjust = 0.5),
           legend.key.size = unit(7, "pt"), legend.text = element_text(size = 7),
           legend.margin = margin(0, 0, 0, 0)) +
-    guides(fill = "none", color = guide_legend(nrow = 1, override.aes = list(size = 1.5)))
+    guides(fill = "none", color = guide_legend(nrow = 1, override.aes = list(size = 1.6)))
 }
-(site_panel("Basin", basin_colors, "Basin") + labs(tag = "A")) +
-  (site_panel("H_bin", hbin_colors, "Height above channel (m)") + labs(tag = "B") + labs(y = NULL)) +
-  (site_panel("S_bin", sizebin_colors, "Assemblage size (n)") + labs(tag = "C") + labs(y = NULL))
+# the gradient runs between the blue and the pink of the shared palette, the
+# same two colours that distinguish the basins in panel A, and carries both the
+# fitted surface and the localities drawn over it. A square-root scale:
+# all three continuous variables are right-skewed (18 of the localities yielded
+# one or two specimens, and three sit far above the terrace sequence), so a
+# linear ramp would leave most points one colour.
+site_grad_panel <- function(var, legend_title, breaks) {
+  s <- surfaces[[var]]
+  # both scales carry the same limits, so that the flat surface is drawn at the
+  # colour its value deserves and not stretched across the whole ramp; the
+  # background is lightened, which keeps a point of average value visible
+  # against it
+  lims <- range(site_scores[[var]], na.rm = TRUE)
+  ggplot(site_scores, aes(PC1, PC2, color = .data[[var]])) +
+    geom_raster(data = s$grid, aes(PC1, PC2, fill = fit), alpha = 0.5,
+                inherit.aes = FALSE) +
+    geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+    geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+    geom_point(size = 1.8, shape = 16) +
+    geom_text(data = data.frame(x = -Inf, y = Inf), aes(x, y), label = s$label,
+              parse = TRUE, hjust = -0.04, vjust = 1.6, size = 1.9,
+              color = "#202124", inherit.aes = FALSE) +
+    scale_fill_gradient(low = grad_low, high = grad_high, transform = "sqrt",
+                        limits = lims, oob = scales::squish,
+                        na.value = "transparent", guide = "none") +
+    scale_color_gradient(low = grad_low, high = grad_high, name = legend_title,
+                         transform = "sqrt", breaks = breaks,
+                         limits = lims, oob = scales::squish) +
+    labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
+         y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
+    fig_theme +
+    theme(panel.grid.major = element_blank(), legend.position = "bottom",
+          legend.title.position = "top",
+          legend.title = element_text(size = 7.5, hjust = 0.5),
+          legend.text = element_text(size = 7),
+          legend.key.width = unit(34, "pt"), legend.key.height = unit(5, "pt"),
+          legend.margin = margin(0, 0, 0, 0)) +
+    guides(color = guide_colourbar())
+}
+
+(site_panel("Basin", basin_colors, "Basin") + labs(tag = "A", x = NULL)) +
+  (site_grad_panel("Height_above_river", "Height above channel (m)",
+                   c(30, 60, 100, 150)) + labs(tag = "B", x = NULL, y = NULL)) +
+  (site_grad_panel("Site_size", "Assemblage size (n specimens)",
+                   c(1, 3, 10, 30)) + labs(tag = "C")) +
+  (site_grad_panel("Distance_to_water", "Distance to channel (m)",
+                   c(250, 500, 1000, 2000)) + labs(tag = "D", y = NULL)) +
+  plot_layout(ncol = 2)
 ```
 
-```{r}
-#| label: fig-site-boxplots
-#| fig-cap: "Locality medians on each of the six technical measures, under each of the three grouping schemes. Points are individual localities, boxes give the median and quartiles of the locality medians, and the black point marks the group mean."
-#| fig-width: 5.9
-#| fig-height: 7.6
-
-box_long <- bind_rows(
-  site_bands |> mutate(Scheme = "Basin", G = as.character(Basin)),
-  site_bands |> mutate(Scheme = "Height above channel (m)", G = as.character(H_bin)),
-  site_bands |> mutate(Scheme = "Assemblage size (n)", G = as.character(S_bin))) |>
-  filter(!is.na(G)) |>
-  select(Scheme, G, all_of(variables)) |>
-  pivot_longer(all_of(variables), names_to = "Variable", values_to = "Value") |>
-  mutate(Scheme = factor(Scheme, levels = c("Basin", "Height above channel (m)",
-                                            "Assemblage size (n)")),
-         G = factor(G, levels = c(names(basin_colors), h_labels, s_labels)),
-         Variable = factor(variable_labels[Variable], levels = unname(variable_labels)))
-
-ggplot(box_long, aes(G, Value)) +
-  geom_jitter(aes(color = G), width = 0.22, height = 0, size = 0.9, alpha = 0.6, shape = 16) +
-  geom_boxplot(color = "black", fill = NA, width = 0.55, linewidth = 0.4, outlier.shape = NA) +
-  stat_summary(fun = mean, geom = "point", shape = 16, size = 1.3, color = "black") +
-  facet_grid(Variable ~ Scheme, scales = "free") +
-  scale_color_manual(values = c(basin_colors, hbin_colors, sizebin_colors)) +
-  labs(x = NULL, y = NULL) +
-  fig_theme + theme(legend.position = "none", panel.grid.major.x = element_blank(),
-                    strip.text.y = element_text(size = 7, angle = -90))
-```
-
-@fig-distance-scatter shows the one pattern in this section that runs in a consistent direction. All six measures increase with distance to the nearest channel, and although no individual correlation reaches significance after adjustment, the concordance of the six is the observation the main text records as a hypothesis for landscape-scale work. The scatter also shows why it can be no more than that: the localities are few, several of the medians rest on a single specimen, and the range of distances is dominated by a small number of localities lying well beyond the rest.
+\newpage
 
 ```{r}
-#| label: fig-distance-scatter
-#| fig-cap: "Each technological measure against distance to the nearest present-day channel, at the scale of the locality. Each panel gives Spearman's ρ with the Bonferroni-adjusted *p*-value across the six tests. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship."
+#| label: fig-landscape-scatter
+#| fig-cap: "Each of the six technological measures against each of the three continuous landscape variables, at the scale of the locality: one row per measure, one column per landscape variable, all at measured values. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship. Each panel gives Spearman's ρ with its *p*-value, adjusted by the Bonferroni procedure within each column, every column being one family of six tests; the distance column is the family reported in the main text. All six coefficients against distance are positive, but no coefficient anywhere in the figure reaches significance after adjustment: the localities are few and several of the medians rest on a single specimen."
 #| fig-width: 5.9
-#| fig-height: 4.2
+#| fig-height: 7.8
 
-sc_long <- site_df |> select(Distance_to_water, all_of(variables)) |>
-  pivot_longer(all_of(variables), names_to = "Variable", values_to = "Value") |>
-  mutate(Variable = factor(variable_labels[Variable], levels = unname(variable_labels)))
-sc_lab <- ls_dist_cor |>
-  mutate(Variable = factor(variable_labels[variable], levels = unname(variable_labels)),
+# the three landscape variables enter as measured, so the display is a scatter
+# throughout; nothing here is binned
+grid_long <- site_df |>
+  select(all_of(c(names(land_vars), variables))) |>
+  pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
+  pivot_longer(all_of(names(land_vars)), names_to = "Landscape", values_to = "X") |>
+  mutate(Measure = factor(variable_labels[Measure], levels = unname(variable_labels)),
+         Landscape = factor(land_vars[Landscape], levels = unname(land_vars)))
+
+rho_lab <- land_cor |>
+  mutate(Measure = factor(variable_labels[variable], levels = unname(variable_labels)),
+         Landscape = factor(land_vars[Landscape], levels = unname(land_vars)),
          label = sprintf("rho == %.2f * ',' ~ %s", rho,
                          ifelse(p_adj < 0.001, "italic(p) < 0.001",
                                 sprintf("italic(p) == %.3f", p_adj))))
 
-ggplot(sc_long, aes(Distance_to_water, Value)) +
+ggplot(grid_long, aes(X, Value)) +
   geom_smooth(method = "lm", formula = y ~ x, se = TRUE,
               color = "#6BA8CE", fill = "#CBDCEA", linewidth = 0.6, linetype = "dashed") +
-  geom_point(color = "#565693", alpha = 0.65, size = 1.4, shape = 16) +
-  geom_text(data = sc_lab, aes(x = -Inf, y = Inf, label = label), parse = TRUE,
-            hjust = -0.06, vjust = 1.35, size = 2.3, color = "#202124", inherit.aes = FALSE) +
-  facet_wrap(~ Variable, scales = "free_y", ncol = 3) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.16))) +
-  labs(x = "Distance to nearest channel (m)", y = NULL) +
-  fig_theme + theme(panel.grid.major = element_blank())
+  geom_point(color = "#565693", alpha = 0.65, size = 1.2, shape = 16) +
+  geom_text(data = rho_lab, aes(x = -Inf, y = Inf, label = label), parse = TRUE,
+            hjust = -0.05, vjust = 1.3, size = 2, color = "#202124", inherit.aes = FALSE) +
+  facet_grid(Measure ~ Landscape, scales = "free") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.18))) +
+  labs(x = NULL, y = NULL) +
+  fig_theme + theme(panel.grid.major = element_blank(),
+                    strip.text.y = element_text(size = 7, angle = -90))
 ```
