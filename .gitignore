@@ -16,3 +16,5 @@ asset/
 # Python caches
 __pycache__/
 *.pyc
+.Rproj.user
+.Rproj.user

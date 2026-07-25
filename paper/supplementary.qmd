@@ -224,13 +224,13 @@ surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
 
 This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and the code needed to regenerate this document are deposited with the research compendium.
 
-The tables and figures follow the order of the Results: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Within each of these, the complete test tables come first, then the diagnostics, then the sensitivity analyses. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
+The tables and figures follow the order of the Results: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
 
 \newpage
 
 ```{r}
 #| label: tbl-composition
-#| tbl-cap: "Raw material composition of the river-bar cobbles and of the surface-collected Quina scrapers, by valley. Cells give the count with the percentage of the row in parentheses. Artefacts are restricted to the localities that carry a valley assignment, as in the corresponding figure of the main text, which is why the artefact total falls slightly below the whole scraper assemblage."
+#| tbl-cap: "Raw material composition of the river-bar cobbles and of the surface-collected Quina scrapers, by valley. Cells give the count with the percentage of the row in parentheses."
 
 comp_tbl <- comp_fig |>
   mutate(cell = ifelse(n == 0, "0", sprintf("%d (%s%%)", n, f(percent, 1)))) |>
@@ -259,7 +259,7 @@ knitr::kable(comp_out, row.names = FALSE,
 
 ```{r}
 #| label: tbl-electivity
-#| tbl-cap: "Jacobs' electivity index for every raw material. Availability is the pooled gravel survey and use is the whole surface Quina scraper assemblage, as in the main text. *D* runs from −1, complete avoidance, through 0, use in proportion to availability, to +1, complete selection. † Andesite does not occur in the cobble survey, so its index takes the limiting value +1 and records non-local procurement rather than a measured preference."
+#| tbl-cap: "Jacobs' electivity index for every raw material. *D* runs from −1, complete avoidance, through 0, use in proportion to availability, to +1, complete selection."
 
 elect_tbl <- tibble(Material = material_levels) |>
   left_join(comp_avail |> transmute(Material, an = n, ap = p), by = "Material") |>
