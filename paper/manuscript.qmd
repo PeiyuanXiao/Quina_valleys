@@ -195,7 +195,7 @@ knitr::kable(loc_fmt, row.names = FALSE,
 
 ## Survey and analysis of raw materials
 
-To establish what raw material was locally available, gravel bars were sampled at five points along three river channels. At each point an area of 1–2 m² was cleared and every cobble longer than 30 mm exposed at the surface was recorded. For each cobble we recorded length, width and thickness (mm), roundness on a four-point scale (0–3, from least to most rounded) and shape (sub-oval, tabular or irregular). These records give the relative abundance of each lithology on the gravel bars.
+To establish what raw material was locally available, gravel bars were sampled at five points along three river channels. At each point an area of 1–2 m² was cleared and every cobble longer than 30 mm exposed at the surface was recorded. For each cobble we recorded length, width and thickness (mm), roundness on a four-point scale (angular, subangular, subrounded, well-rounded) and shape (sub-oval, tabular or irregular). These records give the relative abundance of each lithology on the gravel bars. Because the shape terms of the field record mix geometric form with regularity, form was not analysed from them but derived from the axes themselves: the three measurements of each cobble were sorted into *a* \>= *b* \>= *c* and classified on the ratios *b*/*a* and *c*/*b* at the thresholds of 2/3 that define Zingg's four classes, equant, oblate, prolate and bladed [-@zingg1935], with the maximum projection sphericity (*c*²/*ab*)^1/3^ of Sneed and Folk [-@sneed1958] reported alongside as the continuous form of the same geometry. Form was compared between lithologies by PERMANOVA on Euclidean distances of the two z-scored ratios, so that the comparison rests on the ratios as measured rather than on the classes into which they fall, and size and sphericity with Mann–Whitney rank sum tests.
 
 To characterise the internal properties of the dominant raw material, thin sections were prepared from five trachyte cobbles and examined petrographically, with mineral composition determined by energy-dispersive spectroscopy. Identifications were carried out by the Guangxi Institute of Geological Survey and the China University of Geosciences (Wuhan). The raw material of each artefact was assigned macroscopically to the same lithological categories, using the surveyed cobbles as a reference collection.
 
@@ -235,9 +235,9 @@ That expectation is not met. The raw material composition of the Quina scrapers 
 
 ```{r}
 #| label: fig-raw-material-composition
-#| fig-cap: "aw material composition of river-bar cobbles and surface-collected Quina scrapers across the three valleys. Each row of stacked bars represents a 100% composition: the upper row shows the lithology of available river cobbles, and the lower row shows the lithology of surface-collected Quina scrapers. Per-cell sample sizes are indicated by bar charts on the right."
+#| fig-cap: !expr 'sprintf("Raw material availability, and the properties on which the selection did and did not turn. (A) Raw material composition of river-bar cobbles and surface-collected Quina scrapers across the three valleys. Each row of stacked bars represents a 100%% composition: the upper row shows the lithology of available river cobbles, and the lower row shows the lithology of surface-collected Quina scrapers. Per-cell sample sizes are indicated by bar charts on the right. (B) and (C) compare the two lithologies present in quantity, trachyte (*n* = %d) and sandstone (*n* = %d), on the two properties of a cobble that can be measured from the survey record. (B) Size, the geometric mean of length, breadth and thickness of a cobble, on a logarithmic axis, these sizes being right-skewed: each point is one cobble, the box gives the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled circle is the geometric mean quoted in the text. (C) Form, on the two axial ratios of Zingg [-@zingg1935]. The three measurements of each cobble are sorted before they are used, so that length, breadth and thickness here are the longest, intermediate and shortest axis of that cobble rather than the columns as recorded; five records needed reordering. The dashed lines are the thresholds at 2/3 and divide the four classes named in the corners, and the colours are those of (A), trachyte pink and sandstone blue. The test is run on the ratios themselves rather than on the four classes: PERMANOVA on Euclidean distances of the two z-scored ratios, %s permutations (*R*² = %s, pseudo-*F* = %s). The maximum projection sphericity of Sneed and Folk [-@sneed1958] is the continuous form of the same geometry and gives the same answer (medians %s and %s, *U* = %s, *p* %s). The bracket in (B) is a Mann–Whitney rank sum test and carries the same significance marks as the other figures of this paper (ns / * / ** / *** / ****). Trachyte is the larger of the two and is not distinguishable from it in form.", nT, nS, format(PERM, big.mark = ","), f(form_R2, 3), f(form_F, 2), f(sph_med[["Trachyte"]], 2), f(sph_med[["Sandstone"]], 2), f(sph_U, 0), fp(sph_p))'
 #| fig-width: 5.9
-#| fig-height: 4.25
+#| fig-height: 6.6
 
 # port of scripts/figures/raw_material_composition_figure.R
 # the composition data (comp_fig, counts_fig) are assembled in _analysis.R, so
@@ -256,12 +256,13 @@ fig_theme <- theme_minimal(base_size = 9) +
         strip.background = element_rect(fill = "#E8E8E8", color = NA),
         legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
         legend.key = element_blank(), legend.key.size = unit(10, "pt"),
+        plot.tag = element_text(face = "bold", size = 11),
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
 valley_order <- rev(river_levels)
 p_comp <- ggplot(comp_fig, aes(percent, river_ID, fill = Material)) +
-  geom_col(width = 0.72, color = "white", linewidth = 0.3) +
+  geom_col(width = 0.72, color = "white", linewidth = 0.3, alpha = 0.8) +
   geom_text(data = subset(comp_fig, percent >= 7),
             aes(x = pos, label = sprintf("%.0f%%", percent)),
             size = 2.5, colour = "white", fontface = "bold") +
@@ -270,8 +271,9 @@ p_comp <- ggplot(comp_fig, aes(percent, river_ID, fill = Material)) +
   scale_y_discrete(limits = valley_order) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.02)),
                      breaks = seq(0, 100, 25), labels = function(x) paste0(x, "%")) +
-  labs(x = "Percentage", y = "Valley", fill = "Raw material") +
-  fig_theme + theme(panel.grid.major = element_blank(), legend.position = "bottom") +
+  labs(x = "Percentage", y = "Valley", fill = NULL) +
+  fig_theme + theme(panel.grid.major = element_blank(), legend.position = "bottom",
+                    legend.title = element_blank()) +
   guides(fill = guide_legend(nrow = 1))
 p_n <- ggplot(counts_fig, aes(N, river_ID)) +
   geom_col(width = 0.62, fill = "#8A8F96") +
@@ -282,11 +284,72 @@ p_n <- ggplot(counts_fig, aes(N, river_ID)) +
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
         strip.text = element_blank(), strip.background = element_blank())
 
-p_comp + p_n + plot_layout(widths = c(3.4, 1), guides = "collect") &
+# (B) the size comparison quoted in the text below: the two lithologies present
+# in quantity, on a log axis because the sizes are right-skewed and because the
+# quantity reported for each is a geometric mean, which the log axis places
+# where the eye expects a mean to sit
+size_gm  <- sz |> group_by(G) |> summarise(size = gm(size), .groups = "drop")
+size_br  <- max(sz$size) * 1.06        # bracket height, clear of the largest clast
+p_size <- ggplot(sz, aes(G, size)) +
+  geom_jitter(aes(color = G), size = 0.9, alpha = 0.35, shape = 16,
+              position = position_jitter(width = 0.24, height = 0, seed = 2226)) +
+  geom_boxplot(color = "#202124", fill = NA, width = 0.55, linewidth = 0.4,
+               outlier.shape = NA) +
+  geom_point(data = size_gm, shape = 16, size = 1.8, color = "#202124") +
+  annotate("segment", x = 1, xend = 2, y = size_br, yend = size_br,
+           linewidth = 0.3, color = "#202124") +
+  annotate("segment", x = c(1, 2), xend = c(1, 2), y = size_br, yend = size_br * 0.94,
+           linewidth = 0.3, color = "#202124") +
+  annotate("text", x = 1.5, y = size_br, label = psig(size_p),
+           vjust = 0.1, size = 2.8, color = "#202124") +
+  scale_color_manual(values = material_colors_fig, guide = "none") +
+  scale_x_discrete(limits = c("Trachyte", "Sandstone")) +
+  scale_y_log10(breaks = c(25, 50, 100, 200, 400),
+                expand = expansion(mult = c(0.05, 0.10))) +
+  labs(x = NULL, y = "Clast size (mm, log scale)") +
+  fig_theme + theme(panel.grid.major = element_blank(),
+                    axis.text.x = element_text(angle = 20, hjust = 1, size = 7.5))
+
+# (C) form, on the two axial ratios of Zingg: b/a against c/b, with his 2/3
+# thresholds dividing the four classes. Nothing is binned for the test either,
+# which is run on these same classes. Colours are those of panel A, so the
+# panel needs no legend of its own.
+zingg_lab <- data.frame(
+  ba = c(0.99, 0.99, 0.01, 0.01), cb = c(0.99, 0.02, 0.99, 0.02),
+  h = c(1, 1, 0, 0), v = c(1, 0, 1, 0),
+  label = c("Equant", "Oblate", "Prolate", "Bladed"))
+form_stat <- if (form_p < 0.001) '"PERMANOVA:" ~ italic(p) < 0.001' else
+  sprintf('"PERMANOVA:" ~ italic(p) == "%s"', f(form_p, 3))
+p_form <- ggplot(sz, aes(ba, cb)) +
+  # the thresholds are drawn only across the data, so that they do not run up
+  # into the strip of panel kept clear for the statistic
+  annotate("segment", x = 0, xend = 1, y = 2 / 3, yend = 2 / 3,
+           linetype = "dashed", linewidth = 0.3, color = "#5A5F66") +
+  annotate("segment", x = 2 / 3, xend = 2 / 3, y = 0, yend = 1,
+           linetype = "dashed", linewidth = 0.3, color = "#5A5F66") +
+  geom_point(aes(color = G), size = 1.1, alpha = 0.5, shape = 16) +
+  geom_text(data = zingg_lab, aes(ba, cb, label = label, hjust = h, vjust = v),
+            inherit.aes = FALSE, size = 2.1, color = "#5A5F66") +
+  annotate("text", x = 0.5, y = 1.12, label = form_stat, parse = TRUE,
+           size = 2.4, color = "#202124") +
+  scale_color_manual(values = material_colors_fig, guide = "none") +
+  scale_x_continuous(limits = c(0, 1), breaks = c(0, 1 / 3, 2 / 3, 1),
+                     labels = c("0", "1/3", "2/3", "1")) +
+  scale_y_continuous(limits = c(0, 1.16), breaks = c(0, 1 / 3, 2 / 3, 1),
+                     labels = c("0", "1/3", "2/3", "1")) +
+  labs(x = "Breadth / Length", y = "Thickness / Breadth") +
+  fig_theme + theme(panel.grid.major = element_blank())
+
+row_comp <- (p_comp + labs(tag = "A")) + p_n +
+  plot_layout(widths = c(3.4, 1), guides = "collect") &
   theme(legend.position = "bottom")
+row_prop <- (p_size + labs(tag = "B")) + (p_form + labs(tag = "C")) +
+  plot_layout(widths = c(1, 1.5))
+
+row_comp / row_prop + plot_layout(heights = c(4.25, 2.6))
 ```
 
-Three properties of trachyte account for this preference. First, size: trachyte cobbles (GM = `r f(gmT, 1)` mm) are significantly larger than sandstone (GM = `r f(gmS, 1)` mm) (*U* = `r f(size_U, 0)`, *p* `r fp(size_p)`), giving a larger initial volume from which to sustain prolonged reduction. Second, shape: `r f(trach_tabular_pct, 1)`% of trachyte cobbles are tabular and `r f(trach_irreg_pct, 1)`% irregular, these angular forms offer the acute natural edges and flat surfaces from which removals can be struck. Third, fracture properties: in thin section the trachyte has a porphyritic texture, with euhedral tabular to prismatic K-feldspar phenocrysts (c. 0.3–5.0 mm, c. 1–10% of the rock) set in a groundmass of K-feldspar microlites, chlorite or altered mafic minerals and magnetite, together with about 50% devitrified glass, forming a intersertal texture (\[\[Fig. X\]\]). A groundmass of this kind is likely to promote regular conchoidal fracture and hence sharp, continuous edges, while the crystalline fraction may give the material greater mechanical strength, and so greater durability in use, than a wholly glassy rock.
+Two properties of the trachyte account for this preference, and one does not. First, size: trachyte cobbles (GM = `r f(gmT, 1)` mm) are significantly larger than sandstone (GM = `r f(gmS, 1)` mm) (*U* = `r f(size_U, 0)`, *p* `r fp(size_p)`), giving a larger initial volume from which to sustain prolonged reduction. Second, form, which does not: on the two axial ratios of Zingg [-@zingg1935], the two lithologies are indistinguishable (*R*² = `r f(form_R2, 3)`, pseudo-*F* = `r f(form_F, 2)`, *p* `r fp(form_p)`), so that the selection of trachyte cannot have turned on the shape of the cobbles available (@fig-raw-material-composition). Third, fracture properties: in thin section the trachyte has a porphyritic texture, with euhedral tabular to prismatic K-feldspar phenocrysts (c. 0.3–5.0 mm, c. 1–10% of the rock) set in a groundmass of K-feldspar microlites, chlorite or altered mafic minerals and magnetite, together with about 50% devitrified glass, forming a intersertal texture (\[\[Fig. X\]\]). A groundmass of this kind, part glass and part microlite, is likely to promote regular and predictable conchoidal fracture, and hence the long, continuous and acute edges on which the retouch depends, while the crystalline fraction may give the material greater resistance to edge fracture, and so greater durability in use, than a wholly glassy rock. Durability is what a system of this kind requires: its tools are kept in use and resharpened repeatedly rather than discarded and replaced, so the edge must survive not one episode of work but many.
 
 The advantage of trachyte therefore lies less in its availability than in what it affords: cobbles large and angular enough to be knapped, in a material whose texture combines predictable fracture with resistance to edge broken. These are the properties on which prolonged resharpening depends, and they are the same properties that the Quina system is understood to require.
 
@@ -295,6 +358,8 @@ The advantage of trachyte therefore lies less in its availability than in what i
 ### Techno-typological features
 
 The `r n_scraper` Quina scrapers from the surface collections are consistent with the Quina technological concept in each of its three dimensions: in the blanks selection, in the retouch strategy, in the ramification (@tbl-retouch-products).
+
+![Quina scrapers from the surface collections. (A) to (F) are six specimens, each shown in several views with its cross-section in grey; the outline in (C) marks \[\[what the outline marks\]\] and the diagram in (F) gives the direction of the removals. Scale bars are 50 mm except in (D), where the bar is 20 mm. \[\[Specimen numbers and localities to be added.\]\]](../figures/quina_scraper.png){#fig-quina-scrapers width="5.9in"}
 
 ```{r}
 #| label: tbl-retouch-products

@@ -213,13 +213,47 @@ surf_one <- function(v, n = 250) {
     PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
   grd$fit <- as.numeric(predict(g, newdata = grd))
   grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
-  dev <- 100 * s$dev.expl; pv <- s$s.table[1, "p-value"]
-  list(grid = grd, dev = dev, p = pv,
-       label = sprintf("'Deviance explained %.1f%%, '*italic(p)==%.2f", dev, pv))
+  # the fit of each surface is reported in the caption rather than in the panel
+  list(grid = grd, dev = 100 * s$dev.expl, p = s$s.table[1, "p-value"])
 }
 surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
 surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
 surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
+
+# ---- 7. Each measure between the two basins -------------------------------
+# Basin is the categorical landscape variable, so it cannot enter the scatter
+# figure with the other three; these are the univariate comparisons behind the
+# boxplot that carries it. bdf is the frame the basin PERMANOVA is fitted on in
+# _analysis.R, so figure and test cannot disagree. Each measure is compared with
+# a Mann-Whitney rank sum test carrying the rank-biserial r; the six are one
+# family and take a Bonferroni adjustment, as each correlation family above
+# does. The figure shows the outcome as the bracket the main-text boxplots use,
+# so the numbers themselves are reported in its caption.
+basin_cmp <- bind_rows(lapply(variables, function(v) {
+  d <- bdf[is.finite(bdf[[v]]), c("Basin", v)]
+  names(d) <- c("Basin", "Value")
+  d$Basin <- droplevels(d$Basin)
+  wt <- wilcox_test(d, Value ~ Basin)
+  data.frame(variable = v, p = wt$p,
+             r = suppressWarnings(wilcox_effsize(d, Value ~ Basin))$effsize[1])
+}))
+basin_cmp$p_adj <- p.adjust(basin_cmp$p, "bonferroni")
+basin_cmp <- add_significance(basin_cmp, p.col = "p_adj", output.col = "p.adj.signif")
+basin_r_max <- basin_cmp[which.max(basin_cmp$r), ]
+# the label of that measure, set to run inside a sentence: an ordinary name is
+# lowercased, an abbreviation such as GIUR left as it stands
+basin_r_lab <- variable_labels_bare[[basin_r_max$variable]]
+if (grepl("^[A-Z][a-z]", basin_r_lab))
+  basin_r_lab <- paste0(tolower(substr(basin_r_lab, 1, 1)), substring(basin_r_lab, 2))
+# the boxes are wider in Binchuan on most measures, which is what the
+# significant dispersion test records; counted here rather than asserted
+basin_iqr_wider <- sum(vapply(variables, function(v) {
+  q <- tapply(bdf[[v]], droplevels(bdf$Basin), IQR, na.rm = TRUE)
+  q[["Binchuan"]] > q[["Heqing"]]
+}, logical(1)))
+# spelled out, the count being small enough to read as a word in the caption
+basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
+                    "six")[basin_iqr_wider + 1]
 ```
 
 This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and the code needed to regenerate this document are deposited with the research compendium.
@@ -815,9 +849,6 @@ site_grad_panel <- function(var, legend_title, breaks) {
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_point(size = 1.8, shape = 16) +
-    geom_text(data = data.frame(x = -Inf, y = Inf), aes(x, y), label = s$label,
-              parse = TRUE, hjust = -0.04, vjust = 1.6, size = 1.9,
-              color = "#202124", inherit.aes = FALSE) +
     scale_fill_gradient(low = grad_low, high = grad_high, transform = "sqrt",
                         limits = lims, oob = scales::squish,
                         na.value = "transparent", guide = "none") +
@@ -881,4 +912,48 @@ ggplot(grid_long, aes(X, Value)) +
   labs(x = NULL, y = NULL) +
   fig_theme + theme(panel.grid.major = element_blank(),
                     strip.text.y = element_text(size = 7, angle = -90))
+```
+
+\newpage
+
+```{r}
+#| label: fig-basin-boxplot
+#| fig-cap: !expr 'sprintf("Each of the six technological measures between the two basins, at the scale of the locality: one panel per measure, each point one locality entered as the median of its Quina scrapers, the box giving the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled point the mean. Binchuan contributes %d localities and Heqing %d. Basin is the one categorical landscape variable and for that reason the one variable @fig-landscape-scatter cannot carry, the other three entering there at their measured values; this figure completes that set. The bracket over each panel is a Mann–Whitney rank sum test of the two basins on that measure, adjusted by the Bonferroni procedure across the six, which are one family exactly as each column of @fig-landscape-scatter is; ns marks a comparison that is not significant, as all six are. The effects behind those brackets are small: the rank-biserial *r* reaches %s at most (%s), the smallest unadjusted *p*-value is %s, and multiplying by the six of the family puts every adjusted value at 1. This is the univariate counterpart of the basin term of @tbl-landscape-permanova (*R*² = %s, *p* %s), and it shows what the dispersion test beside that term (*F* = %s, *p* %s) records: the Binchuan box is the wider on %s of the six measures, %d localities sampling more of the range than %d do, rather than the two basins standing apart in the technology itself.", n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]], f(basin_r_max$r, 2), basin_r_lab, f(min(basin_cmp$p), 3), f(ls_basin["R2"], 3), fp(ls_basin["p"]), f(ls_basin_pd[["F"]], 2), fp(ls_basin_pd[["p"]]), basin_iqr_word, n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]])'
+#| fig-width: 5.9
+#| fig-height: 5.4
+
+# one row per locality, as everywhere in this section: the points are the
+# medians the tests are run on
+basin_long <- bdf |>
+  select(Basin, all_of(variables)) |>
+  mutate(Basin = droplevels(Basin)) |>
+  pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
+  mutate(Measure = factor(variable_labels[Measure], levels = unname(variable_labels)))
+
+# the bracket sits above the highest point of its panel, placed as the brackets
+# of the main-text boxplots are and carrying the same significance labels
+basin_brackets <- basin_cmp |>
+  transmute(Measure = factor(variable_labels[variable], levels = unname(variable_labels)),
+            group1 = "Binchuan", group2 = "Heqing", label = p.adj.signif) |>
+  left_join(basin_long |> group_by(Measure) |>
+              summarise(ymax = max(Value, na.rm = TRUE),
+                        yrange = diff(range(Value, na.rm = TRUE)), .groups = "drop"),
+            by = "Measure") |>
+  mutate(y.position = ymax + yrange * 0.10)
+
+ggplot(basin_long, aes(Basin, Value)) +
+  geom_jitter(aes(color = Basin), size = 1.7, alpha = 0.6, shape = 16,
+              position = position_jitter(width = 0.22, height = 0, seed = 2226)) +
+  geom_boxplot(color = "#202124", fill = NA, width = 0.55, linewidth = 0.4,
+               outlier.shape = NA) +
+  stat_summary(fun = mean, geom = "point", shape = 16, size = 2, color = "#202124") +
+  stat_pvalue_manual(basin_brackets, label = "label", y.position = "y.position",
+                     tip.length = 0.012, bracket.size = 0.3, label.size = 2.5,
+                     color = "#202124") +
+  facet_wrap(~ Measure, scales = "free_y", ncol = 3) +
+  scale_color_manual(values = basin_colors, guide = "none") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.16))) +
+  labs(x = NULL, y = NULL) +
+  fig_theme +
+  theme(panel.grid.major = element_blank())
 ```

@@ -44,6 +44,12 @@ fp <- function(p) {
   else if (p < 0.001) "< 0.001"
   else paste0("= ", formatC(p, format = "f", digits = 3))
 }
+# significance stars for figure brackets, on the cut points rstatix uses, so
+# that every bracket in the paper reads the same way
+psig <- function(p) {
+  ifelse(is.na(p), "", ifelse(p <= 1e-4, "****", ifelse(p <= 1e-3, "***",
+    ifelse(p <= 1e-2, "**", ifelse(p <= 5e-2, "*", "ns")))))
+}
 # non-breaking indent for the rows sitting under a panel heading in a table
 IND <- strrep(intToUtf8(160), 3)
 
@@ -207,6 +213,28 @@ cl <- raw |>
             Shape = trimws(as.character(Shape))) |>
   mutate(size = (L * B * Th)^(1 / 3)) |>
   filter(is.finite(size), L > 0, B > 0, Th > 0)
+
+# ---- clast form, taken from the axes rather than from the field record ----
+# The shape recorded in the field (sub-oval, tabular, irregular) mixes
+# geometric form with regularity, two different things, so form is derived
+# here from the three axes themselves. Length, breadth and thickness are
+# sorted per clast into a >= b >= c (five records needed reordering) and
+# classified on Zingg's two ratios at his 2/3 thresholds; the maximum
+# projection sphericity of Sneed and Folk is carried alongside as a single
+# continuous summary of the same geometry. (-> Fig. 1C, and the methods)
+form_levels <- c("Equant", "Oblate", "Prolate", "Bladed")
+cl_ax <- t(apply(as.matrix(cl[, c("L", "B", "Th")]), 1, sort, decreasing = TRUE))
+cl <- cl |>
+  mutate(a_ax = cl_ax[, 1], b_ax = cl_ax[, 2], c_ax = cl_ax[, 3],
+         ba = b_ax / a_ax, cb = c_ax / b_ax,
+         # the four classes the quadrants of Fig. 1C are named for
+         Form = factor(case_when(ba > 2 / 3 & cb > 2 / 3 ~ "Equant",
+                                 ba > 2 / 3              ~ "Oblate",
+                                 cb > 2 / 3              ~ "Prolate",
+                                 TRUE                    ~ "Bladed"),
+                       levels = form_levels),
+         Sphericity = (c_ax^2 / (a_ax * b_ax))^(1 / 3))
+
 sz  <- cl |> filter(Material %in% c("Trachyte", "Sandstone")) |>
   mutate(G = factor(Material, levels = c("Trachyte", "Sandstone")))
 gmT <- gm(sz$size[sz$G == "Trachyte"]); gmS <- gm(sz$size[sz$G == "Sandstone"])
@@ -217,9 +245,25 @@ size_p  <- size_wt$p.value
 # rank-biserial effect size for the same comparison (reported in the
 # supplementary material; the methods promise it alongside U)
 size_r  <- sz |> wilcox_effsize(size ~ G) |> pull(effsize)
-trs <- cl |> filter(Lithology == "Trachyte")
-trach_tabular_pct <- 100 * mean(trs$Shape == "Tablet")
-trach_irreg_pct   <- 100 * mean(trs$Shape == "Irregular")
+
+# ---- does form distinguish the two lithologies? ---------------------------
+# Size does, and the paragraph on raw material selection reports it; form is
+# the property a reader would ask about next. U is taken in the same
+# min(W, nT nS - W) form as size_U above.
+mw_U <- function(w) min(unname(w$statistic), nT * nS - unname(w$statistic))
+# form is tested where it is shown, in the plane of the two axial ratios, by
+# PERMANOVA on Euclidean distances of the z-scored ratios: the same procedure
+# and the same permutation count as every other PERMANOVA reported here, and
+# one that uses the ratios as measured instead of the four classes they fall in
+set.seed(2226)
+form_perm <- adonis2(dist(scale(as.matrix(sz[, c("ba", "cb")]))) ~ G,
+                     data = sz, permutations = PERM)
+form_R2 <- form_perm$R2[1]; form_F <- form_perm$F[1]
+form_df <- form_perm$Df[1]; form_df_res <- form_perm$Df[2]
+form_p  <- form_perm$`Pr(>F)`[1]
+sph_wt  <- suppressWarnings(wilcox.test(Sphericity ~ G, data = sz))
+sph_med <- tapply(sz$Sphericity, sz$G, median)
+sph_U   <- mw_U(sph_wt); sph_p <- sph_wt$p.value
 
 # --------------------------------------------------------------------------
 # 4. Quina scraper techno-typology descriptive analysis
