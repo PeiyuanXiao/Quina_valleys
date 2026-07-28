@@ -222,15 +222,17 @@ cl <- raw |>
 # classified on Zingg's two ratios at his 2/3 thresholds; the maximum
 # projection sphericity of Sneed and Folk is carried alongside as a single
 # continuous summary of the same geometry. (-> Fig. 1C, and the methods)
-form_levels <- c("Equant", "Oblate", "Prolate", "Bladed")
+# Zingg's four fields, under the names used here: tabular for his disc-shaped
+# (oblate) field and prismatic for his rod-shaped (prolate) one
+form_levels <- c("Equant", "Tabular", "Prismatic", "Bladed")
 cl_ax <- t(apply(as.matrix(cl[, c("L", "B", "Th")]), 1, sort, decreasing = TRUE))
 cl <- cl |>
   mutate(a_ax = cl_ax[, 1], b_ax = cl_ax[, 2], c_ax = cl_ax[, 3],
          ba = b_ax / a_ax, cb = c_ax / b_ax,
          # the four classes the quadrants of Fig. 1C are named for
          Form = factor(case_when(ba > 2 / 3 & cb > 2 / 3 ~ "Equant",
-                                 ba > 2 / 3              ~ "Oblate",
-                                 cb > 2 / 3              ~ "Prolate",
+                                 ba > 2 / 3              ~ "Tabular",
+                                 cb > 2 / 3              ~ "Prismatic",
                                  TRUE                    ~ "Bladed"),
                        levels = form_levels),
          Sphericity = (c_ax^2 / (a_ax * b_ax))^(1 / 3))
@@ -251,6 +253,10 @@ size_r  <- sz |> wilcox_effsize(size ~ G) |> pull(effsize)
 # the property a reader would ask about next. U is taken in the same
 # min(W, nT nS - W) form as size_U above.
 mw_U <- function(w) min(unname(w$statistic), nT * nS - unname(w$statistic))
+# the four classes as the composition of each lithology (-> Fig. 1D); the
+# comparison itself is made on the ratios, not on these classes
+form_tab <- table(sz$G, sz$Form)
+form_pct <- 100 * prop.table(form_tab, 1)
 # form is tested where it is shown, in the plane of the two axial ratios, by
 # PERMANOVA on Euclidean distances of the z-scored ratios: the same procedure
 # and the same permutation count as every other PERMANOVA reported here, and

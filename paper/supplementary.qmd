@@ -82,9 +82,9 @@ editor_options:
 # two further correlation families of the landscape figure -- are computed in
 # the next chunk from the objects it leaves behind.
 #
-# Apart from the note that opens it, this document carries no running text: it
-# is the tables and figures with their captions alone, each caption written to
-# stand on its own.
+# Apart from the note that opens it and the short guide that opens each of its
+# four sections, this document carries no running text: it is the tables and
+# figures with their captions alone, each caption written to stand on its own.
 source(here::here("paper", "_analysis.R"))
 
 # p-value formatter for table cells: fp() with its leading "= " removed
@@ -258,7 +258,13 @@ basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
 
 This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and the code needed to regenerate this document are deposited with the research compendium.
 
-The tables and figures follow the order of the Results: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
+The tables and figures follow the order of the Results and are grouped into four sections: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Each section opens with a short guide to what it contains. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
+
+\newpage
+
+# Raw material economy
+
+This section reports what was available on the river bars and what was chosen from it. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
 
 \newpage
 
@@ -321,7 +327,7 @@ knitr::kable(elect_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r
 
 ```{r}
 #| label: tbl-rawmat-permanova
-#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second. The two tests are read together: on the gravel bars both the position of the centroid and the spread about it differ between sampling points and between valleys, whereas among the artefacts neither differs at either scale, so the uniformity of raw material selection is not an artefact of unequal dispersion."
+#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second."
 
 perm_row <- function(model, a, pd) {
   data.frame(Model = paste0(IND, model),
@@ -354,7 +360,7 @@ knitr::kable(rawmat_out, row.names = FALSE,
 
 ```{r}
 #| label: tbl-clast-size
-#| tbl-cap: !expr 'sprintf("Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology. Sandstone is the harmonised category used throughout the paper, combining the quartz sandstone and coarse sandstone of the field record. Trachyte and sandstone, the two lithologies present in quantity, were compared with a Mann–Whitney rank sum test: *U* = %s, *p* %s, rank-biserial *r* = %s. Quartz and mudstone occur in numbers too small to support a comparison and are listed for completeness; andesite does not occur in the survey.", f(size_U, 0), fp(size_p), f(size_r, 2))'
+#| tbl-cap: "Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology."
 
 size_row <- function(m) {
   x <- cl$size[cl$Material == m]
@@ -374,9 +380,15 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 \newpage
 
+# Techno-typological characterisation of the retouch products
+
+This section describes the surface Quina scrapers themselves. @fig-categorical-attributes gives their categorical attributes — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The metric attributes and the typological attribution of the same specimens are reported in the main text.
+
+\newpage
+
 ```{r}
 #| label: fig-categorical-attributes
-#| fig-cap: !expr 'sprintf("Categorical attributes of the surface Quina scrapers: proportion of the dorsal face covered by cortex, position of that cortex, platform type, and the direction from which retouch was struck. Bars run to the percentage of the specimens recorded for that attribute, and the count and percentage are given at the end of each bar. Cortex proportion, cortex position and retouch direction are recorded on all %d scrapers; platform type only on the %d that retain the platform of the blank. Cortex position is taken over the whole assemblage, so that its percentages are of all specimens rather than of the cortex-bearing ones alone as in the main text. Categories are ordered by frequency except in the first panel, where the classes are ordered and the shading runs with them.", n_scraper, plat_n)'
+#| fig-cap: "Categorical attributes of the surface Quina scrapers: proportion of the dorsal face covered by cortex, position of that cortex, platform type, and the direction from which retouch was struck. Bars run to the percentage of the specimens recorded for that attribute, and the count and percentage are given at the end of each bar."
 #| fig-width: 5.9
 #| fig-height: 4.9
 
@@ -432,9 +444,15 @@ ggplot(cat_df, aes(pct, Level)) +
 
 \newpage
 
+# Technological consistency
+
+This section compares the surface Quina scrapers with the excavated Quina scrapers from Longtan, against the Longtan non-Quina scrapers as a control. @fig-qq shows the distribution of each of the six technological variables within each group, the check that stands behind the choice of test. @tbl-tc-permanova to @tbl-tc-pca give the full output of the comparison: the pairwise tests of group position and of group spread, the variable-by-variable tests, and the loadings of the ordination. @tbl-tc-sensitivity and @fig-sensitivity-pca then repeat the analysis with the surface specimens collected from within the area of the Longtan site removed.
+
+\newpage
+
 ```{r}
 #| label: fig-qq
-#| fig-cap: "Normal quantile–quantile plots of the six technological variables, on the specimens complete for all six, with one row per variable, named at the left of the row, and one column per group in the order of the legend. In every panel the horizontal axis is the theoretical normal quantile and the vertical axis the sample quantile, and the dashed line passes through the first and third sample quartiles. Inset at the upper left of each panel is a histogram of the same values, plotted in its own right but with its axes suppressed, to give the shape of the distribution alongside its departure from normality. The insets occupy the same corner of every panel at the same size, so their outlines may be compared with one another; their bar heights are scaled within each inset and may not. These are the distributions on which the choice of test set out in the Materials and methods rests: departures from normality are most pronounced for GIUR, which is bounded at one, and for the two count variables, and these three were compared with Kruskal–Wallis and Dunn tests, while thickness, retouched perimeter and edge angle, closer to normal within each group but unequal in variance between groups, were compared with Welch's procedures."
+#| fig-cap: "Normal quantile–quantile plots of the six technological variables. In every panel the horizontal axis is the theoretical normal quantile and the vertical axis the sample quantile, and the dashed line passes through the first and third sample quartiles. Inset at the upper left of each panel is a histogram of the same values, plotted in its own right but with its axes suppressed, to give the shape of the distribution alongside its departure from normality."
 #| fig-width: 5.9
 #| fig-height: 8.4
 
@@ -528,7 +546,7 @@ wrap_plots(qq_cells, ncol = 3, guides = "collect") &
 
 ```{r}
 #| label: tbl-tc-permanova
-#| tbl-cap: "Pairwise PERMANOVA on the z-scored six-variable technological space, Euclidean distances, 9,999 permutations. Degrees of freedom are given as model, residual. Adjusted *p* is the Bonferroni adjustment across the three comparisons. The main text quotes the *R*² of each comparison; the sums of squares and degrees of freedom are given here so that the partition of variance can be checked directly."
+#| tbl-cap: "Pairwise PERMANOVA on the z-scored six-variable technological space, Euclidean distances, 9,999 permutations. Degrees of freedom are given as model, residual. Adjusted *p* is the Bonferroni adjustment across the three comparisons."
 
 pw_label <- function(x) {
   parts <- strsplit(x, " vs ", fixed = TRUE)[[1]]
@@ -554,7 +572,7 @@ knitr::kable(tc_perm_out, row.names = FALSE,
 
 ```{r}
 #| label: tbl-tc-permdisp
-#| tbl-cap: "PERMDISP on the same technological space. The upper panel gives the mean distance of each group to its own centroid, the quantity the test compares; distance is measured in the z-scored space, so its units are standard deviations. The lower panel gives the pairwise tests, each fitted to its pair in turn, with the *p*-value from the permutation of the full three-group model alongside for comparison. Columns carry the quantity named first in rows of the upper panel and the quantity named second in rows of the lower."
+#| tbl-cap: "PERMDISP on the same technological space. The upper panel gives the mean distance of each group to its own centroid, the quantity the test compares; distance is measured in the z-scored space, so its units are standard deviations. The lower panel gives the pairwise tests, each fitted to its pair in turn, with the *p*-value from the permutation of the full three-group model alongside for comparison."
 
 pdd <- permA$distances |> group_by(Group) |>
   summarise(n = n(), m = mean(distance), s = sd(distance), .groups = "drop") |>
@@ -633,7 +651,7 @@ knitr::kable(uni_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r")
 
 ```{r}
 #| label: tbl-tc-pca
-#| tbl-cap: "Loadings of all six principal components of the z-scored technological space, with the eigenvalue, the percentage of variance and the cumulative percentage for each. The ordination in the main text plots the first two components. The first loads in the same direction on all six variables and is therefore a general axis of reduction intensity; the remaining four together account for less than a quarter of the variance."
+#| tbl-cap: "Loadings of all six principal components of the z-scored technological space, with the eigenvalue, the percentage of variance and the cumulative percentage for each."
 
 ld <- permA$pca_loadings
 pca_out <- bind_rows(
@@ -654,7 +672,7 @@ knitr::kable(pca_out, row.names = FALSE, align = c("l", rep("r", 6)),
 
 ```{r}
 #| label: tbl-tc-sensitivity
-#| tbl-cap: !expr 'sprintf("Sensitivity of the technological consistency result to the surface specimens collected from within the area of the Longtan site. The full set is the analysis reported in the main text, with %d surface specimens; the reduced set excludes those collected within the site area, leaving %d, and is z-scored on its own. PERMANOVA *p*-values carry the Bonferroni adjustment across the three comparisons; PERMDISP rows have no *R*², the test being one of dispersion rather than of explained variance.", permA$n_by_group[["SC_Quina"]], permC$n_by_group[["SC_Quina"]])'
+#| tbl-cap: "Sensitivity of the technological consistency result to the surface specimens collected from within the area of the Longtan site. The full set is the analysis reported in the main text, with 165 surface specimens; the reduced set excludes those collected within the site area, leaving 150, and is z-scored on its own. PERMANOVA *p*-values carry the Bonferroni adjustment across the three comparisons."
 
 sens_rows <- function(comp_perm, comp_disp) {
   full_p <- tc_pw[tc_pw$Comparison == comp_perm, ]
@@ -687,7 +705,7 @@ knitr::kable(sens_out, row.names = FALSE, align = c("l", "l", rep("r", 6)),
 
 ```{r}
 #| label: fig-sensitivity-pca
-#| fig-cap: "Ordination of the technological space with the surface specimens from within the area of the Longtan site removed, to be compared with panel A of the corresponding figure in the main text. (A) Specimen scores, with convex hulls enclosing each group and filled points marking group centroids. (B) Loadings of the six variables on the same two components, drawn on their own axes so that the specimen scores are not overplotted. The dashed circle in (B) is the unit circle: each variable has unit length across all six components, so an arrow reaching the circle would be one accounted for in full by these two."
+#| fig-cap: "Ordination of the technological space with the surface specimens from within the area of the Longtan site removed, to be compared with panel A of the corresponding figure in the main text. (A) Specimen scores, with convex hulls enclosing each group and filled points marking group centroids. (B) Loadings of the six variables on the same two components, drawn on their own axes so that the specimen scores are not overplotted."
 #| fig-width: 5.9
 #| fig-height: 3.7
 
@@ -748,9 +766,15 @@ p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
 
 \newpage
 
+# Landscape structure
+
+This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the six measures, and @tbl-landscape-permanova tests each landscape variable against that space. The three figures show the same data in turn: @fig-site-pca as an ordination of the localities coloured by each landscape variable, @fig-landscape-scatter as each measure against each of the continuous variables, and @fig-basin-boxplot as a comparison between the two basins.
+
+\newpage
+
 ```{r}
 #| label: tbl-locality-matrix
-#| tbl-cap: !expr 'sprintf("Locality-level analysis frame. Each row is one locality, with the number of Quina scrapers complete on all six variables and the median of those specimens on each. Distance and height are measured to and above the nearest present-day channel. %d of the %d localities are represented by a single specimen, so their medians are single observations; this is the reason the analyses at this level are read from the size of the effects rather than from the significance of the tests.", sum(site_df$n_art == 1), n_localities)'
+#| tbl-cap: "Locality-level analysis frame. Each row is one Quina locality, with the number of Quina scrapers complete on all six variables and the median of those specimens on each. Distance and height are measured to and above the nearest channel."
 
 loc_out <- site_df |>
   arrange(Basin, desc(n_art), Name) |>
@@ -772,7 +796,7 @@ knitr::kable(loc_out, row.names = FALSE,
 
 ```{r}
 #| label: tbl-landscape-permanova
-#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored six-variable space with 9,999 permutations, together with the test of dispersion for the one categorical variable. The three continuous variables enter at their measured values and are nowhere discretised, so no cut point of ours affects any result here. The two basins do not differ in the position of their centroids but do differ in dispersion; with only five localities in Heqing a dispersion estimate is unstable, and this is recorded not as a difference in technological variability between the basins but as an indication that the small basin *R*² reflects overlapping groups rather than two coincident clusters."
+#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored six-variable space with 9,999 permutations, together with the test of dispersion for the one categorical variable."
 
 ls_row <- function(label, v, indent = TRUE) {
   data.frame(Term = if (indent) paste0(IND, label) else sprintf("**%s**", label),
@@ -798,7 +822,7 @@ knitr::kable(ls_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
 
 ```{r}
 #| label: fig-site-pca
-#| fig-cap: !expr 'sprintf("Locality-level ordination of the six technological measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel, (C) assemblage size and (D) distance to the nearest channel. The four panels are the same ordination and differ only in the landscape variable shown, which is named in the legend beneath each. The three continuous variables are carried by the colour gradient at their measured values, the form in which they enter every test reported here; the gradient runs between the two colours that distinguish the basins in (A), the colour scale is square-root, all three being right-skewed, and the legend ticks are in the original units. Behind the localities of (B) to (D), on that same scale, is a thin-plate spline of the variable fitted over the ordination plane and clipped to the area the localities cover. The smooth was free to be shrunk out of the model altogether, and in every case it very nearly was: the surfaces explain at most %.1f%% of the deviance, none of them significant (*p* >= %.2f). A landscape gradient would show as colour running in a direction across a panel, and none does. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids.", surf_dev_max, surf_p_min)'
+#| fig-cap: "Locality-level ordination of the six technological measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel, (C) assemblage size and (D) distance to the nearest channel. The four panels are the same ordination and differ only in the landscape variable shown, which is named in the legend beneath each. The three continuous variables are carried by the colour gradient at their measured values, the form in which they enter every test reported here; the gradient runs between the two colours that distinguish the basins in (A), the colour scale is square-root, all three being right-skewed, and the legend ticks are in the original units. Behind the localities of (B) to (D), on that same scale, is a thin-plate spline of the variable fitted over the ordination plane and clipped to the area the localities cover. A landscape gradient would show as colour running in a direction across a panel. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids."
 #| fig-width: 5.9
 #| fig-height: 5.8
 
@@ -881,7 +905,7 @@ site_grad_panel <- function(var, legend_title, breaks) {
 
 ```{r}
 #| label: fig-landscape-scatter
-#| fig-cap: "Each of the six technological measures against each of the three continuous landscape variables, at the scale of the locality: one row per measure, one column per landscape variable, all at measured values. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship. Each panel gives Spearman's ρ with its *p*-value, adjusted by the Bonferroni procedure within each column, every column being one family of six tests; the distance column is the family reported in the main text. All six coefficients against distance are positive, but no coefficient anywhere in the figure reaches significance after adjustment: the localities are few and several of the medians rest on a single specimen."
+#| fig-cap: "Each of the six technological measures against each of the three continuous landscape variables, at the scale of the locality: one row per measure, one column per landscape variable, all at measured values. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship. Each panel gives Spearman's ρ with its *p*-value, adjusted by the Bonferroni procedure within each column, every column being one family of six tests; the distance column is the family reported in the main text."
 #| fig-width: 5.9
 #| fig-height: 7.8
 
@@ -918,7 +942,7 @@ ggplot(grid_long, aes(X, Value)) +
 
 ```{r}
 #| label: fig-basin-boxplot
-#| fig-cap: !expr 'sprintf("Each of the six technological measures between the two basins, at the scale of the locality: one panel per measure, each point one locality entered as the median of its Quina scrapers, the box giving the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled point the mean. Binchuan contributes %d localities and Heqing %d. Basin is the one categorical landscape variable and for that reason the one variable @fig-landscape-scatter cannot carry, the other three entering there at their measured values; this figure completes that set. The bracket over each panel is a Mann–Whitney rank sum test of the two basins on that measure, adjusted by the Bonferroni procedure across the six, which are one family exactly as each column of @fig-landscape-scatter is; ns marks a comparison that is not significant, as all six are. The effects behind those brackets are small: the rank-biserial *r* reaches %s at most (%s), the smallest unadjusted *p*-value is %s, and multiplying by the six of the family puts every adjusted value at 1. This is the univariate counterpart of the basin term of @tbl-landscape-permanova (*R*² = %s, *p* %s), and it shows what the dispersion test beside that term (*F* = %s, *p* %s) records: the Binchuan box is the wider on %s of the six measures, %d localities sampling more of the range than %d do, rather than the two basins standing apart in the technology itself.", n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]], f(basin_r_max$r, 2), basin_r_lab, f(min(basin_cmp$p), 3), f(ls_basin["R2"], 3), fp(ls_basin["p"]), f(ls_basin_pd[["F"]], 2), fp(ls_basin_pd[["p"]]), basin_iqr_word, n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]])'
+#| fig-cap: "Each of the six technological measures between the two basins, at the scale of the locality: one panel per measure, each point one locality entered as the median of its Quina scrapers, the box giving the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled point the mean."
 #| fig-width: 5.9
 #| fig-height: 5.4
 
