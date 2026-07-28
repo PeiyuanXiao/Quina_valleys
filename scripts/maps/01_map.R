@@ -37,9 +37,9 @@ cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- display toggles -----------------------------------------------------
-for_manuscript    <- FALSE  # TRUE -> drop title/subtitle/caption (the .qmd carries them)
+for_manuscript    <- TRUE   # TRUE -> drop title/subtitle/caption (the .qmd carries them)
 show_site_labels  <- TRUE
-show_basin_tint   <- FALSE  # convex hulls read as marquee boxes; names carry the basins
+show_basin_tint   <- FALSE  # convex hulls read as marquee boxes
 show_river_labels <- FALSE
 rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp") (best)
 
@@ -47,9 +47,14 @@ rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp")
 z_exag        <- 1.8              # hillshade vertical exaggeration
 sun_angle     <- 35               # sun elevation (deg)
 sun_dirs      <- c(300, 337, 15)  # multi-light azimuths, averaged
-relief        <- 0.46             # 0 = flat colour, ~0.5 = hard relief (HSL L gain)
-warm_gain     <- 0.14             # warm tint added on lit slopes
-cool_gain     <- 0.26             # cool tint added in shadow
+## Relief is applied as a headroom-aware interpolation of the HSL L channel
+## (L -> 1 on lit faces, L -> 0 in shadow), NOT as a multiplicative gain: a
+## multiplicative gain clips to pure white wherever the base tint is already
+## pale, which blows out the high ground and destroys the shading detail there.
+relief_hi     <- 0.42             # 0..1, pull toward white on lit faces
+relief_lo     <- 0.38             # 0..1, pull toward black in shadow
+warm_gain     <- 0.10             # warm tint added on lit slopes
+cool_gain     <- 0.20             # cool tint added in shadow
 hyps_strength <- 0.72             # 1 = full hypsometric tint, 0 = plain paper
 river_min_acc <- 60000            # min upstream cells for a channel to be drawn
 lake_min_ha   <- 5                # drop OSM ponds smaller than this
@@ -62,8 +67,10 @@ grat_step     <- 0.05             # graticule / axis-break spacing (degrees)
 ## Kept deliberately narrow in value: with hyps_strength the relief, not the
 ## elevation tint, carries the terrain, so the sheet stays even and the site
 ## symbols keep the strongest contrast on the page.
-hyps_cols  <- c("#8A9A7F", "#A2AB92", "#BCBBA2", "#D1CAAF",
-                "#E1D8C2", "#EDE6D5", "#F7F3EA")
+## the top stop is deliberately NOT near-white: the relief shading needs
+## headroom above it, or the summits render as a featureless white blob
+hyps_cols  <- c("#7E8E74", "#93A184", "#A9B195", "#BFBCA4",
+                "#D1C9B3", "#DCD4C1", "#E6DECB")
 paper_col  <- "#E9E4D8"           # neutral the tint is blended toward
 ## the wash actually painted on the map, so the colourbar matches the sheet
 blend_to <- function(cols, to, k) {
@@ -81,13 +88,6 @@ grat_col   <- grDevices::adjustcolor("white", alpha.f = 0.30)
 ## shape = geomorphic position, identical to 03_elevation_profile.R
 geomorph_shapes <- c(T2 = 21, T3 = 22, T4 = 24, hilltop = 23)
 
-## on-map basin annotations (moved by hand into open ground)
-basin_labels <- data.frame(
-  basin = factor(c("Heqing", "Binchuan"), levels = c("Binchuan", "Heqing")),
-  label = c("Heqing basin", "Binchuan basin"),
-  lon   = c(100.4320, 100.5015),
-  lat   = c(26.0555,  25.9395))
-
 ## ---- sites (Site_information.xlsx = source of truth; PJDD/ZKZ dropped) ----
 sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
@@ -99,7 +99,6 @@ sites <- sites |>
     geomorph = factor(geomorph, levels = names(geomorph_shapes))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)
-anchor <- subset(sites, code %in% c("LT", "THC"))
 
 ## faint tinted hull per basin (groups the sites without drawing a marquee box)
 hulls <- sites |>
@@ -185,10 +184,9 @@ hr     <- as.numeric(stats::quantile(terra::values(hill, mat = FALSE),
                                      c(0.02, 0.98), na.rm = TRUE))
 hill   <- (terra::clamp(hill, hr[1], hr[2]) - hr[1]) / (hr[2] - hr[1])
 
-## hypsometric wash, clamped to the 2-98% elevation range so the ramp is spent
-## where the terrain actually is
-dem_lims <- as.numeric(stats::quantile(terra::values(dem, mat = FALSE),
-                                       c(0.02, 0.98), na.rm = TRUE))
+## hypsometric wash over the full elevation range: clamping to 2-98% flattened
+## the highest ground (the NW ridges) onto a single ramp stop
+dem_lims <- as.numeric(terra::minmax(dem))
 ev <- terra::values(dem)[, 1]
 u  <- pmin(1, pmax(0, (ev - dem_lims[1]) / diff(dem_lims)))
 ok <- !is.na(u)
@@ -201,11 +199,15 @@ pap <- as.numeric(grDevices::col2rgb(paper_col)) / 255
 m   <- m * hyps_strength + pap * (1 - hyps_strength)
 hsl <- rgb2hsl(m[1, ], m[2, ], m[3, ])
 hh  <- terra::values(hill)[, 1]; hh[is.na(hh)] <- 0.5
-Ln  <- pmin(1, pmax(0, hsl$l * (1 + relief * (2 * hh - 1))))
+tt  <- 2 * hh - 1                       # -1 = full shadow ... +1 = full light
+## interpolate toward the endpoints by the REMAINING headroom, so neither the
+## pale summits nor the dark gorges ever clip and both keep their shading
+Ln  <- hsl$l + ifelse(tt > 0, relief_hi * tt * (1 - hsl$l), relief_lo * tt * hsl$l)
+Ln  <- pmin(1, pmax(0, Ln))
 o   <- hsl2rgb(hsl$h, hsl$s, Ln)
 ## warm light / cool shade: nudges lit faces to cream and shadows to slate-blue
-w_lit <- pmax(0, (hh - 0.5) * 2) * warm_gain
-w_shd <- pmax(0, (0.5 - hh) * 2) * cool_gain
+w_lit <- pmax(0, tt) * warm_gain
+w_shd <- pmax(0, -tt) * cool_gain
 warm  <- grDevices::col2rgb("#FFF4E2") / 255
 cool  <- grDevices::col2rgb("#4C5A6B") / 255
 keep  <- 1 - w_lit - w_shd
@@ -266,26 +268,17 @@ if (!is.null(rivers)) {
     scale_linewidth_continuous(range = c(0.12, 0.45), guide = "none")
 }
 
-## optional basin tint (off by default) + on-map basin names
+## optional basin tint (off by default). Basin names are added by hand in
+## post-production, so nothing is drawn for them here.
 if (show_basin_tint) {
   p <- p + geom_sf(data = hulls, aes(fill = basin), color = NA, alpha = 0.09,
                    show.legend = FALSE)
 }
-p <- p +
-  ggrepel::geom_text_repel(
-    data = basin_labels, aes(lon, lat, label = label, colour = basin),
-    inherit.aes = FALSE, fontface = "italic", size = 2.9, seed = 1,
-    force = 0, box.padding = 0, point.padding = 0, max.overlaps = Inf,
-    bg.color = grDevices::adjustcolor("white", alpha.f = 0.7), bg.r = 0.1,
-    segment.color = NA, show.legend = FALSE)
 
 ## sites: one fixed size; fill = basin, shape = geomorphic position
 p <- p +
   geom_sf(data = sites, aes(fill = basin, shape = geomorph),
           size = 2.2, color = "white", stroke = 0.45, alpha = 0.98) +
-  ## ring = excavated & dated anchor (LT, THC)
-  geom_sf(data = anchor, aes(colour = "Excavated & dated"), shape = 21, fill = NA,
-          size = 4.6, stroke = 0.5) +
   scale_fill_manual(
     values = basin_cols, name = "Basin",
     guide = guide_legend(order = 1,
@@ -293,12 +286,7 @@ p <- p +
   scale_shape_manual(
     values = geomorph_shapes, name = "Geomorphic position", drop = FALSE,
     guide = guide_legend(order = 2,
-      override.aes = list(fill = "grey45", colour = "white", size = 2.6, stroke = 0.45))) +
-  scale_colour_manual(
-    values = c(basin_cols, "Excavated & dated" = label_col),
-    breaks = "Excavated & dated", name = NULL,
-    guide = guide_legend(order = 3,
-      override.aes = list(shape = 21, fill = NA, size = 3.4, stroke = 0.5)))
+      override.aes = list(fill = "grey45", colour = "white", size = 2.6, stroke = 0.45)))
 
 if (show_site_labels) {
   p <- p + ggrepel::geom_text_repel(
@@ -324,21 +312,23 @@ if (show_river_labels && !is.null(rivers)) {
 ## presets, which are drawn for topographic sheets rather than journal figures
 north_needle <- grid::gTree(children = grid::gList(
   grid::linesGrob(
-    x = grid::unit(c(0.5, 0.5), "npc"), y = grid::unit(c(0.0, 0.70), "npc"),
-    arrow = grid::arrow(type = "closed", angle = 18, length = grid::unit(1.6, "mm")),
-    gp = grid::gpar(col = label_col, fill = label_col, lwd = 0.7)),
-  grid::textGrob("N", x = 0.5, y = 0.92,
-                 gp = grid::gpar(col = label_col, fontsize = 7))))
+    x = grid::unit(c(0.5, 0.5), "npc"), y = grid::unit(c(0.0, 0.66), "npc"),
+    arrow = grid::arrow(type = "closed", angle = 20, length = grid::unit(3.2, "mm")),
+    gp = grid::gpar(col = label_col, fill = label_col, lwd = 2.0, lineend = "butt")),
+  grid::textGrob("N", x = 0.5, y = 0.90,
+                 gp = grid::gpar(col = label_col, fontsize = 10, fontface = "bold"))))
 
 p <- p +
+  ## width_hint 0.33 of a ~31 km frame -> annotation_scale picks a 10 km bar
   annotation_scale(
-    location = "bl", style = "ticks", width_hint = 0.24,
-    height = unit(0.16, "cm"), line_width = 0.5, tick_height = 0.7,
-    text_cex = 0.58, text_col = label_col, line_col = label_col,
-    text_family = "", pad_x = unit(0.4, "cm"), pad_y = unit(0.4, "cm")) +
+    location = "bl", style = "ticks", width_hint = 0.33,
+    height = unit(0.26, "cm"), line_width = 1.5, tick_height = 0.8,
+    text_cex = 0.8, text_col = label_col, line_col = label_col,
+    text_face = "bold", text_family = "",
+    pad_x = unit(0.45, "cm"), pad_y = unit(0.45, "cm")) +
   annotation_north_arrow(
     location = "tr", which_north = "true",
-    height = unit(0.95, "cm"), width = unit(0.5, "cm"),
+    height = unit(1.2, "cm"), width = unit(0.7, "cm"),
     pad_x = unit(0.45, "cm"), pad_y = unit(0.45, "cm"),
     style = north_needle) +
   coord_sf(xlim = bbx[1:2], ylim = bbx[3:4], expand = FALSE) +
@@ -386,7 +376,7 @@ p <- p +
 
 ## ---- export (150 mm wide @ 600 dpi, as in scripts/figures/*.R) ------------
 FIG_W_MM <- 150
-FIG_H_MM <- 168
+FIG_H_MM <- 148   # no title/caption: just the panel + axis text
 FIG_DPI  <- 600
 ggsave(file.path(output_dir, "map_quina_sites.png"), p,
        width = FIG_W_MM, height = FIG_H_MM, units = "mm", dpi = FIG_DPI,
