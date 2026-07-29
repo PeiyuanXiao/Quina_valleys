@@ -53,7 +53,7 @@ ground_fill     <- "#DCD6C8"
 ground_line     <- "#5E5849"
 
 # transect order along the traverse, NW -> NE -> S
-transect_levels <- c("Caifeng (Heqing)", "Sangyuan (Binchuan)", "Liandong (Binchuan)")
+transect_levels <- c("Caifeng valley", "Sangyuan valley", "Liandong valley")
 
 # ==============================================================================
 # Sites
@@ -66,8 +66,7 @@ sites <- sites |>
   mutate(
     basin    = factor(sub(" basin$", "", trimws(basin)), levels = names(basin_cols)),
     geomorph = factor(geomorph, levels = names(geomorph_shapes)),
-    transect = factor(paste0(trimws(river_ID), " (",
-                             sub(" basin$", "", trimws(basin)), ")"),
+    transect = factor(paste0(trimws(river_ID), " valley"),
                       levels = transect_levels)
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE) |>
@@ -147,7 +146,8 @@ br_y  <- y_top + 0.16 * pad
 # ==============================================================================
 fig_theme <- theme_minimal(base_size = 9) +
   theme(
-    panel.grid.major.y = element_line(color = "#E6E8EB", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "#CFD3D8", linewidth = 0.3,
+                                      linetype = "22"),
     panel.grid.major.x = element_blank(),
     panel.grid.minor   = element_blank(),
     panel.border     = element_rect(color = "#202124", fill = NA, linewidth = 0.5),

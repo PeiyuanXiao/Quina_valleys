@@ -38,6 +38,7 @@ dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- display toggles -----------------------------------------------------
 for_manuscript    <- TRUE   # TRUE -> drop title/subtitle/caption (the .qmd carries them)
+show_elev_legend  <- FALSE  # the elevation colourbar; off for the Fig. 1 panel
 show_site_labels  <- TRUE
 show_basin_tint   <- FALSE  # convex hulls read as marquee boxes
 show_river_labels <- FALSE
@@ -84,7 +85,7 @@ basin_cols <- c(Binchuan = "#A0364B", Heqing = "#2F6489")
 water_col  <- "#86A6BB"
 contour_col<- "#6B6357"
 label_col  <- "#332F29"
-grat_col   <- grDevices::adjustcolor("white", alpha.f = 0.30)
+grat_col   <- grDevices::adjustcolor("white", alpha.f = 0.78)
 ## shape = geomorphic position, identical to 03_elevation_profile.R
 geomorph_shapes <- c(T2 = 21, T3 = 22, T4 = 24, hilltop = 23)
 
@@ -228,20 +229,29 @@ lon_breaks <- seq(ceiling(bbx[1] / grat_step) * grat_step, bbx[2], by = grat_ste
 lat_breaks <- seq(ceiling(bbx[3] / grat_step) * grat_step, bbx[4], by = grat_step)
 
 ## ---- build map -----------------------------------------------------------
-p <- ggplot() +
-  ## drawn only to carry the elevation colourbar; the shaded RGB covers it
-  tidyterra::geom_spatraster(data = dem_key, maxcell = 5e5) +
-  scale_fill_gradientn(
-    colours = blend_to(hyps_cols, paper_col, hyps_strength),
-    limits = dem_lims, oob = scales::squish, na.value = NA,
-    name = "Elevation (m)",
-    guide = guide_colourbar(
-      order = 4,
-      theme = theme(legend.key.width  = unit(3.2, "mm"),
-                    legend.key.height = unit(20, "mm"),
-                    legend.ticks = element_blank(),
-                    legend.frame = element_rect(colour = "grey55", linewidth = 0.2)))) +
-  ggnewscale::new_scale_fill() +
+p <- ggplot()
+
+## The dummy raster exists only to carry the elevation colourbar (the shaded RGB
+## covers it). With the colourbar off there is nothing for it to do, so skip the
+## layer and its scale entirely rather than drawing 500k covered cells.
+if (show_elev_legend) {
+  p <- p +
+    tidyterra::geom_spatraster(data = dem_key, maxcell = 5e5) +
+    scale_fill_gradientn(
+      colours = blend_to(hyps_cols, paper_col, hyps_strength),
+      limits = dem_lims, oob = scales::squish, na.value = NA,
+      name = "Elevation (m)",
+      guide = guide_colourbar(
+        order = 4,
+        theme = theme(legend.key.width  = unit(3.2, "mm"),
+                      legend.key.height = unit(20, "mm"),
+                      legend.ticks = element_blank(),
+                      legend.frame = element_rect(colour = "grey55",
+                                                  linewidth = 0.2)))) +
+    ggnewscale::new_scale_fill()
+}
+
+p <- p +
   tidyterra::geom_spatraster_rgb(data = shaded, maxcell = 2e6) +
   ## contours: texture, not information — barely there
   tidyterra::geom_spatraster_contour(
@@ -251,8 +261,8 @@ p <- ggplot() +
     data = dem_s, breaks = seq(1000, 5000, cont_index),
     color = contour_col, linewidth = 0.14, alpha = 0.30) +
   ## graticule drawn as layers so it floats above the terrain
-  geom_vline(xintercept = lon_breaks, color = grat_col, linewidth = 0.18) +
-  geom_hline(yintercept = lat_breaks, color = grat_col, linewidth = 0.18)
+  geom_vline(xintercept = lon_breaks, color = grat_col, linewidth = 0.16) +
+  geom_hline(yintercept = lat_breaks, color = grat_col, linewidth = 0.16)
 
 ## water: lakes (polygons) under rivers (lines)
 if (!is.null(lakes)) {
@@ -281,6 +291,9 @@ p <- p +
           size = 2.2, color = "white", stroke = 0.45, alpha = 0.98) +
   scale_fill_manual(
     values = basin_cols, name = "Basin",
+    ## display label only -- Site_information.xlsx still records "Heqing basin",
+    ## so the data key stays Heqing and only what the reader sees changes
+    labels = c(Binchuan = "Binchuan", Heqing = "Huangping"),
     guide = guide_legend(order = 1,
       override.aes = list(shape = 21, size = 2.6, colour = "white", stroke = 0.45))) +
   scale_shape_manual(
@@ -359,7 +372,7 @@ p <- p +
     plot.background   = element_rect(color = NA, fill = "white"),
     axis.ticks        = element_line(color = "#202124", linewidth = 0.3),
     axis.ticks.length = unit(2, "pt"),
-    axis.text         = element_text(color = "#303238", size = 7),
+    axis.text         = element_text(color = "#303238", size = 6),
     legend.position   = "right",
     legend.title      = element_text(size = 8.5),
     legend.text       = element_text(size = 8),
