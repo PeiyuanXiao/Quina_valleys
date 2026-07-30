@@ -382,7 +382,56 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 # Techno-typological characterisation of the retouch products
 
-This section describes the surface Quina scrapers themselves. @fig-categorical-attributes gives their categorical attributes — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The metric attributes and the typological attribution of the same specimens are reported in the main text.
+This section describes the retouch products themselves. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The typological attribution of the same specimens is reported in the main text.
+
+\newpage
+
+```{r}
+#| label: tbl-retouch-products
+#| tbl-cap: "Metric and reduction attributes of the Quina scrapers and the resharpening flakes from the surface collections. Not every attribute could be measured on every specimen: the platform attributes are recorded only on those that retain the platform of the blank, and GIUR on all but one scraper. The retouch attributes apply to the scrapers alone and the exterior platform angle to the resharpening flakes alone."
+
+# one row per attribute; d = decimals for mean/SD, ds for the order statistics
+attr_row <- function(label, x, d = 1, ds = d) {
+  x  <- as.numeric(x); x <- x[is.finite(x)]
+  qs <- unname(quantile(x, c(.25, .75)))
+  data.frame(Attribute = paste0(IND, label),
+             mn  = f(mean(x), d), sd = f(sd(x), d),
+             med = f(median(x), ds),
+             iqr = paste0(f(qs[1], ds), "–", f(qs[2], ds)))
+}
+# panel heading, keeping the two classes of retouch product apart
+attr_head <- function(label, n_total) {
+  data.frame(Attribute = sprintf("**%s** (*n* = %d)", label, n_total),
+             mn = "", sd = "", med = "", iqr = "")
+}
+
+retouch_products_tbl <- bind_rows(
+  attr_head("Quina scrapers", nrow(q)),
+  attr_row("Length (mm)",    q$Length,    1),
+  attr_row("Width (mm)",     q$Width,     1),
+  attr_row("Thickness (mm)", q$Thickness, 1),
+  attr_row("Mass (g)",       q$Mass,      1),
+  attr_row("Platform depth (mm)", q$Platform_depth, 1),
+  attr_row("Platform width (mm)", q$Platform_width, 1),
+  attr_row("IPA (°)",             q$IPA,            1),
+  attr_row("Retouch generations", q$Ave_RG,    2),
+  attr_row(variable_labels[["N_Scar"]], q$N_Scar, 1, ds = 0),
+  attr_row("GIUR",                q$Ave_GIUR,  2),
+  attr_row("Edge angle (°)",      q$Edge_Angle, 1),
+  attr_row("Retouched perimeter", q$Retouch_length_index, 2),
+  attr_head("Resharpening flakes", nrow(rfl)),
+  attr_row("Length (mm)",    rfl$Length,    1),
+  attr_row("Width (mm)",     rfl$Width,     1),
+  attr_row("Thickness (mm)", rfl$Thickness, 1),
+  attr_row("Mass (g)",       rfl$Mass,      1),
+  attr_row("Platform depth (mm)", rfl$Platform_depth, 1),
+  attr_row("Platform width (mm)", rfl$Platform_width, 1),
+  attr_row("IPA (°)",             rfl$IPA,            1),
+  attr_row("EPA (°)",             rfl$EPA,            1))
+
+knitr::kable(retouch_products_tbl, align = c("l", "r", "r", "r", "r"),
+             col.names = c("Attribute", "Mean", "SD", "Median", "Q1–Q3"))
+```
 
 \newpage
 

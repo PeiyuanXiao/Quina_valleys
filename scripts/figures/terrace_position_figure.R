@@ -1,5 +1,12 @@
 # terrace_position_figure.R
-# Manuscript figure: where the Quina sites sit in the valley cross-section.
+# SUPERSEDED as a Figure 1 panel by scripts/figure1/traverse_profile_figure.R,
+# which shows the sites on the real ground surface along the valleys instead of
+# in an abstract cross-section frame. Kept because the cross-section view answers
+# a different question — how the sites distribute across terrace levels — and no
+# figure in the paper currently carries it. Nothing sources this script; it is
+# not part of the Figure 1 pipeline.
+#
+# Where the Quina sites sit in the valley cross-section.
 #
 # The frame is a valley profile in data space:
 #   x -- distance to the nearest channel (log10; d_river_m is strongly right
@@ -51,7 +58,7 @@ FIG_DPI  <- 600
 drop_sites <- c("PJDD", "ZKZ")
 cave_sites <- c("THC")            # not a terrace site; annotated as such
 
-# palette + symbol mapping shared with scripts/maps/01_map.R
+# palette + symbol mapping shared with scripts/figure1/terra_map_2D.R
 basin_cols      <- c(Binchuan = "#A0364B", Heqing = "#2F6489")
 geomorph_shapes <- c(T2 = 21, T3 = 22, T4 = 24, hilltop = 23)
 label_col       <- "#332F29"

@@ -1,6 +1,14 @@
 # liandong_section_figure.R
-# Manuscript figure: swath cross-section of the Liandong valley (Binchuan),
-# with the 14 Liandong Quina sites projected onto it.
+# SUPERSEDED as a Figure 1 panel by scripts/figure1/traverse_profile_figure.R:
+# a swath shows the DISTRIBUTION of surface heights at a given cross-valley
+# offset, so the sites necessarily float below the median line and need
+# explaining, whereas the traverse puts them on the drawn ground. Kept for the
+# note below, which is the only written record that d_river_m and h_river_m —
+# both of which the landscape analyses use — disagree with the DEM. Nothing
+# sources this script; it is not part of the Figure 1 pipeline.
+#
+# Swath cross-section of the Liandong valley (Binchuan), with the 14 Liandong
+# Quina sites projected onto it.
 #
 # WHY THE COORDINATES ARE COMPUTED HERE RATHER THAN TAKEN FROM THE SITE TABLE
 # --------------------------------------------------------------------------
