@@ -64,7 +64,6 @@ sites <- read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(
     basin    = factor(sub(" basin$", "", trimws(basin)), levels = names(basin_cols)),
     geomorph = factor(geomorph, levels = names(geomorph_shapes)),

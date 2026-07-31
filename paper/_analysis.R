@@ -34,7 +34,8 @@ library(cvequality)
 # reproducible (see the "Materials and methods" note on reproducibility).
 set.seed(2226)
 PERM    <- 9999
-B_BOOT  <- 5000   # bootstrap replicates for the dispersion-ratio intervals
+B_BOOT  <- 5000   # bootstrap replicates: every percentile interval reported
+                  # (dispersion ratios, Spearman rho, Cohen's d)
 MSLR_NR <- 1e5    # Monte Carlo iterations for the KL-MSLRT
 
 # ---- inline-number formatters --------------------------------------------
@@ -58,7 +59,6 @@ lt_path    <- here("data", "Longtan_lithic_tools.xlsx")
 basin_path <- here("data", "Raw_mat_basin.xlsx")
 site_path  <- here("data", "Site_information.xlsx")
 
-drop_sites      <- c("PJDD", "ZKZ")
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone", "Andesite")
 river_levels    <- c("Sangyuan", "Liandong", "Caifeng")
 basin_levels    <- c("Binchuan", "Heqing")
@@ -101,7 +101,7 @@ dist_dat <- sites |>
             basin    = factor(strip_basin(basin), levels = basin_levels),
             river_ID = factor(trimws(river_ID),   levels = river_levels),
             d = as.numeric(d_river_m)) |>
-  filter(!Code %in% drop_sites, !is.na(d), !is.na(basin), !is.na(river_ID))
+  filter(!is.na(d), !is.na(basin), !is.na(river_ID))
 dist_median  <- median(dist_dat$d)
 mw_basin     <- dist_dat |> wilcox_test(d ~ basin)
 dist_basin_U <- mw_basin$statistic; dist_basin_p <- mw_basin$p
@@ -142,7 +142,7 @@ site_key <- sites |>
 scA <- q |>
   transmute(Site_ID = trimws(as.character(Site_ID)),
             Material = harmonise_lithology(Raw_material)) |>
-  filter(!is.na(Material), !Material %in% c("", "NA"), !Site_ID %in% drop_sites) |>
+  filter(!is.na(Material), !Material %in% c("", "NA")) |>
   left_join(site_key, by = "Site_ID") |>
   mutate(Material = factor(Material, levels = material_levels))
 A_D    <- vegdist(as.matrix(unclass(table(seq_len(nrow(scA)), droplevels(scA$Material)))), "bray")
@@ -178,7 +178,7 @@ site_key_fig <- sites |>
 used_fig <- q |>
   transmute(Site_ID = trimws(as.character(Site_ID)),
             Material = harmonise_lithology(Raw_material)) |>
-  filter(!is.na(Material), !Material %in% c("", "NA"), !Site_ID %in% drop_sites) |>
+  filter(!is.na(Material), !Material %in% c("", "NA")) |>
   left_join(site_key_fig, by = "Site_ID") |> filter(!is.na(river_ID)) |>
   transmute(Layer = layer_levels[2], river_ID, Material)
 avail_fig <- read_excel(basin_path, sheet = "Sheet1")
@@ -328,7 +328,7 @@ da <- bind_rows(tibble(Group = "edge", Value = ea), tibble(Group = "epa", Value 
 welch  <- t_test(da, Value ~ Group, var.equal = FALSE, detailed = TRUE)
 welch_t <- welch$statistic; welch_df <- welch$df; welch_p <- welch$p
 set.seed(2226)
-cohd_res <- cohens_d(da, Value ~ Group, var.equal = FALSE, ci = TRUE, nboot = 1000)
+cohd_res <- cohens_d(da, Value ~ Group, var.equal = FALSE, ci = TRUE, nboot = B_BOOT)
 cohd <- cohd_res$effsize; cohd_lo <- cohd_res$conf.low; cohd_hi <- cohd_res$conf.high
 
 # --------------------------------------------------------------------------

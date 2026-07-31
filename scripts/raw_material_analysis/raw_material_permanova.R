@@ -51,7 +51,6 @@ basin_path<- file.path(proj_dir, "data", "Raw_mat_basin.xlsx")
 out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "raw_material_permanova")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-drop_sites <- c("PJDD", "ZKZ")                    # -> the analysed "clean 27"
 perm       <- 9999
 
 # ---- shared levels / palettes (project idiom) ------------------------------
@@ -194,7 +193,6 @@ sc <- read_excel(sc_path, sheet = "Quina scraper") |>
   transmute(Site_ID  = trimws(as.character(Site_ID)),
             Material = harmonise_lithology(Raw_material)) |>
   filter(!is.na(Material), !Material %in% c("", "NA")) |>
-  filter(!Site_ID %in% drop_sites) |>
   left_join(site_key, by = "Site_ID")
 
 unmatched <- sc |> filter(is.na(basin) | is.na(river_ID))

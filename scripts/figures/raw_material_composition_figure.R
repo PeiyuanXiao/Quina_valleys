@@ -10,7 +10,7 @@
 # everywhere -- selection against local abundance.
 #
 # Data pipeline matches scripts/raw_material_analysis/raw_material_permanova.R
-# (harmonised sandstone classes; sites PJDD, ZKZ dropped; river_ID nests in
+# (harmonised sandstone classes; river_ID nests in
 # basin). Composition is recomputed here (a couple of counts, no permutation),
 # not cached.
 #
@@ -49,8 +49,6 @@ FIG_W_MM <- 150
 FIG_H_MM <- 108
 FIG_DPI  <- 600
 
-drop_sites <- c("PJDD", "ZKZ")
-
 # shared levels; palette in the muted family of fig_technological_consistency
 # (pink / blue / yellow reuse its exact group hues; purple + green added to fill
 # the five-material set), mapped to materials in legend order.
@@ -83,7 +81,6 @@ used <- read_excel(sc_path, sheet = "Quina scraper") |>
   transmute(Site_ID  = trimws(as.character(Site_ID)),
             Material = harmonise_lithology(Raw_material)) |>
   filter(!is.na(Material), !Material %in% c("", "NA")) |>
-  filter(!Site_ID %in% drop_sites) |>
   left_join(site_key, by = "Site_ID") |>
   filter(!is.na(river_ID)) |>
   transmute(Layer = layer_levels[2], river_ID, Material)

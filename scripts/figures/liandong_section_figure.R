@@ -81,7 +81,7 @@ sites <- read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% c("PJDD", "ZKZ"), trimws(river_ID) == "Liandong") |>
+  filter(trimws(river_ID) == "Liandong") |>
   mutate(geomorph = factor(geomorph, levels = names(geomorph_shapes))) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE) |>
   st_transform(32647)

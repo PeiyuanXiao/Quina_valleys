@@ -55,7 +55,6 @@ FIG_W_MM <- 150
 FIG_H_MM <- 90
 FIG_DPI  <- 600
 
-drop_sites <- c("PJDD", "ZKZ")
 cave_sites <- c("THC")            # not a terrace site; annotated as such
 
 # palette + symbol mapping shared with scripts/figure1/terra_map_2D.R
@@ -71,7 +70,6 @@ sites <- read_excel(site_path)
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% drop_sites) |>
   mutate(
     basin    = factor(sub(" basin$", "", trimws(basin)),
                       levels = c("Binchuan", "Heqing")),

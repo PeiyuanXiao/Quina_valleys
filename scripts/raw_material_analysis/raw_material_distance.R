@@ -1,12 +1,13 @@
 # QV_dist_river_by_group.R
 # Site distance-to-river (d_river_m) by basin and by river.
 #
-# One value per site (clean 27) -> site-level, no pseudoreplication. Rank-based
+# One value per site (all 27 in Site_information.xlsx) -> site-level, no
+# pseudoreplication. Rank-based
 # tests only (small, unbalanced N; right-skew with outliers THC, DPD_1).
 # river_ID nests in basin (Caifeng = Heqing), so the two contrasts overlap.
 #
 # Pipeline:
-#   1. Load one d_river_m per clean site; descriptives + assumption checks.
+#   1. Load one d_river_m per site; descriptives + assumption checks.
 #   2. Basin contrast: Mann-Whitney U + rank-biserial r.
 #   3. River contrast: Kruskal-Wallis + epsilon^2.
 #   4. Boxplots (log10 y) by basin and river.
@@ -32,7 +33,6 @@ proj_dir  <- here()
 site_path <- file.path(proj_dir, "data", "Site_information.xlsx")
 out_dir   <- file.path(proj_dir, "output", "raw_material_analysis", "dist_river_by_group")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-drop_sites <- c("PJDD", "ZKZ")
 
 basin_levels <- c("Binchuan", "Heqing")
 basin_colors <- c(Binchuan = "#C9603F", Heqing = "#3F7CAC")
@@ -64,7 +64,7 @@ dat <- sites |>
             basin = factor(strip_basin(basin), levels = basin_levels),
             river_ID = factor(trimws(river_ID), levels = river_levels),
             d = as.numeric(d_river_m)) |>
-  filter(!Code %in% drop_sites, !is.na(d), !is.na(basin), !is.na(river_ID))
+  filter(!is.na(d), !is.na(basin), !is.na(river_ID))
 
 cat("N =", nrow(dat), "sites\n")
 cat("\nBy basin:\n");  print(table(dat$basin))

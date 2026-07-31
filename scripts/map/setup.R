@@ -57,16 +57,15 @@ rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp")
 stream_threshold <- 1500
 
 ## ---- 1. sites (Site_information.xlsx = source of truth) ------------------
-## 29 surveyed localities; PJDD and ZKZ are dropped to give the analysed
-## "clean 27". The xlsx `geomorph` column was previously corrupted (mojibake)
-## and has been repaired in-file to the canonical T2/T3/T4/hilltop tokens;
-## headers carry trailing spaces so are trimmed on read, and `basin` is stored
-## as "<name> basin", so the " basin" suffix is stripped.
+## The 27 Quina-bearing localities, all of which are analysed. The xlsx
+## `geomorph` column was previously corrupted (mojibake) and has been repaired
+## in-file to the canonical T2/T3/T4/hilltop tokens; headers carry trailing
+## spaces so are trimmed on read, and `basin` is stored as "<name> basin", so
+## the " basin" suffix is stripped.
 sites <- readxl::read_excel(site_xlsx)
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% c("PJDD", "ZKZ")) |>                 # the clean 27
   mutate(
     basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop"))

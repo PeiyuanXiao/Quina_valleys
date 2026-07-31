@@ -99,7 +99,6 @@ sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx")
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(basin = factor(sub(" basin$", "", trimws(basin)),
                         levels = c("Binchuan", "Heqing"))) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE) |>

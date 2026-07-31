@@ -93,12 +93,11 @@ grat_col   <- grDevices::adjustcolor("white", alpha.f = 0.78)
 ## shape = geomorphic position, identical to the traverse profile (Fig. 1C)
 geomorph_shapes <- c(T2 = 21, T3 = 22, T4 = 24, hilltop = 23)
 
-## ---- sites (Site_information.xlsx = source of truth; PJDD/ZKZ dropped) ----
+## ---- sites (Site_information.xlsx = source of truth) ----------------------
 sites <- readxl::read_excel(file.path(proj_dir, "data", "Site_information.xlsx"))
 names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
-  filter(!code %in% c("PJDD", "ZKZ")) |>
   mutate(
     basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
     geomorph = factor(geomorph, levels = names(geomorph_shapes))
