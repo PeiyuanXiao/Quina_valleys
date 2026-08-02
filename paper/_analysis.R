@@ -1,19 +1,6 @@
 # ==========================================================================
 # _analysis.R -- the single source of every statistical result reported in
 # the manuscript and in the supplementary material.
-#
-# Both paper/manuscript.qmd and paper/supplementary.qmd source this file, so
-# a number can never differ between the two documents. It is self-contained:
-# it loads the packages, sets the seed and the permutation counts, defines
-# the inline-number formatters, reads the data and computes everything.
-# Sourcing it has no side effects on disk and writes no output; the mirror
-# scripts under scripts/ produce the same numbers plus their diagnostic
-# figures.
-#
-# Permutation tests use PERM = 9999 permutations and the fixed seed 2226;
-# the seed is re-set before each permutation test so results do not depend
-# on evaluation order.
-#
 # Input:  data/Quina_scraper_surface.xlsx, data/Longtan_lithic_tools.xlsx,
 #         data/Raw_mat_basin.xlsx, data/Site_information.xlsx
 # ==========================================================================
@@ -29,9 +16,6 @@ library(ggrepel)
 library(grid)
 library(cvequality)
 
-# A single fixed seed and permutation count govern every permutation, Monte
-# Carlo and bootstrap result reported, so the documents are exactly
-# reproducible (see the "Materials and methods" note on reproducibility).
 set.seed(2226)
 PERM    <- 9999
 B_BOOT  <- 5000   # bootstrap replicates: every percentile interval reported
@@ -45,8 +29,7 @@ fp <- function(p) {
   else if (p < 0.001) "< 0.001"
   else paste0("= ", formatC(p, format = "f", digits = 3))
 }
-# significance stars for figure brackets, on the cut points rstatix uses, so
-# that every bracket in the paper reads the same way
+# significance stars on the cut points rstatix uses
 psig <- function(p) {
   ifelse(is.na(p), "", ifelse(p <= 1e-4, "****", ifelse(p <= 1e-3, "***",
     ifelse(p <= 1e-2, "**", ifelse(p <= 5e-2, "*", "ns")))))
@@ -66,11 +49,6 @@ variables       <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                      "N_Scar", "Ave_RG", "Edge_Angle")
 
 # ---- display labels for those six variables -------------------------------
-# The one canonical set, used by every table and figure in both documents, so
-# that a variable is never named two ways. The bare form drops the unit and is
-# for places too tight to carry it, such as the loading arrows of an
-# ordination. disp_labels extends the set with the three raw dimensions that
-# enter the dispersion comparison but no other analysis.
 variable_labels <- c(Thickness            = "Thickness (mm)",
                      Retouch_length_index = "Retouched perimeter",
                      Ave_GIUR             = "GIUR",
@@ -161,16 +139,12 @@ C_D <- vegdist(as.matrix(unclass(table(seq_len(nrow(cobbles)), cobbles$Material)
 set.seed(2226); cobbleLoc   <- adonis2(C_D ~ Loc,      data = cobbles, permutations = PERM)
 set.seed(2226); cobbleRiver <- adonis2(C_D ~ river_ID, data = cobbles, permutations = PERM)
 
-# extract each PERMANOVA to plain scalars (the `Pr(>F)` column name cannot be
-# reached from inline `r ...` code, so the p-values are pulled out here)
+# the `Pr(>F)` column name cannot be reached from inline `r ...` code
 ad3 <- function(a) c(R2 = a$R2[1], F = a$F[1], p = a$`Pr(>F)`[1])
 usedA_basin_v <- ad3(usedA_basin); usedA_river_v <- ad3(usedA_river)
 cobbleLoc_v    <- ad3(cobbleLoc);    cobbleRiver_v  <- ad3(cobbleRiver)
 
-# composition of cobbles and artefacts by valley: the data behind
-# fig-raw-material-composition in the manuscript and tbl-composition in the
-# supplementary material, so that figure and table cannot disagree. Artefacts
-# are restricted to localities with a valley assignment, as the figure is.
+# composition by valley: shared by the manuscript figure and the supplementary table
 layer_levels <- c("River cobbles", "Surface Quina scrapers")
 site_key_fig <- sites |>
   transmute(Site_ID = trimws(as.character(Code)),
@@ -215,27 +189,21 @@ cl <- raw |>
   filter(is.finite(size), L > 0, B > 0, Th > 0)
 
 # ---- clast form, taken from the axes rather than from the field record ----
-# The shape recorded in the field (sub-oval, tabular, irregular) mixes
-# geometric form with regularity, two different things, so form is derived
-# here from the three axes themselves. Length, breadth and thickness are
-# sorted per clast into a >= b >= c (five records needed reordering) and
-# classified on Zingg's two ratios at his 2/3 thresholds; the maximum
-# projection sphericity of Sneed and Folk is carried alongside as a single
-# continuous summary of the same geometry. (-> Fig. 1C, and the methods)
-# Zingg's four fields, under the names used here: tabular for his disc-shaped
-# (oblate) field and prismatic for his rod-shaped (prolate) one
-form_levels <- c("Equant", "Tabular", "Prismatic", "Bladed")
+# the field shape terms mix form with regularity, so form comes from the axes
 cl_ax <- t(apply(as.matrix(cl[, c("L", "B", "Th")]), 1, sort, decreasing = TRUE))
 cl <- cl |>
   mutate(a_ax = cl_ax[, 1], b_ax = cl_ax[, 2], c_ax = cl_ax[, 3],
-         ba = b_ax / a_ax, cb = c_ax / b_ax,
-         # the four classes the quadrants of Fig. 1C are named for
-         Form = factor(case_when(ba > 2 / 3 & cb > 2 / 3 ~ "Equant",
-                                 ba > 2 / 3              ~ "Tabular",
-                                 cb > 2 / 3              ~ "Prismatic",
-                                 TRUE                    ~ "Bladed"),
-                       levels = form_levels),
          Sphericity = (c_ax^2 / (a_ax * b_ax))^(1 / 3))
+
+# Sneed and Folk coordinates, for the figure. a = c leaves the ratios
+# undefined; such a clast is perfectly compact, and n_ac_equal is 0 here
+n_ac_equal <- sum(cl$a_ax == cl$c_ax)
+cl <- cl |>
+  mutate(sf_ab = ifelse(a_ax > c_ax, (a_ax - b_ax) / (a_ax - c_ax), 0.5),
+         sf_bc = 1 - sf_ab,                       # = (b - c) / (a - c)
+         sf_compact  = c_ax / a_ax,
+         sf_elongate = (1 - sf_compact) * sf_ab,
+         sf_platy    = (1 - sf_compact) * sf_bc)
 
 sz  <- cl |> filter(Material %in% c("Trachyte", "Sandstone")) |>
   mutate(G = factor(Material, levels = c("Trachyte", "Sandstone")))
@@ -244,32 +212,27 @@ size_wt <- suppressWarnings(wilcox.test(size ~ G, data = sz))
 nT <- sum(sz$G == "Trachyte"); nS <- sum(sz$G == "Sandstone")
 size_U  <- min(unname(size_wt$statistic), nT * nS - unname(size_wt$statistic))
 size_p  <- size_wt$p.value
-# rank-biserial effect size for the same comparison (reported in the
-# supplementary material; the methods promise it alongside U)
 size_r  <- sz |> wilcox_effsize(size ~ G) |> pull(effsize)
 
 # ---- does form distinguish the two lithologies? ---------------------------
-# Size does, and the paragraph on raw material selection reports it; form is
-# the property a reader would ask about next. U is taken in the same
-# min(W, nT nS - W) form as size_U above.
-mw_U <- function(w) min(unname(w$statistic), nT * nS - unname(w$statistic))
-# the four classes as the composition of each lithology (-> Fig. 1D); the
-# comparison itself is made on the ratios, not on these classes
-form_tab <- table(sz$G, sz$Form)
-form_pct <- 100 * prop.table(form_tab, 1)
-# form is tested where it is shown, in the plane of the two axial ratios, by
-# PERMANOVA on Euclidean distances of the z-scored ratios: the same procedure
-# and the same permutation count as every other PERMANOVA reported here, and
-# one that uses the ratios as measured instead of the four classes they fall in
+# the three axes as a composition: Aitchison distance, so size divides out and
+# the ilr basis does not matter. Strictly positive, so no zero replacement
+form_axes <- as.matrix(sz[, c("a_ax", "b_ax", "c_ax")])
+D_form    <- vegdist(form_axes, method = "aitchison")
 set.seed(2226)
-form_perm <- adonis2(dist(scale(as.matrix(sz[, c("ba", "cb")]))) ~ G,
-                     data = sz, permutations = PERM)
+form_perm <- adonis2(D_form ~ G, data = sz, permutations = PERM)
 form_R2 <- form_perm$R2[1]; form_F <- form_perm$F[1]
 form_df <- form_perm$Df[1]; form_df_res <- form_perm$Df[2]
 form_p  <- form_perm$`Pr(>F)`[1]
-sph_wt  <- suppressWarnings(wilcox.test(Sphericity ~ G, data = sz))
-sph_med <- tapply(sz$Sphericity, sz$G, median)
-sph_U   <- mw_U(sph_wt); sph_p <- sph_wt$p.value
+# PERMDISP on the same distances
+set.seed(2226)
+form_disp <- betadisper(D_form, sz$G)
+set.seed(2226)
+form_disp_perm <- permutest(form_disp, permutations = PERM)
+form_disp_F <- form_disp_perm$tab$F[1]
+form_disp_p <- form_disp_perm$tab$`Pr(>F)`[1]
+# sphericity is not tested: log psi is the clr coordinate of the short axis,
+# a marginal direction of the comparison just made
 
 # --------------------------------------------------------------------------
 # 4. Quina scraper techno-typology descriptive analysis
@@ -310,8 +273,6 @@ spear <- function(v) {
   ct <- suppressWarnings(cor.test(ea[ok], v[ok], method = "spearman", exact = FALSE))
   c(rho = unname(ct$estimate), p = ct$p.value)
 }
-# the three correlations form one family, so the p-values carry a Bonferroni
-# adjustment across them, as everywhere else in the paper
 ea_cor  <- vapply(list(giur, rli, rg), spear, numeric(2))
 ea_cor["p", ] <- p.adjust(ea_cor["p", ], "bonferroni")
 ea_giur <- ea_cor[, 1]; ea_rli <- ea_cor[, 2]; ea_rg <- ea_cor[, 3]
@@ -351,9 +312,6 @@ n_by_group <- table(complete_data$Group)
 ltq_n <- n_by_group[["LT_Quina"]]; lto_n <- n_by_group[["LT_Ordinary"]]
 amat  <- complete_data |> select(all_of(variables)) |> scale() |> as.matrix()
 
-# the degrees of freedom and sums of squares are carried through as well as the
-# R2/F/p the manuscript quotes, so the supplementary material can print the
-# complete PERMANOVA table without re-running anything
 pairwise_permanova <- function(data, m) {
   gs <- levels(droplevels(data$Group))
   bind_rows(lapply(combn(gs, 2, simplify = FALSE), function(pair) {
@@ -399,9 +357,6 @@ posthoc_brackets <- bind_rows(
             by = "Variable") |>
   mutate(y.position = ymax + yrange * (0.06 + 0.10 * step))
 
-# the omnibus tests behind those post-hoc comparisons: Kruskal-Wallis with
-# epsilon-squared for the three rank-tested variables, Welch's ANOVA for the
-# three tested parametrically (-> the supplementary per-variable table)
 kw_omni <- variable_long |> filter(Variable %in% kw_vars) |> mutate(Variable = droplevels(Variable)) |>
   group_by(Variable) |> kruskal_test(Value ~ Group) |> ungroup()
 kw_eff  <- variable_long |> filter(Variable %in% kw_vars) |> mutate(Variable = droplevels(Variable)) |>
@@ -416,11 +371,8 @@ run_permdisp <- function(df) {
   set.seed(2226); bd <- betadisper(d, mvd$Group)
   set.seed(2226); pt <- permutest(bd, permutations = PERM, pairwise = TRUE)
   pca <- prcomp(mat, center = TRUE, scale. = FALSE); vexp <- pca$sdev^2 / sum(pca$sdev^2) * 100
-  # F and p for each pair, so that the two are matched: permutest() returns
-  # pairwise p-values but no pairwise F. The pair is subset from the distance
-  # matrix of the whole set rather than re-scaled on its own, keeping the
-  # technological space fixed; with Euclidean distances the mean distances to
-  # centroid do not depend on which other groups are present.
+  # permutest() gives pairwise p but no pairwise F, so each pair is re-run on a
+  # subset of the whole distance matrix, keeping the technological space fixed
   pair_tab <- bind_rows(lapply(combn(levels(mvd$Group), 2, simplify = FALSE), function(pr) {
     rows <- mvd$Group %in% pr
     set.seed(2226); b2 <- betadisper(dist(mat[rows, ]), droplevels(mvd$Group[rows]))
@@ -431,8 +383,6 @@ run_permdisp <- function(df) {
                SumOfSqs = p2$tab$`Sum Sq`[1], SumOfSqs_res = p2$tab$`Sum Sq`[2],
                F = p2$tab$F[1], p = p2$tab$`Pr(>F)`[1])
   }))
-  # the full rotation and every eigenvalue are kept, not only PC1-PC2, so the
-  # supplementary material can tabulate all six components
   list(means = tapply(bd$distances, mvd$Group, mean), overall_p = pt$tab$`Pr(>F)`[1],
        overall_F = pt$tab$F[1], overall_df = pt$tab$Df[1], overall_df_res = pt$tab$Df[2],
        distances = data.frame(Group = mvd$Group, distance = unname(bd$distances)),
@@ -448,9 +398,7 @@ permdisp_scltq_F <- pdget(permA, "SC_Quina-LT_Quina", "F")
 permdisp_scltq_p <- pdget(permA, "SC_Quina-LT_Quina", "p")
 permdisp_nonq_F  <- c(pdget(permA, "SC_Quina-LT_Ordinary", "F"), pdget(permA, "LT_Quina-LT_Ordinary", "F"))
 permdisp_nonq_p  <- max(pdget(permA, "SC_Quina-LT_Ordinary", "p"), pdget(permA, "LT_Quina-LT_Ordinary", "p"))
-# sensitivity: drop surface pieces from within the Longtan site area, and repeat
-# both halves of the comparison -- centroid position (PERMANOVA) and dispersion
-# (PERMDISP). The reduced set is z-scored on its own, as the full set was.
+# sensitivity: drop surface pieces from within the Longtan site area and repeat
 scraper_excl  <- scraper_all |> filter(!(Group == "SC_Quina" & Site_ID %in% "LT"))
 permC <- run_permdisp(scraper_excl)
 sens_scltq_F <- pdget(permC, "SC_Quina-LT_Quina", "F")
@@ -473,9 +421,8 @@ sens_perm_nonq_F   <- c(pwgetE("SC_Quina vs LT_Ordinary", "F"),
 sens_perm_nonq_p   <- max(pwgetE("SC_Quina vs LT_Ordinary", "p_adjusted"),
                           pwgetE("LT_Quina vs LT_Ordinary", "p_adjusted"))
 
-# univariate dispersion: CV family tested with the KL-MSLRT, the bounded [0,1]
-# indices and the counts with Fligner-Killeen (see the methods note on why the
-# CV is not used for those). Surface Quina against Longtan Quina throughout.
+# univariate dispersion: KL-MSLRT for the CV family, Fligner-Killeen for the
+# bounded indices and the counts
 disp_vars <- c("Length", "Width", "Thickness", "Mass", "Edge_Angle",
                "Ave_GIUR", "Retouch_length_index", "N_Scar", "Ave_RG")
 read_disp <- function(path, g) read_excel(path, sheet = "Quina scraper") |>
@@ -490,8 +437,8 @@ boot_ratio_ci <- function(a, b, FUN, B = B_BOOT) {
   unname(quantile(replicate(B, FUN(sample(a, replace = TRUE)) / FUN(sample(b, replace = TRUE))),
                   c(.025, .975), na.rm = TRUE))
 }
-# mslr_test is Monte Carlo; its RNG use is insulated (seed saved and restored) so
-# that the bootstrap intervals do not depend on how many tests ran before it
+# mslr_test is Monte Carlo; its RNG use is insulated so the bootstrap intervals
+# do not depend on how many tests ran before it
 cv_equal_test <- function(a, b) {
   a <- finite(a); b <- finite(b)
   old <- if (exists(".Random.seed", envir = .GlobalEnv)) get(".Random.seed", envir = .GlobalEnv) else NULL
@@ -549,7 +496,6 @@ site_df <- scL |> group_by(Site_ID) |>
   left_join(site_size, by = "Site_ID")
 n_localities <- nrow(site_df)
 dL <- dist(scale(as.matrix(site_df[, variables])))
-# Df and SS carried through for the supplementary table, as in pairwise_permanova
 grad_permanova <- function(col) {
   set.seed(2226); a <- adonis2(dL ~ site_df[[col]], permutations = PERM)
   c(R2 = a$R2[1], F = a$F[1], p = a$`Pr(>F)`[1], Df = a$Df[1], Df_res = a$Df[2],
@@ -562,9 +508,8 @@ bdf <- site_df |> filter(!is.na(Basin))
 set.seed(2226); aB <- adonis2(dist(scale(as.matrix(bdf[, variables]))) ~ Basin, data = bdf, permutations = PERM)
 ls_basin <- c(R2 = aB$R2[1], F = aB$F[1], p = aB$`Pr(>F)`[1], Df = aB$Df[1], Df_res = aB$Df[2],
               SumOfSqs = aB$SumOfSqs[1], SumOfSqs_res = aB$SumOfSqs[2])
-# each of the six measures against distance to the nearest channel, with a
-# bootstrap interval on rho: at this number of localities the interval, not the
-# p-value, is what shows how little the coefficients pin down (-> tbl-distance-correlations)
+# bootstrap interval on rho: at this n the interval, not the p-value, is what
+# shows how little the coefficients pin down
 ls_dist_cor <- bind_rows(lapply(variables, function(v) {
   d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df$Distance_to_water), ]
   ct <- suppressWarnings(cor.test(d[[v]], d$Distance_to_water, method = "spearman", exact = FALSE))

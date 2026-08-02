@@ -75,16 +75,6 @@ editor_options:
 #| label: setup
 #| include: false
 
-# Every result in this document is computed by paper/_analysis.R, the same file
-# the manuscript sources, so the two cannot disagree. The few quantities needed
-# only here -- the dispersion tests that accompany the raw-material PERMANOVAs,
-# the omnibus statistics behind the per-variable post-hoc comparisons, and the
-# two further correlation families of the landscape figure -- are computed in
-# the next chunk from the objects it leaves behind.
-#
-# Apart from the note that opens it and the short guide that opens each of its
-# four sections, this document carries no running text: it is the tables and
-# figures with their captions alone, each caption written to stand on its own.
 source(here::here("paper", "_analysis.R"))
 
 # p-value formatter for table cells: fp() with its leading "= " removed
@@ -93,11 +83,6 @@ fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
 group_labels <- c(SC_Quina = "Surface Quina", LT_Quina = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
-# variable_labels and variable_labels_bare come from _analysis.R, the same set
-# the manuscript uses, so that no variable is named two ways across the two
-# documents
-# the blue and the pink of the shared palette, which are also the two ends of
-# the gradient used for the continuous landscape variables
 basin_colors   <- c(Binchuan = "#6BA8CE", Heqing = "#E07C90")
 grad_low       <- "#6BA8CE"
 grad_high      <- "#E07C90"
@@ -115,21 +100,26 @@ fig_theme <- theme_minimal(base_size = 9) +
         legend.key = element_blank(), plot.tag = element_text(face = "bold", size = 11),
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
+
+# versions are read from the rendering session, not typed out
+si_pkgs <- c("tidyverse", "dplyr", "tidyr", "ggplot2", "readxl", "here",
+             "vegan", "rstatix", "ggpubr", "patchwork", "ggrepel",
+             "cvequality", "mgcv", "knitr")
+si_pkg_list <- paste(sprintf("%s %s", si_pkgs,
+                             vapply(si_pkgs,
+                                    function(p) as.character(packageVersion(p)),
+                                    character(1))),
+                     collapse = ", ")
+n_fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
 ```
 
 ```{r}
 #| label: si-analysis
 #| include: false
 
-# ==========================================================================
-# Quantities needed only in this document. Everything here is built from the
-# objects created in _analysis.R, on the same seed and the same PERM.
-# ==========================================================================
+# quantities needed only in this document, built from the objects _analysis.R leaves
 
 # ---- 1. PERMDISP alongside each raw-material PERMANOVA --------------------
-# A significant PERMANOVA with a small R2 can reflect unequal dispersion
-# rather than a shift of centroid, so each composition model is repeated as a
-# test of dispersion on the same dissimilarity.
 permdisp_one <- function(D, g) {
   g <- droplevels(factor(g))
   set.seed(2226); bd <- suppressWarnings(betadisper(D, g))
@@ -142,10 +132,6 @@ pd_usedA_basin <- permdisp_one(A_D, A_meta$basin)
 pd_usedA_river <- permdisp_one(A_D, A_meta$river_ID)
 
 # ---- 2. Welch post-hoc statistics ----------------------------------------
-# pairwise_t_test() returns adjusted p-values but no test statistic, so the
-# same comparisons are re-run with t_test() to recover t and its df. The two
-# procedures are the same Welch test with the same Bonferroni adjustment; the
-# check below fails the render if the adjusted p-values ever diverge.
 we_t <- variable_long |> filter(Variable %in% welch_vars) |>
   mutate(Variable = droplevels(Variable)) |> group_by(Variable) |>
   t_test(Value ~ Group, var.equal = FALSE, p.adjust.method = "bonferroni") |> ungroup()
@@ -155,9 +141,6 @@ we_ph_full <- we_ph |> select(Variable, group1, group2, p.adj, p.adj.signif) |>
 stopifnot(isTRUE(all.equal(we_ph_full$p.adj, we_ph_full$p.adj.t)))
 
 # ---- 3. Landscape: dispersion between the basins --------------------------
-# Basin is the one categorical landscape variable and so the only one for which
-# a test of dispersion is defined. The other three enter every analysis at
-# their measured values; they are nowhere discretised.
 ls_basin_pd <- permdisp_one(dL, site_df$Basin)
 n_basin_site <- table(droplevels(site_df$Basin))
 
@@ -167,11 +150,6 @@ site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
 site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
 
 # ---- 5. Each measure against each continuous landscape variable -----------
-# The distance family is the one the paper reports; the other two are given
-# here so that every panel of the scatter figure carries its coefficient. Each
-# is one family of six tests and carries its own Bonferroni adjustment, exactly
-# as the distance family does in _analysis.R. The check below fails the render
-# if the distance rows ever depart from the values reported in the paper.
 land_vars <- c(Height_above_river = "Height above channel (m)",
                Site_size          = "Assemblage size (n specimens)",
                Distance_to_water  = "Distance to channel (m)")
@@ -191,17 +169,8 @@ stopifnot(isTRUE(all.equal(land_cor$rho[land_cor$Landscape == "Distance_to_water
                            ls_dist_cor$p_adj)))
 
 # ---- 6. Each landscape variable as a surface over the ordination ----------
-# A thin-plate spline fitted over the ordination plane, as ordisurf fits one,
-# and drawn as the background of the locality-level figure. select = TRUE lets
-# the smooth be shrunk out of the model altogether, so a flat surface is a
-# conclusion the fit reached rather than one imposed on it. The grid is clipped
-# to the convex hull of the localities: colour would be an extrapolation
-# anywhere else.
 hull_i  <- chull(site_scores$PC1, site_scores$PC2)
 hull_xy <- as.matrix(site_scores[c(hull_i, hull_i[1]), c("PC1", "PC2")])
-# the grid is kept whole and the cells outside the hull set to NA, rather than
-# dropped: a complete grid is what geom_raster needs, and it draws the missing
-# cells as nothing at all
 surf_one <- function(v, n = 250) {
   y <- site_scores[[v]]
   g <- mgcv::gam(y ~ s(PC1, PC2, k = 10), data = site_scores,
@@ -213,7 +182,6 @@ surf_one <- function(v, n = 250) {
     PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
   grd$fit <- as.numeric(predict(g, newdata = grd))
   grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
-  # the fit of each surface is reported in the caption rather than in the panel
   list(grid = grd, dev = 100 * s$dev.expl, p = s$s.table[1, "p-value"])
 }
 surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
@@ -221,14 +189,6 @@ surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
 surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
 
 # ---- 7. Each measure between the two basins -------------------------------
-# Basin is the categorical landscape variable, so it cannot enter the scatter
-# figure with the other three; these are the univariate comparisons behind the
-# boxplot that carries it. bdf is the frame the basin PERMANOVA is fitted on in
-# _analysis.R, so figure and test cannot disagree. Each measure is compared with
-# a Mann-Whitney rank sum test carrying the rank-biserial r; the six are one
-# family and take a Bonferroni adjustment, as each correlation family above
-# does. The figure shows the outcome as the bracket the main-text boxplots use,
-# so the numbers themselves are reported in its caption.
 basin_cmp <- bind_rows(lapply(variables, function(v) {
   d <- bdf[is.finite(bdf[[v]]), c("Basin", v)]
   names(d) <- c("Basin", "Value")
@@ -240,23 +200,22 @@ basin_cmp <- bind_rows(lapply(variables, function(v) {
 basin_cmp$p_adj <- p.adjust(basin_cmp$p, "bonferroni")
 basin_cmp <- add_significance(basin_cmp, p.col = "p_adj", output.col = "p.adj.signif")
 basin_r_max <- basin_cmp[which.max(basin_cmp$r), ]
-# the label of that measure, set to run inside a sentence: an ordinary name is
-# lowercased, an abbreviation such as GIUR left as it stands
 basin_r_lab <- variable_labels_bare[[basin_r_max$variable]]
 if (grepl("^[A-Z][a-z]", basin_r_lab))
   basin_r_lab <- paste0(tolower(substr(basin_r_lab, 1, 1)), substring(basin_r_lab, 2))
-# the boxes are wider in Binchuan on most measures, which is what the
-# significant dispersion test records; counted here rather than asserted
 basin_iqr_wider <- sum(vapply(variables, function(v) {
   q <- tapply(bdf[[v]], droplevels(bdf$Basin), IQR, na.rm = TRUE)
   q[["Binchuan"]] > q[["Heqing"]]
 }, logical(1)))
-# spelled out, the count being small enough to read as a word in the caption
 basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
                     "six")[basin_iqr_wider + 1]
 ```
 
-This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. Permutation tests use 9,999 permutations throughout, and every family of multiple comparisons carries a Bonferroni adjustment. The data and the code needed to regenerate this document are deposited with the research compendium.
+This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. The data and the code needed to regenerate this document are deposited with the research compendium.
+
+All analyses were carried out in `r R.version.string`, with the following packages: `r si_pkg_list`. The seed 2226 is set once at the head of the analysis file and again immediately before each permutation, Monte Carlo or bootstrap procedure, so that no result depends on the order in which the others were evaluated.
+
+Three resampling settings govern the results reported below. Permutation tests use `r n_fmt(PERM)` permutations throughout, PERMANOVA and PERMDISP alike. Percentile confidence intervals are taken from `r n_fmt(B_BOOT)` bootstrap replicates. Three quantities carry such an interval, all of them reported in the main text: the between-group ratios of the coefficient of variation and of the Fano factor, Spearman's ρ between each technological measure and distance to the nearest channel, and Cohen's *d* for the difference between scraper edge angle and the exterior platform angle of the resharpening flakes. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation is evaluated by Monte Carlo simulation with `r n_fmt(MSLR_NR)` iterations; its use of the random number stream is insulated, the state being saved and restored around each call, so that the bootstrap intervals do not depend on how many such tests preceded them. Every family of multiple comparisons carries a Bonferroni adjustment.
 
 The tables and figures follow the order of the Results and are grouped into four sections: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Each section opens with a short guide to what it contains. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
 
@@ -264,7 +223,11 @@ The tables and figures follow the order of the Results and are grouped into four
 
 # Raw material economy
 
-This section reports what was available on the river bars and what was chosen from it. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
+This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
+
+\newpage
+
+![The gravel-bar sampling points. (A) to (E) The five points at which the surveyed cobbles were recorded, each with the cleared quadrat marked out by string and a spirit level laid across it for scale. (F) A general view of one of the sampled channels. Every cobble longer than 30 mm exposed at the surface within the quadrat was recorded.](../figures/sample_point_photo.png){#fig-sample-points width="5.9in"}
 
 \newpage
 
@@ -382,7 +345,11 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 # Techno-typological characterisation of the retouch products
 
-This section describes the retouch products themselves. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The typological attribution of the same specimens is reported in the main text.
+This section describes the retouch products themselves. @fig-quina-scrapers-si illustrates further specimens beyond those figured in the main text. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The typological attribution of the same specimens is reported in the main text.
+
+\newpage
+
+![Quina scrapers from the surface collections. (A) and (B) simple scrapers. (C) convergent scraper. (D) alternate scraper. (E) *limace*](../figures/quina_scraper_SI_.png){#fig-quina-scrapers-si width="5.9in"}
 
 \newpage
 
@@ -390,7 +357,6 @@ This section describes the retouch products themselves. @tbl-retouch-products gi
 #| label: tbl-retouch-products
 #| tbl-cap: "Metric and reduction attributes of the Quina scrapers and the resharpening flakes from the surface collections. Not every attribute could be measured on every specimen: the platform attributes are recorded only on those that retain the platform of the blank, and GIUR on all but one scraper. The retouch attributes apply to the scrapers alone and the exterior platform angle to the resharpening flakes alone."
 
-# one row per attribute; d = decimals for mean/SD, ds for the order statistics
 attr_row <- function(label, x, d = 1, ds = d) {
   x  <- as.numeric(x); x <- x[is.finite(x)]
   qs <- unname(quantile(x, c(.25, .75)))
@@ -399,7 +365,6 @@ attr_row <- function(label, x, d = 1, ds = d) {
              med = f(median(x), ds),
              iqr = paste0(f(qs[1], ds), "–", f(qs[2], ds)))
 }
-# panel heading, keeping the two classes of retouch product apart
 attr_head <- function(label, n_total) {
   data.frame(Attribute = sprintf("**%s** (*n* = %d)", label, n_total),
              mn = "", sd = "", med = "", iqr = "")
@@ -441,8 +406,6 @@ knitr::kable(retouch_products_tbl, align = c("l", "r", "r", "r", "r"),
 #| fig-width: 5.9
 #| fig-height: 4.9
 
-# one row per category, ordered within its panel: by frequency where the
-# categories are nominal, in their own order where they are not
 cat_panel <- function(x, panel, levels_order = NULL, recode_map = NULL) {
   x <- trimws(as.character(x)); x <- x[!is.na(x)]
   if (!is.null(recode_map)) x <- ifelse(x %in% names(recode_map), recode_map[x], x)
@@ -458,14 +421,9 @@ cat_df <- bind_rows(
   cat_panel(q$Platform_type, "Platform type"),
   cat_panel(q$Tot_Direction, "Retouch direction")) |>
   mutate(Panel = factor(Panel, levels = unique(Panel)))
-# a discrete axis places its first level at the foot of the panel, so the
-# display order is reversed here to put the leading category at the top
 cat_df$Level <- factor(cat_df$Level,
                        levels = cat_df |> arrange(Panel, desc(rank)) |> pull(Level))
 
-# colour carries the ordering where there is one: the cortex classes take a
-# light-to-dark ramp, and each nominal panel a single colour of the shared
-# palette, which distinguishes the panels without implying an order within them
 cortex_ramp <- setNames(colorRampPalette(c("#CBDCEA", "#2C5F7C"))(length(cortex_classes)),
                         cortex_classes)
 panel_flat <- c(`Cortex position` = "#E07C90", `Platform type` = "#E6C25C",
@@ -512,11 +470,6 @@ dist_long <- variable_long |>
                         levels = unname(group_labels)))
 lab_colors <- setNames(unname(group_colors), unname(group_labels))
 
-# Each cell of the figure is built as its own plot rather than as one facet of
-# a whole, so that a histogram drawn as a plot in its own right can be inset
-# into it. inset_element places the inset as a fraction of the panel, so every
-# one of them lands in the same corner at the same size whatever the scales of
-# the panel it sits in.
 INSET_GAP <- unit(1.4, "mm")     # the same clearance at the left and the top
 inset_theme <- theme_minimal(base_size = 6) +
   theme(panel.grid = element_blank(),
@@ -527,11 +480,7 @@ inset_theme <- theme_minimal(base_size = 6) +
         plot.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(0, 0, 0, 0))
 
-# Each cell holds one group only, so a legend built from it has a key for that
-# group and two blank ones, and three such legends would be collected side by
-# side. The legend is therefore carried by a single cell, which is given three
-# fully transparent points, one per group, placed inside its own range so that
-# they move nothing. override.aes makes the keys solid.
+# one cell carries the legend for all three groups, via transparent points
 qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
   d <- dist_long[dist_long$Variable == vlab & dist_long$Group == glab, ]
   legend_key <- data.frame(
@@ -564,10 +513,7 @@ qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
                  inherit.aes = FALSE, alpha = 0, size = 0.7, shape = 16,
                  show.legend = TRUE)
   }
-  # the gap is given in millimetres rather than as a fraction of the panel, so
-  # that the inset stands the same distance from the left edge as from the top;
-  # the panels are wider than they are tall, and equal fractions would not be
-  # equal distances
+  # millimetres, not a fraction: the panels are wider than they are tall
   p_qq + inset_element(p_hist,
                        left   = INSET_GAP,
                        bottom = unit(0.63, "npc"),
@@ -576,9 +522,6 @@ qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
                        align_to = "panel", ignore_tag = TRUE)
 }
 
-# the group is carried by the legend along the foot of the figure rather than
-# by a strip over every column, the group names being too long to sit there;
-# the variable names the row from the left
 vars_row <- levels(dist_long$Variable)
 qq_cells <- unlist(lapply(vars_row, function(v) {
   lapply(seq_along(levels(dist_long$Group)), function(i) {
@@ -784,10 +727,6 @@ p_scores <- ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   guides(fill = "none",
          color = guide_legend(nrow = 1, override.aes = list(size = 1.8, alpha = 1)))
 
-# the loadings on their own axes, so that the arrows need no arbitrary scaling
-# factor to be readable over the point cloud. Each column of the rotation has
-# unit norm across all six components, so the unit circle is the reference an
-# arrow would reach if these two components accounted for the variable in full.
 circle_ref <- data.frame(theta = seq(0, 2 * pi, length.out = 200)) |>
   mutate(x = cos(theta), y = sin(theta))
 lim_s <- 1.12
@@ -875,10 +814,6 @@ knitr::kable(ls_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
 #| fig-width: 5.9
 #| fig-height: 5.8
 
-# Basin is the only categorical landscape variable; the other three enter the
-# tests at their measured values, so they are shown here as gradients rather
-# than in classes of our own choosing. The landscape variable is named in the
-# legend under each panel rather than in a title over it.
 site_panel <- function(grp, cols, legend_title) {
   d <- site_scores |> mutate(G = .data[[grp]]) |> filter(!is.na(G))
   cen <- d |> group_by(G) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
@@ -903,18 +838,10 @@ site_panel <- function(grp, cols, legend_title) {
           legend.margin = margin(0, 0, 0, 0)) +
     guides(fill = "none", color = guide_legend(nrow = 1, override.aes = list(size = 1.6)))
 }
-# the gradient runs between the blue and the pink of the shared palette, the
-# same two colours that distinguish the basins in panel A, and carries both the
-# fitted surface and the localities drawn over it. A square-root scale:
-# all three continuous variables are right-skewed (18 of the localities yielded
-# one or two specimens, and three sit far above the terrace sequence), so a
-# linear ramp would leave most points one colour.
+# square-root scale: all three variables are right-skewed
 site_grad_panel <- function(var, legend_title, breaks) {
   s <- surfaces[[var]]
-  # both scales carry the same limits, so that the flat surface is drawn at the
-  # colour its value deserves and not stretched across the whole ramp; the
-  # background is lightened, which keeps a point of average value visible
-  # against it
+  # shared limits, so a flat surface is not stretched across the whole ramp
   lims <- range(site_scores[[var]], na.rm = TRUE)
   ggplot(site_scores, aes(PC1, PC2, color = .data[[var]])) +
     geom_raster(data = s$grid, aes(PC1, PC2, fill = fit), alpha = 0.5,
@@ -958,8 +885,6 @@ site_grad_panel <- function(var, legend_title, breaks) {
 #| fig-width: 5.9
 #| fig-height: 7.8
 
-# the three landscape variables enter as measured, so the display is a scatter
-# throughout; nothing here is binned
 grid_long <- site_df |>
   select(all_of(c(names(land_vars), variables))) |>
   pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
@@ -995,16 +920,12 @@ ggplot(grid_long, aes(X, Value)) +
 #| fig-width: 5.9
 #| fig-height: 5.4
 
-# one row per locality, as everywhere in this section: the points are the
-# medians the tests are run on
 basin_long <- bdf |>
   select(Basin, all_of(variables)) |>
   mutate(Basin = droplevels(Basin)) |>
   pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
   mutate(Measure = factor(variable_labels[Measure], levels = unname(variable_labels)))
 
-# the bracket sits above the highest point of its panel, placed as the brackets
-# of the main-text boxplots are and carrying the same significance labels
 basin_brackets <- basin_cmp |>
   transmute(Measure = factor(variable_labels[variable], levels = unname(variable_labels)),
             group1 = "Binchuan", group2 = "Heqing", label = p.adj.signif) |>
