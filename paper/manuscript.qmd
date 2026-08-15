@@ -108,21 +108,19 @@ source(here::here("paper", "_analysis.R"))
 
 # Introduction
 
-The Middle Palaeolithic (\~300-40 ka) was a period of marked diversity in both hominin populations and lithic technology, and what produced that diversity has been contested since Bordes read the variability of Mousterian assemblages as the signature of distinct cultural traditions [@bordesMousterianCulturesFrance1961; @bordes1950]. The same variability has since been attributed to the activities carried out at a site [@binfordbinford1966], to change through time [@mellars1969], to the raw material available locally and the distances over which it was moved [@geneste1985; @kuhn1995], and to the degree to which tools had been reduced [@dibble1987interpretation]. The Quina Mousterian has been central to that debate.
-
-The Quina Mousterian is one of the best-defined Middle Palaeolithic techno-complexes [@delagnes2006; @faivre2017], and what distinguishes it is not a tool type but a techno-economic system, the Quina system, whose defining features form three interlocking dimensions [@delpiano2022; @peresani2023]. The first dimension is blank production. Quina cores receive little preparation and are reduced through alternating, concatenated removals on sub-parallel and secant surfaces, with invasive detachments that optimise the volume of stone converted into blanks [@turq1989; @turq2000; @Bourguignon1997]. The target product is a thick flake, asymmetric in cross-section, with a sharp cutting edge on one margin and a thick, often cortical, back opposite [@turq1992; @hiscock2009]. This asymmetry is what allows such a tool to be repeatedly resharpened [@turq1992; @hiscock2009]. The second dimension is edge maintenance, achieved through Quina retouch. Here the working edge is not merely produced but sustained, and resharpening follows a regular rhythm [@lemoriniScrapersLifeHistory2016; @Bourguignon1997]. Early episodes detach relatively large resharpening flakes and leave convex scars, giving a plano-convex edge and preserving volume for later work; as retouch proceeds it concentrates on the margin itself, producing smaller concave scars with stepped or hinged terminations and a plano-concave edge that keeps the tool serviceable. Each generation of retouch therefore restores a working edge without drawing on new raw material. The third dimension is ramification of the reduction sequence [@bourguignon2004ramification; @faivre2017]. Resharpening flakes detached during edge maintenance carry cutting edges of their own and can be used directly, as use-wear analysis has shown [@claud2012]; in some cases they were themselves retouched into tools [@ruanQuinaLithicTechnology2025a]. Quina flakes, besides being shaped into Quina scrapers, are thick enough to serve as cores for small flakes (i.e. core-on-flake) [@hiscock2009]. Use-wear on scrapers and resharpening flakes from the same assemblages indicates that the two were put to different tasks, scraping and cutting respectively [@delpiano2022], so that ramification widened the functional range of the toolkit as well as extending its life. Efficient blank production, intensive edge maintenance and ramification together create an economy of stone use in which the thick Quina flake functions as a transportable and highly extendable package of raw material, yielding a large amount of working edge from a small initial investment [@hiscock2009; @delpiano2022].
-
-Quina technology has been interpreted as an adaptation to high mobility in open environments where resources were patchily distributed and seasonally structured, and this interpretation rests on three lines of evidence. Faunal assemblages from Quina sites are typically dominated by a single gregarious and migratory species, most often reindeer, although equids and bovids predominate in some regions [@delpechLenvironnementAnimalMousteriens1996; @delagnesShiftsNeandertalMobility2011; @delpiano2022; @castelNeandertalSubsistenceStrategies2017]. Settlement organisation is correspondingly structured, with residential camps surrounded by task-specific satellite locations given over to hunting and carcass processing [@delagnesShiftsNeandertalMobility2011]. At the landscape scale, Quina assemblages occur in open, largly treeless in which prey were distributed across the terrain in a way that was patchy but not random [@delpechLenvironnementAnimalMousteriens1996; @hiscock2009]. Neanderthals under these conditions are argued to have relied on seasonal, high-mobility strategies of resource use and tool provisioning [@hiscock2009; @delagnesShiftsNeandertalMobility2011], and it is here that the technological economy described above becomes advantageous: versatile blanks, tools with long use-lives and cores requiring little preparation together lower the time and energy costs of replacing equipment on the move, and reduce the risk both of being left without an effective cutting edge far from a source of raw material and of carrying a toolkit ill-suited to the tasks that a given season and location happened to present [@hiscock2009; @delagnesShiftsNeandertalMobility2011].
-
-The distinction between the Quina system and Quina retouch alone matters when its distribution is assessed. In the strict sense, with blank production, edge maintenance and ramification operating together, Quina system is documented in western and southern Europe within a narrow interval between MIS 4 and early MIS 3, coinciding with pronounced global climatic instability [@delagnesShiftsNeandertalMobility2011; @delpiano2022; @frouinDatingMiddlePaleolithic2017]. Quina retouch taken on its own is far more widely distributed: in the Levant it has been reported in Acheulo–Yabrudian industries dating from as early as MIS 11 [@agamInterpretingQuinaDemiQuina2020; @FALGUERES2022101266; @zaidnerEndLowerPaleolithic2016]. The occurrence of so distinctive a way of maintaining a working edge in contexts this widely separated in time and space raises the possibility that Quina retouch is a recurrent solution to a recurrent problem rather than the signature of a single tradition. Neither the system nor Quina retouch, however, had been securely documented in the East Asia.
-
 Whether East Asia has a Middle Palaeolithic has long been contested. On the conventional view, substantial innovation in lithic technology was deferred until the Upper Palaeolithic, leaving no phase corresponding to the western Middle Palaeolithic [@gaoPaleolithicCulturesChina2013; @norton2009eastasian]. Recent discoveries have provided new evidence that is reshaping this long-standing understanding. Discoid technology is documented at Lingjing (\~125–90 ka) [@liTechnologicalBehaviorEarly2019], and Levallois technology at Guanyindong (\~170–80 ka) [@huLateMiddlePleistocene2019] and Jinsitai (\~47–37 ka) [@liEasternmostMiddlePaleolithic2018]. These finds indicate that the technological scenario of the East Asian Middle Palaeolithic is more complex than the conventional view allows. It is against this background that we identified a complete Quina system at Longtan, dated to \~60–50 ka [@ruanQuinaLithicTechnology2025a], the first Quina site in East Asia to be unambiguously characterised, formally excavated, securely dated and systematically analysed. This discovery not only filled a long-standing gap in the eastern Old World distribution of Quina technology, but also provided new evidence for reassessing the diversity and complexity of the East Asian Middle Palaeolithic. More importantly, Longtan is unlikely to be an isolated case. Surface collections bearing Quina features have been recovered from river terraces at a number of localities in the Huangping Basin, where Longtan is situated, and in the neighbouring Binchuan Basin [@ruanQuinaLithicTechnology2025a; @xiao2024survey]. These finds suggest that Quina technology on the southeastern margin of the Tibetan Plateau may not be confined to a single site, but may instead represent a regional technological phenomenon of some spatial extent.
 
 The Huangping and Binchuan basins lie in the Hengduan Mountains, on the southeastern margin of the Tibetan Plateau, in what is today the dry-hot valley zone of the Jinsha River drainage. At roughly 26°N, in relief of this amplitude and under monsoon control [@xiaoVariationSouthwestMonsoon2010; @zhishengGlacialInterglacialIndianSummer2011], the region is governed by a climatic regime unlike the mid-latitude, glacial-stage settings of western Europe in which the European Quina is documented [@delpiano2022; @delpechLenvironnementAnimalMousteriens1996]. A technology usually associated with open landscapes, seasonally structured resources and high mobility subsistence therefore occurs here under a quite different climatic regime, and whether the two settings nonetheless resemble one another in the respects that bear on how technology was organised is a question we return to once the technological results are in place. All of the localities so far identified, moreover, apart from Longtan itself, are surface collections without absolute dates, so that whether they constitute a coherent regional technological entity is equally open.
 
 The analysis proceeds in two steps. We ask first whether the surface collections share a consistent technological concept with the Quina technology at Longtan, and can therefore be identified as a single regional technological entity, which we term the Quina Valley. To answer this we systematically analyse the most diagnostic elements of the Quina system, the Quina scrapers and the resharpening flakes removed in maintaining them, and assess their technological consistency with the excavated material from Longtan. Only if the first step can be sustained does the second question arise: whether such an entity can be accounted for by the environmental setting of the region, its available resources and the strategies by which technology was organised. Here we bring together the spatial distribution of the localities, the raw materials used at them and the environmental characteristics of the region. Taken together, these analyses clarify the regional distribution of Quina technology in East Asia and provide new insight into the relationship between environmental constraints, technological convergence and regional technological organisation during the Middle Palaeolithic.
 
-# Regional Geological and Palaeoenvironmental Setting
+# The Quina system
+
+The Quina Mousterian is one of the best-defined Middle Palaeolithic techno-complexes [@delagnes2006; @faivre2017], and what distinguishes it is not a tool type but a techno-economic system, the Quina system, whose defining features form three interlocking dimensions [@delpiano2022; @peresani2023]. The first dimension is blank production. Quina cores receive little preparation and are reduced through alternating, concatenated removals on sub-parallel and secant surfaces, with invasive detachments that optimise the volume of stone converted into blanks [@turq1989; @turq2000; @Bourguignon1997]. The target product is a thick flake, asymmetric in cross-section, with a sharp cutting edge on one margin and a thick, often cortical, back opposite [@turq1992; @hiscock2009]. This asymmetry is what allows such a tool to be repeatedly resharpened [@turq1992; @hiscock2009]. The second dimension is edge maintenance, achieved through Quina retouch. Here the working edge is not merely produced but sustained, and resharpening follows a regular rhythm [@lemoriniScrapersLifeHistory2016; @Bourguignon1997]. Early episodes detach relatively large resharpening flakes and leave convex scars, giving a plano-convex edge and preserving volume for later work; as retouch proceeds it concentrates on the margin itself, producing smaller concave scars with stepped or hinged terminations and a plano-concave edge that keeps the tool serviceable. Each generation of retouch therefore restores a working edge without drawing on new raw material. The third dimension is ramification of the reduction sequence [@bourguignon2004ramification; @faivre2017]. Resharpening flakes detached during edge maintenance carry cutting edges of their own and can be used directly, as use-wear analysis has shown [@claud2012]; in some cases they were themselves retouched into tools [@ruanQuinaLithicTechnology2025a]. Quina flakes, besides being shaped into Quina scrapers, are thick enough to serve as cores for small flakes (i.e. core-on-flake) [@hiscock2009]. Use-wear on scrapers and resharpening flakes from the same assemblages indicates that the two were put to different tasks, scraping and cutting respectively [@delpiano2022], so that ramification widened the functional range of the toolkit as well as extending its life. Efficient blank production, intensive edge maintenance and ramification together create an economy of stone use in which the thick Quina flake functions as a transportable and highly extendable package of raw material, yielding a large amount of working edge from a small initial investment [@hiscock2009; @delpiano2022].
+
+The distinction between the Quina system and Quina retouch alone matters when its distribution is assessed. In the strict sense, with blank production, edge maintenance and ramification operating together, Quina system is documented in western and southern Europe within a narrow interval between MIS 4 and early MIS 3, coinciding with pronounced global climatic instability [@delagnesShiftsNeandertalMobility2011; @delpiano2022; @frouinDatingMiddlePaleolithic2017]. Quina retouch taken on its own is far more widely distributed: in the Levant it has been reported in Acheulo–Yabrudian industries dating from as early as MIS 11 [@agamInterpretingQuinaDemiQuina2020; @FALGUERES2022101266; @zaidnerEndLowerPaleolithic2016]. The occurrence of so distinctive a way of maintaining a working edge in contexts this widely separated in time and space raises the possibility that Quina retouch is a recurrent solution to a recurrent problem rather than the signature of a single tradition. Neither the system nor Quina retouch, however, had been securely documented in the East Asia.
+
+# Regional geological setting and raw material sources
 
 The tectonic framework of the study area determines both where its intermontane basins lie and where knappable stone is available within them. The area falls within the Jinsha River drainage in the southern Hengduan Mountains, on the southeastern margin of the Tibetan Plateau, and is controlled by a system of approximately north–south trending faults: continued relative uplift of massifs such as Yulong Mountains and Diancang Shan, alternating with subsidence of the ground between them, has produced a series of north–south trending intermontane basins, among them Lijiang, Heqing and Dali [@liJGS2023]. This alternation of uplifted ranges and downfaulted basins shelters the deeply incised valley floors from precipitation carried by the Indian monsoon and the warm, moist airflow from the southwest, and gives them, today, a dry-hot valley climate: descending air masses are adiabatically warmed by the foehn effect and the deeply incised floors lie in the rain shadow of the flanking ranges, producing a sharp division between wet and dry seasons and high insolation [@zhu2024; @yangReviewResearchVegetation2016]. The Quina localities discussed here are concentrated in two of these basins, the Huangping Basin in the southwest of Heqing County and the neighbouring Binchuan Basin, each of them cut by tributaries of the Jinsha River: the Caifeng River in the Huangping Basin, and the Sangyuan River together with its tributary the Liandong River in the Binchuan Basin (@fig-study-area).
 
@@ -131,10 +129,6 @@ The tectonic framework of the study area determines both where its intermontane 
 The two basins differ in bedrock (@fig-geology). Permian volcanic rocks are extensively exposed along the western side of the Huangping Basin, with Triassic sedimentary rocks predominating to the east, whereas the Binchuan Basin is largely mantled by unconsolidated Quaternary sediments and exposes its Permian volcanic basement only locally [@yunnangeology1973]. The volcanic sequence comprises basalt, tuff and trachyte. Because the rivers of both basins cut across these outcrops, volcanic cobbles were carried into the gravel bars of the valley floors, and it was these bars, rather than the outcrops themselves, that supplied the stone used at the localities.
 
 ![Bedrock geology of the study area, and the gravel bars that supplied its raw material. (A) Geological units of the Huangping and Binchuan basins on shaded relief, with the Quina localities in black and the five gravel-bar sampling points in red. The units were traced from the 1:200,000 regional geological sheet compiled in 1973 by the First Regional Geological Survey Team of the Yunnan Geological Bureau; their boundaries are generalised from that sheet and are given as context rather than as surveyed contacts. Relief is rendered from the SRTM DEM. (B) to (E) The surveyed gravel bars at sampling points 2 to 5, with trachyte and sandstone cobbles indicated.](../figures/geology_map.png){#fig-geology width="5.9in"}
-
-The regional monsoon record places the occupation of these basins at a climatic transition rather than within a settled phase. The nearest palaeoclimate records covering this period come from the lacustrine sediments of the Heqing Basin, about 60 km north of the Huangping and Binchuan basins and some 650 m higher, which are among the longest and most continuous environmental sequences available for the Asian monsoon domain and are highly sensitive to variation in the Indian Summer Monsoon (ISM) [@xiaoVariationSouthwestMonsoon2010; @zhishengGlacialInterglacialIndianSummer2011]. Magnetic and geochemical proxies there, on a chronology built from geomagnetic palaeointensity [@xuMagneticProxyHeqing2025], record a return to aridity between 69 and 57 ka, corresponding to MIS 4, and a generally humid MIS 3 thereafter, punctuated by repeated arid events [@yangIndianSummerMonsoon2025]. A diatom sequence from the same basin, dated by AMS ¹⁴C and magnetostratigraphy, resolves the interval of interest here directly: its zone spanning 64.8 to 49.8 ka brackets the MIS 4/MIS 3 boundary, opening with a deeper and cooler lake of low productivity and passing towards indicators of increasing runoff from the catchment, with the boundary itself placed at about 59 ka; the succeeding zone, from 49.8 ka, records shallow water and low runoff under a weakened monsoon [@liDiatomResponseClimatic2015]. Millennial-scale weakenings of the monsoon, each corresponding to a North Atlantic cold event, have been resolved in the basin for the past 52 ka [@houDifferentCoercivityMagnetic2026]; the earliest of them post-dates the interval dated at Longtan, and we cite this record to show that the monsoon of this region was liable to interruption of this kind rather than to date any interruption within the period of human presence. These records are treated here as regional context rather than as a proxy for conditions at the localities themselves, and for three reasons: the distance and altitudinal offset just noted; the reconfiguration of the Heqing lake's hydrology by tectonic uplift of the basin from about 132 ka; and the contribution to its water balance, during the interval in question, of meltwater from glaciers in the Yulong Mountains, where moraines have been dated to between 54 and 41 ka [@liDiatomResponseClimatic2015]. Read at that scale, what matters is not whether a particular stage was on balance wetter or drier, but that the occupation falls across the MIS 4/MIS 3 boundary, where an arid phase gave way to a strengthening monsoon in a system that the record of the following 40 kyr shows to have been liable to abrupt interruption.
-
-Longtan provides the local counterpart to this regional picture, since it preserves both a robust chronology and a record of vegetation change. Optically stimulated luminescence (OSL) dating places its *in situ* cultural layer at \~60–50 ka [@ruanQuinaLithicTechnology2025a]; OSL ages of \~90–40 ka have been reported for the cultural layers at the nearby Tianhuadong Cave [@hu2020Tianhuadong], but neither its chronology nor its technological attribution is yet secure enough to carry weight here. The surface collections examined below have no independent age control, and the Longtan dates cannot be transferred to them: what those dates establish is when the Quina system was present in this landscape, not when any individual collection was formed. What Longtan adds beyond a date is a local environmental record. Pollen analysis of the terrace section at Longtan documents a shift from a pine–hemlock–grass assemblage to one in which arboreal pollen declines and herbs and wetland taxa rise, indicating a change from coniferous forest to a more open woodland-steppe; the Quina-bearing layer spans this transition [@ruanQuinaLithicTechnology2025a]. The spectrum is a mixture: wetland and herbaceous taxa record the immediate surroundings, while the montane conifers it contains, hemlock, spruce, fir and cedar, cannot have grown on a dry-hot valley floor and reach the site by the upslope and downslope air flows documented for the Hengduan Mountains [@zeng2025asian]. It is therefore read here as a relative shift towards more open conditions within the catchment rather than as a measure of the vegetation immediately around the site.
 
 Taken together, the regional and local records indicate that hominins were present in this landscape while the vegetation was opening locally, and across the MIS 4/MIS 3 boundary, as regional aridity gave way to a strengthening monsoon.
 
@@ -192,6 +186,12 @@ knitr::kable(loc_fmt, row.names = FALSE,
                            "Resharpening flakes"))
 ```
 
+## Techno-typological analysis of Quina retouch products
+
+The techno-typological observations and measurements follow established practice in the study of Quina assemblages [@Bourguignon1997; @peresani2023; @ruanQuinaLithicTechnology2025a; @hiscock2008construction]. For each Quina scraper we recorded length, width, thickness and mass; cortex position; platform type and platform depth (PD); interior platform angle (IPA); the number of retouch generations; the numbers of convex scars and concave scars; the geometric index of unifacial reduction (GIUR) [@kuhnGeometricIndexReduction1990] and the proportion of the perimeter retouched; the edge angle; and its attribution within Bordes' type list [@bordes1961; @debenath1994]. For each resharpening flake we recorded dimensions, platform type, PD, IPA and exterior platform angle (EPA). Relationships between edge angle and GIUR, the proportion of retouched edge and the mean number of retouch generations were examined with Spearman rank correlation, with p-values adjusted by the Bonferroni procedure. The difference between the EPAs of the resharpening flakes and the edge angles of the scrapers was tested with Welch's t-test, so that unequal variances would not affect the inference [@welch1947generalization], and its magnitude summarised by Cohen's *d* with a bootstrap percentile confidence interval.
+
+To test the technological consistency between the surface Quina scrapers and the excavated material, the Quina scrapers from Longtan were used as the reference, and non-Quina scrapers from the same site were included as a technological control group. To reduce dimensionality and minimise redundancy among correlated variables, six of the recorded variables were selected for multivariate analysis as the most representative: thickness, proportion of the perimeter retouched, GIUR, number of total scars, number of retouch generations and edge angle. All were standardised to z-scores and differences between specimens computed as Euclidean distances. Differences between groups were tested by PERMANOVA, with the proportion of variance explained (*R*²) reported for each pairwise comparison. The non-Quina scrapers serve to calibrate the scale on which those *R*² values are read: if the same set of variables separates Quina from ordinary scrapers with a high *R*² while the two Quina groups differ only at a low *R*², the latter is more likely to reflect a real technological similarity than a lack of statistical power. At the univariate level, mean GIUR, scar count and mean number of retouch generations were compared with Kruskal–Wallis rank sum tests followed by Dunn's post hoc comparisons, and thickness, proportion of the perimeter retouched and edge angle with Welch's ANOVA followed by Welch's t post hoc comparisons; all post hoc comparisons were corrected using the Bonferroni method. The distributions on which that choice of test rests are given in Fig. S4. Technological dispersion between groups was tested with PERMDISP [@andersonDistanceBasedTestsHomogeneity2006]. To compare the degree of variation within groups, the coefficients of variation (CV) of length, width, thickness, mass and edge angle were tested for equality across groups using the Krishnamoorthy–Lee modified signed likelihood ratio test (KL-MSLRT) [@krishnamoorthy2014], these being ratio-scale variables with a true zero. GIUR, the proportion of the perimeter retouched, number of total scars and the number of retouch generations were instead compared with Fligner–Killeen tests [@fligner1976]: the first two are bounded on \[0, 1\], which leaves the CV without a clear interpretation, and the last two are counts whose variance structure does not meet the assumptions required for comparing CVs. To assess how robust the results are, the analyses were repeated with the surface specimens collected from within the area of the Longtan site removed (Table S10, Fig. S5).
+
 ## Survey and analysis of raw materials
 
 To establish what raw material was locally available, gravel bars were sampled at five points along three river channels (@fig-geology; Fig. S1). At each point an area of 1–2 m² was cleared and every cobble longer than 30 mm exposed at the surface was recorded. For each cobble we recorded length, width and thickness (mm), roundness on a four-point scale (angular, subangular, subrounded, well-rounded) and shape (sub-oval, tabular or irregular). Because the shape terms of the field record mix geometric form with regularity, form was not analysed from them but derived from the axes themselves: the three measurements of each cobble were sorted into *a* ≥ *b* ≥ *c* and treated as a composition, so that the comparison of form is invariant to size [@aitchison1986; @egozcue2003]. Form was compared between lithologies by permutational multivariate analysis of variance (PERMANOVA) on Aitchison distances [@anderson2001new], with PERMDISP used to test the homogeneity of dispersions [@andersonDistanceBasedTestsHomogeneity2006]; because Aitchison distance does not depend on the choice of ilr basis, the result is unaffected by that choice. Cobbles were displayed on the ternary diagram of Sneed and Folk [-@sneed1958], with contours of maximum projection sphericity, (*c*²/*ab*)^1/3^. Size was represented by the geometric mean of the three axes and compared between lithologies with a Mann–Whitney U test [@erenRoleRawMaterial2014].
@@ -208,11 +208,7 @@ $$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$\$\$D = \\frac{r - p}{\\,r + p - 2\\,r\
 
 where *r* is the proportion of a given raw material among the artefacts and *p* is its proportion among the cobbles recorded in the gravel survey. *D* ranges from −1 (complete avoidance) through 0 (use in proportion to availability) to +1 (complete selection). It was computed for each raw material in the surface Quina scrapers against availability pooled across the gravel survey. Where either proportion is zero the index saturates: a material absent from the gravel survey returns *D* = +1, and one absent from the artefacts returns *D* = −1, whatever the value of the other proportion. In these cases *D* records the direction of the selection but not its strength, and a zero in the gravel survey is in any case a sampling zero rather than a demonstrated absence. Such values are therefore reported for completeness but are not read on the same scale as those computed from two non-zero proportions.
 
-## Techno-typological analysis of Quina retouch products
-
-The techno-typological observations and measurements follow established practice in the study of Quina assemblages [@Bourguignon1997; @peresani2023; @ruanQuinaLithicTechnology2025a; @hiscock2008construction]. For each Quina scraper we recorded length, width, thickness and mass; cortex position; platform type and platform depth (PD); interior platform angle (IPA); the number of retouch generations; the numbers of convex scars and concave scars; the geometric index of unifacial reduction (GIUR) [@kuhnGeometricIndexReduction1990] and the proportion of the perimeter retouched; the edge angle; and its attribution within Bordes' type list [@bordes1961; @debenath1994]. For each resharpening flake we recorded dimensions, platform type, PD, IPA and exterior platform angle (EPA). Relationships between edge angle and GIUR, the proportion of retouched edge and the mean number of retouch generations were examined with Spearman rank correlation, with p-values adjusted by the Bonferroni procedure. The difference between the EPAs of the resharpening flakes and the edge angles of the scrapers was tested with Welch's t-test, so that unequal variances would not affect the inference [@welch1947generalization], and its magnitude summarised by Cohen's *d* with a bootstrap percentile confidence interval.
-
-To test the technological consistency between the surface Quina scrapers and the excavated material, the Quina scrapers from Longtan were used as the reference, and non-Quina scrapers from the same site were included as a technological control group. To reduce dimensionality and minimise redundancy among correlated variables, six of the recorded variables were selected for multivariate analysis as the most representative: thickness, proportion of the perimeter retouched, GIUR, number of total scars, number of retouch generations and edge angle. All were standardised to z-scores and differences between specimens computed as Euclidean distances. Differences between groups were tested by PERMANOVA, with the proportion of variance explained (*R*²) reported for each pairwise comparison. The non-Quina scrapers serve to calibrate the scale on which those *R*² values are read: if the same set of variables separates Quina from ordinary scrapers with a high *R*² while the two Quina groups differ only at a low *R*², the latter is more likely to reflect a real technological similarity than a lack of statistical power. At the univariate level, mean GIUR, scar count and mean number of retouch generations were compared with Kruskal–Wallis rank sum tests followed by Dunn's post hoc comparisons, and thickness, proportion of the perimeter retouched and edge angle with Welch's ANOVA followed by Welch's t post hoc comparisons; all post hoc comparisons were corrected using the Bonferroni method. The distributions on which that choice of test rests are given in Fig. S4. Technological dispersion between groups was tested with PERMDISP [@andersonDistanceBasedTestsHomogeneity2006]. To compare the degree of variation within groups, the coefficients of variation (CV) of length, width, thickness, mass and edge angle were tested for equality across groups using the Krishnamoorthy–Lee modified signed likelihood ratio test (KL-MSLRT) [@krishnamoorthy2014], these being ratio-scale variables with a true zero. GIUR, the proportion of the perimeter retouched, number of total scars and the number of retouch generations were instead compared with Fligner–Killeen tests [@fligner1976]: the first two are bounded on \[0, 1\], which leaves the CV without a clear interpretation, and the last two are counts whose variance structure does not meet the assumptions required for comparing CVs. To assess how robust the results are, the analyses were repeated with the surface specimens collected from within the area of the Longtan site removed (Table S10, Fig. S5).
+## Landscape structure
 
 To test whether technological variation is systematically structured by the landscape, the analysis was repeated with the locality as the unit, each locality represented by the median value of its Quina scrapers on the same six variables. Four landscape variables were considered: basin (Huangping or Binchuan), the height of the locality above the present-day channel, distance from the locality to that channel, and assemblage size (number of specimens). Height above the channel was used in preference to a categorical terrace level, and in preference to absolute elevation: it is the continuous quantity of which terrace level is a discretisation, and because it is measured from the local channel rather than from sea level, the difference in base level between the two basins cancels out. Basin, the only categorical variable, was tested with PERMANOVA and PERMDISP; the three continuous variables with Spearman rank correlation, and with locality-level PERMANOVA on Euclidean distances.
 
@@ -224,267 +220,7 @@ Computational reproducibility remains a challenge in archaeological science, yet
 
 # Results
 
-## Landscape distribution and raw material economy
-
-Quina localities in both basins lie along the valley systems, on river terraces, and at consistently short distances from the channels. In the Huangping Basin they are concentrated on the second and third terraces; in the Binchuan Basin they extend across the second to fourth terraces (T2–T4), with a small number (*n* = 3) occurring higher, on hilltops. Because the artefacts are made overwhelmingly on river cobbles, the straight-line distance from a locality to the nearest channel serves as a proxy for ease of access to lithic raw material. Across the three valleys, the Sangyuan, Liandong and Caifeng, these distances are short and similarly distributed, with a median of `r f(dist_median, 0)` m. Neither comparison detected a difference between spatial units, whether at the scale of the basin (*U* = `r f(dist_basin_U, 0)`, *p* `r fp(dist_basin_p)`) or of the valley (*H* = `r f(dist_river_H, 2)`, *df* = `r dist_river_df`, *p* `r fp(dist_river_p)`). Access to river gravels therefore appears to have been broadly comparable across the study area, so that differences in the raw materials actually used at these localities are unlikely to be explained by differential proximity to a source.
-
-Raw material use does not follow raw material abundance. On the gravel bars, sandstone is the most abundant lithology (`r f(sand_avail_pct, 1)`% of `r n_cobble` cobbles), with trachyte second (`r f(trach_avail_pct, 1)`%); among the artefacts, trachyte accounts for `r f(trach_used_pct, 1)`% (Table S1). The bars are not uniform in composition, however: raw material composition differs significantly between sampling points (*R*² = `r f(cobbleLoc_v["R2"], 3)`, pseudo-*F* = `r f(cobbleLoc_v["F"], 2)`, *p* `r fp(cobbleLoc_v["p"])`), and stratified analysis attributes this variation to differences between valleys (*R*² = `r f(cobbleRiver_v["R2"], 3)`, pseudo-*F* = `r f(cobbleRiver_v["F"], 2)`, *p* `r fp(cobbleRiver_v["p"])`) rather than within them (Table S3). Sandstone-dominated and trachyte-richer bars are therefore distributed unevenly across the study area, in a pattern that follows the contrast in bedrock described in Section 2 (@fig-geology). If knappers had simply worked whatever lay most abundantly at hand, the raw material composition of the artefacts should vary from valley to valley in the same way.
-
-That expectation is not met. The raw material composition of the Quina scrapers is uniform across the study area, differing neither between basins (*R*² = `r f(usedA_basin_v["R2"], 3)`, pseudo-*F* = `r f(usedA_basin_v["F"], 2)`, *p* `r fp(usedA_basin_v["p"])`) nor between valleys (*R*² = `r f(usedA_river_v["R2"], 3)`, pseudo-*F* = `r f(usedA_river_v["F"], 2)`, *p* `r fp(usedA_river_v["p"])`) (@fig-raw-material-composition; Table S3). The same material was selected wherever knappers used, although sandstone is more abundant on the bars and although the composition of those bars varies from valley to valley. Jacobs' electivity index puts the strength of that preference on a common scale (Table S2): trachyte is strongly selected (*D* = `r f(D_trach, 2)`) and sandstone strongly avoided (*D* = `r f(D_sand, 2)`), with quartz and mudstone likewise avoided (*D* = `r f(D_quartz, 2)` in each case, neither being used at all); andesite returns *D* = `r f(D_and, 2)`, but only because the `r andesite_n` andesite artefacts have no counterpart among the recorded cobbles, so that its index is undefined in practice rather than informative. Because D returns to zero only when a raw material is used in proportion to its availability, trachyte would have to make up some `r f(trach_used_pct, 0)`% of the gravel before its use could be read as neutral; no redistribution of availability among the valleys approaches that figure, so neither the direction nor the magnitude of the selection depends on how availability is pooled. The selection of trachyte, in other words, was made against local abundance rather than in step with it.
-
-```{r}
-#| label: fig-raw-material-composition
-#| fig-cap: "Raw material composition of river gravels and archaeological assemblages. Each bar is a 100% composition: the left panel gives the lithological composition of the available river cobbles, the right panel that of the surface-collected Quina scrapers, with the three valleys on a common row so that available and used composition can be read against each other. The sample size of each cell is given at the end of its bar."
-#| fig-width: 6.5
-#| fig-height: 2.5
-
-material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
-                         Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
-
-fig_theme <- theme_minimal(base_size = 9) +
-  theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
-        panel.grid.minor = element_blank(),
-        panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
-        axis.ticks = element_line(color = "#202124", linewidth = 0.3),
-        axis.ticks.length = unit(2, "pt"),
-        axis.title = element_text(size = 9), axis.text = element_text(color = "#303238", size = 8),
-        strip.text = element_text(face = "bold", color = "#202124", size = 9),
-        strip.background = element_rect(fill = "#E8E8E8", color = NA),
-        legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
-        legend.key = element_blank(), legend.key.size = unit(10, "pt"),
-        plot.tag = element_text(face = "bold", size = 11),
-        plot.background = element_rect(color = NA, fill = "white"),
-        panel.background = element_rect(color = NA, fill = "white"))
-
-valley_order <- rev(river_levels)
-counts_lab <- transform(counts_fig, label = paste0("n = ", N))
-
-ggplot(comp_fig, aes(percent, river_ID, fill = Material)) +
-  geom_col(width = 0.8, color = "white", linewidth = 0.3, alpha = 0.8) +
-  geom_text(data = subset(comp_fig, percent >= 7),
-            aes(x = pos, label = sprintf("%.0f%%", percent)),
-            size = 2.5, colour = "white", fontface = "bold") +
-  geom_text(data = counts_lab, aes(x = 102, y = river_ID, label = label),
-            inherit.aes = FALSE, hjust = 0, size = 2.5, colour = "#5A5F66") +
-  facet_wrap(~ Layer, ncol = 2) +
-  scale_fill_manual(values = material_colors_fig, drop = FALSE) +
-  scale_y_discrete(limits = valley_order) +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.17)),
-                     breaks = seq(0, 100, 25), labels = function(x) paste0(x, "%")) +
-  labs(x = NULL, y = "Valley", fill = NULL) +
-  fig_theme + theme(panel.grid.major = element_blank(), legend.position = "bottom",
-                    legend.title = element_blank(),
-                    legend.margin = margin(t = 0), legend.box.spacing = unit(11, "pt")) +
-  guides(fill = guide_legend(nrow = 1))
-```
-
-Two properties of the trachyte account for this preference, and a third can be excluded. Trachyte cobbles are significantly larger than sandstone cobbles (GM = `r f(gmT, 1)` mm against `r f(gmS, 1)` mm; *U* = `r f(size_U, 0)`, *p* `r fp(size_p)`; Table S4), giving a greater initial volume from which to sustain prolonged reduction. Their form does not distinguish them: treating the three axes as a composition, so that the comparison is invariant to size, the two lithologies are indistinguishable on Aitchison distances (*R*² = `r f(form_R2, 3)`, pseudo-*F* = `r f(form_F, 2)`, *p* `r fp(form_p)`), with no difference in dispersion (PERMDISP *F* = `r f(form_disp_F, 2)`, *p* `r fp(form_disp_p)`), and they occupy the same region of the Sneed and Folk form triangle (@fig-cobble-size-form). The preference cannot therefore have turned on the shapes in which the two raw materials occur on the bars. What remains is fracture predictability. In thin section the trachyte is porphyritic, with euhedral tabular to prismatic K-feldspar phenocrysts (\~0.3–5.0 mm, \~1–10% of the rock) set in a hyalopilitic groundmass of K-feldspar microlites, chlorite or altered mafic minerals, magnetite and about 50% devitrified glass (@fig-thin-section). Assessed on the criteria conventionally applied to volcanic rock, groundmass texture together with the size and abundance of phenocrysts [@stoutRawMaterialSelectivity2005], it is a fine-grained rock with a low phenocryst content, properties associated elsewhere with predictable conchoidal fracture and hence with long, continuous and acute edges. Size and fracture quality are the two properties on which prolonged resharpening most directly depends.
-
-```{r}
-#| label: fig-cobble-size-form
-#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles. The three vertices represent the three end-member forms: compact, platy, and elongate. Statistical significance in (A) is indicated as follows: ns, not significant; * p < 0.05; ** p < 0.01; *** p < 0.001; **** p < 0.0001."
-#| fig-width: 6.5
-#| fig-height: 2.63
-
-# fig-height is set so the fixed-aspect ternary panel exactly fills its cell,
-# which stops it being centred; reset it if the width or the layout changes.
-#
-material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
-                         Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
-
-fig_theme <- theme_minimal(base_size = 9) +
-  theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
-        panel.grid.minor = element_blank(),
-        panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
-        axis.ticks = element_line(color = "#202124", linewidth = 0.3),
-        axis.ticks.length = unit(2, "pt"),
-        axis.title = element_text(size = 9), axis.text = element_text(color = "#303238", size = 8),
-        strip.text = element_text(face = "bold", color = "#202124", size = 8.5),
-        strip.background = element_rect(fill = "#E8E8E8", color = NA),
-        legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
-        legend.key = element_blank(), legend.key.size = unit(10, "pt"),
-        plot.tag = element_text(face = "bold", size = 11),
-        plot.background = element_rect(color = NA, fill = "white"),
-        panel.background = element_rect(color = NA, fill = "white"))
-
-# the frame is one rectangle drawn inside the panel, so that its foot lands on
-# the base of the triangles rather than on the foot of the panel: f_base is
-# where that base sits, as a fraction of the ternary panel's height
-tri_h     <- sqrt(3) / 2               # height of the unit equilateral triangle
-tern_ylim <- c(-0.235, tri_h + 0.34)   # the ternary panels use these limits
-f_base    <- -tern_ylim[1] / diff(tern_ylim)
-frame_lwd  <- 0.4
-# the height of a real strip, measured rather than guessed, so the two headings
-# of (B) match those of the composition figure whatever the figure is scaled to
-strip_pt  <- local({
-  g <- ggplotGrob(ggplot(data.frame(x = 1, f = levels(sz$G)[1]), aes(x, x)) +
-                    facet_wrap(~ f) + fig_theme)
-  convertHeight(g$heights[g$layout$t[grepl("^strip-t", g$layout$name)][1]],
-                "pt", valueOnly = TRUE)
-})
-frame_grob <- rectGrob(x = unit(0.5, "npc"), y = unit(f_base, "npc"),
-                       width = unit(1, "npc"), height = unit(1 - f_base, "npc"),
-                       just = c("centre", "bottom"),
-                       gp = gpar(col = "#202124", fill = NA,
-                                 lwd = frame_lwd * .pt, lineend = "square"))
-
-size_gm  <- sz |> group_by(G) |> summarise(size = gm(size), .groups = "drop")
-size_br  <- max(sz$size) * 1.06        # bracket height, clear of the largest clast
-sz_span  <- log10(size_br) - log10(min(sz$size))
-base_y   <- log10(min(sz$size)) - 0.05 * sz_span   # the baseline, in log10 mm
-top_y    <- log10(size_br)        + 0.10 * sz_span
-low_y    <- base_y - f_base / (1 - f_base) * (top_y - base_y)
-
-p_size <- ggplot(sz, aes(G, size)) +
-  geom_jitter(aes(color = G), size = 0.9, alpha = 0.35, shape = 16,
-              position = position_jitter(width = 0.24, height = 0, seed = 2226)) +
-  geom_boxplot(color = "#202124", fill = NA, width = 0.55, linewidth = 0.4,
-               outlier.shape = NA) +
-  geom_point(data = size_gm, shape = 16, size = 1.8, color = "#202124") +
-  annotate("segment", x = 1, xend = 2, y = size_br, yend = size_br,
-           linewidth = 0.3, color = "#202124") +
-  annotate("segment", x = c(1, 2), xend = c(1, 2), y = size_br, yend = size_br * 0.94,
-           linewidth = 0.3, color = "#202124") +
-  annotate("text", x = 1.5, y = size_br, label = psig(size_p),
-           vjust = 0.1, size = 2.8, color = "#202124") +
-  annotate("segment", x = c(1, 2), xend = c(1, 2), y = 10^base_y,
-           yend = 10^(base_y - 0.017 * (top_y - low_y)),
-           linewidth = frame_lwd, color = "#202124") +
-  annotate("text", x = c(1, 2), y = 10^(base_y - 0.054 * (top_y - low_y)),
-           label = c("Trachyte", "Sandstone"), vjust = 1,
-           size = 2.4, color = "#303238") +
-  # given in full: the infinite default is NaN through a log scale
-  annotation_custom(frame_grob, xmin = 0.4, xmax = 2.6,
-                    ymin = 10^low_y, ymax = 10^top_y) +
-  scale_color_manual(values = material_colors_fig, guide = "none") +
-  scale_x_discrete(limits = c("Trachyte", "Sandstone")) +
-  scale_y_log10(breaks = c(25, 50, 100, 200, 400),
-                limits = 10^c(low_y, top_y), expand = expansion(0)) +
-  coord_cartesian(clip = "off") +
-  labs(x = NULL, y = "Geometric mean size (mm)") +
-  fig_theme + theme(panel.grid.major = element_blank(),
-                    panel.border = element_blank(),
-                    axis.line = element_blank(),
-                    axis.ticks.x = element_blank(),
-                    axis.ticks.y = element_line(color = "#202124",
-                                                linewidth = frame_lwd),
-                    axis.text.x = element_blank())
-
-to_xy  <- function(compact, elongate) {  # barycentric -> plane
-  data.frame(x = elongate + compact / 2, y = tri_h * compact)
-}
-tri_out <- rbind(to_xy(0, 0), to_xy(0, 1), to_xy(1, 0), to_xy(0, 0))
-sf_pts  <- cbind(to_xy(sz$sf_compact, sz$sf_elongate), G = sz$G)
-
-ca_cuts <- c(0.3, 0.5, 0.7)                 # c/a
-ab_cuts <- c(1 / 3, 2 / 3)                  # (a - b)/(a - c)
-ca_top  <- max(ca_cuts)                     # the apex field is not subdivided
-grid_ca <- do.call(rbind, lapply(ca_cuts, function(k)
-  data.frame(g = paste0("ca", k), x = c(k / 2, 1 - k / 2), y = tri_h * k)))
-grid_ab <- do.call(rbind, lapply(ab_cuts, function(t)
-  data.frame(g = paste0("ab", round(t, 2)),
-             x = c(t, (1 - ca_top) * t + ca_top / 2),
-             y = c(0, tri_h * ca_top))))
-
-gx  <- seq(0, 1, length.out = 300)
-gy  <- seq(0, tri_h, length.out = 260)
-grd <- expand.grid(x = gx, y = gy)
-grd <- transform(grd, compact = y / tri_h)
-grd <- transform(grd, elongate = x - compact / 2)
-grd <- transform(grd, platy = 1 - compact - elongate,
-                 ba_ratio = 1 - (x - compact / 2))          # b/a
-grd$psi <- with(grd, ifelse(compact >= 0 & elongate >= 0 & platy >= 0 &
-                              ba_ratio > 0,
-                            (compact^2 / ba_ratio)^(1 / 3), NA_real_))
-psi_lines <- contourLines(gx, gy, matrix(grd$psi, length(gx), length(gy)),
-                          levels = seq(0.3, 0.9, by = 0.2))
-psi_df <- do.call(rbind, lapply(seq_along(psi_lines), function(i)
-  data.frame(g = i, level = psi_lines[[i]]$level,
-             x = psi_lines[[i]]$x, y = psi_lines[[i]]$y)))
-
-n_out    <- c(-tri_h, 0.5)                  # outward normal of the left edge
-ca_ticks <- c(0.3, 0.5, 0.7, 1)          # 0 is carried by the base scale
-tick_ca  <- data.frame(x0 = ca_ticks / 2, y0 = tri_h * ca_ticks,
-                       label = formatC(ca_ticks, format = "f", digits = 1))
-tick_ca  <- transform(tick_ca,
-                      x1 = x0 + 0.030 * n_out[1], y1 = y0 + 0.030 * n_out[2],
-                      xl = x0 + 0.070 * n_out[1], yl = y0 + 0.070 * n_out[2])
-ab_ticks <- c(0, 1 / 3, 2 / 3, 1)
-tick_ab  <- data.frame(x0 = ab_ticks, y0 = 0, x1 = ab_ticks, y1 = -0.030,
-                       xl = ab_ticks, yl = -0.072,
-                       label = c("0", "0.33", "0.67", "1.0"))
-vert_lab <- data.frame(
-  x = c(0, 1, 0.5), y = c(-0.175, -0.175, tri_h + 0.105),
-  label = c("Platy", "Elongate", "Compact"), vj = c(1, 1, 0))
-
-# one panel, not two facets: facets nest inside the panel row and no longer
-# align with (A). Everything is therefore drawn twice, shifted by tri_dx.
-tri_dx <- 1.30
-two <- function(d, xcols, gcol = NULL) {
-  right <- d
-  for (nm in xcols) right[[nm]] <- right[[nm]] + tri_dx
-  if (!is.null(gcol)) {
-    d[[gcol]] <- paste0(d[[gcol]], "_l"); right[[gcol]] <- paste0(right[[gcol]], "_r")
-  }
-  rbind(d, right)
-}
-tri_out$g  <- "o"
-psi_df$g   <- as.character(psi_df$g)
-sf_pts$x   <- sf_pts$x + ifelse(sf_pts$G == levels(sz$G)[2], tri_dx, 0)
-# each heading is a bar of strip height hung from the top of the panel, with its
-# label centred in it; both are absolute, so neither moves when the figure does
-head_grob <- function(label) {
-  grobTree(rectGrob(y = unit(1, "npc"), height = unit(strip_pt, "pt"),
-                    just = c("centre", "top"),
-                    gp = gpar(fill = "#E8E8E8", col = NA)),
-           textGrob(label, y = unit(1, "npc") - unit(strip_pt / 2, "pt"),
-                    gp = gpar(fontface = "bold", fontsize = 8.5, col = "#202124")))
-}
-
-p_form <- ggplot(sf_pts, aes(x, y)) +
-  geom_path(data = two(psi_df, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#C3C8CE") +
-  geom_line(data = two(grid_ca, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#9AA0A6") +
-  geom_line(data = two(grid_ab, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#9AA0A6") +
-  geom_path(data = two(tri_out, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = frame_lwd, colour = "#202124") +
-  geom_point(aes(colour = G), size = 1.0, alpha = 0.55, shape = 16) +
-  geom_segment(data = two(rbind(tick_ca[, c("x0", "y0", "x1", "y1")],
-                                tick_ab[, c("x0", "y0", "x1", "y1")]),
-                          c("x0", "x1")),
-               aes(x = x0, y = y0, xend = x1, yend = y1), inherit.aes = FALSE,
-               linewidth = frame_lwd, colour = "#202124") +
-  geom_text(data = two(tick_ca, "xl"), aes(xl, yl, label = label),
-            inherit.aes = FALSE, size = 2.4, colour = "#303238",
-            hjust = 1, vjust = 0.4) +
-  geom_text(data = two(tick_ab, "xl"), aes(xl, yl, label = label),
-            inherit.aes = FALSE, size = 2.4, colour = "#303238", vjust = 1) +
-  geom_text(data = two(vert_lab, "x"), aes(x, y, label = label, vjust = vj),
-            inherit.aes = FALSE, size = 2.5, colour = "#5A5F66") +
-  annotation_custom(head_grob(levels(sz$G)[1]), xmin = 0, xmax = 1,
-                    ymin = tern_ylim[1], ymax = tern_ylim[2]) +
-  annotation_custom(head_grob(levels(sz$G)[2]), xmin = tri_dx, xmax = 1 + tri_dx,
-                    ymin = tern_ylim[1], ymax = tern_ylim[2]) +
-  scale_colour_manual(values = material_colors_fig, guide = "none") +
-  coord_fixed(xlim = c(-0.17, 1.13 + tri_dx), ylim = tern_ylim,
-              expand = FALSE, clip = "off") +
-  labs(x = NULL, y = NULL) +
-  fig_theme +
-  theme(panel.grid.major = element_blank(), panel.border = element_blank(),
-        axis.text = element_blank(), axis.ticks = element_blank())
-
-(p_size + labs(tag = "A")) + (p_form + labs(tag = "B")) +
-  plot_layout(widths = c(1.1, 3))
-```
-
-![Petrography of the trachyte. (A) Hand specimens of five of the sampled trachyte cobbles. (B) Photomicrographs of thin sections cut from them, with the magnification and the scale given in each frame. The rock is porphyritic: euhedral tabular to prismatic K-feldspar phenocrysts, with subordinate quartz, augite and clay minerals, are set in a fine-grained groundmass of K-feldspar microlites and devitrified glass.](../figures/thin_section.png){#fig-thin-section width="5.9in"}
-
-## Characterising the Quina retouch products
+## Quina technology of the surface assemblages and its consistency with Longtan
 
 ### Techno-typological features
 
@@ -765,6 +501,266 @@ These results are not driven by the material belongs to Longtan surface collecti
 
 Taken together, in centroid position and in dispersion alike, the surface Quina scrapers and the excavated Quina scrapers from Longtan cannot be told apart on measurements that readily separate both from other retouched scrapers at the same site. They are most economically understood as the products of a single technological concept.
 
+## Raw material economy and landscape organisation
+
+Quina localities in both basins lie along the valley systems, on river terraces, and at consistently short distances from the channels. In the Huangping Basin they are concentrated on the second and third terraces; in the Binchuan Basin they extend across the second to fourth terraces (T2–T4), with a small number (*n* = 3) occurring higher, on hilltops. Because the artefacts are made overwhelmingly on river cobbles, the straight-line distance from a locality to the nearest channel serves as a proxy for ease of access to lithic raw material. Across the three valleys, the Sangyuan, Liandong and Caifeng, these distances are short and similarly distributed, with a median of `r f(dist_median, 0)` m. Neither comparison detected a difference between spatial units, whether at the scale of the basin (*U* = `r f(dist_basin_U, 0)`, *p* `r fp(dist_basin_p)`) or of the valley (*H* = `r f(dist_river_H, 2)`, *df* = `r dist_river_df`, *p* `r fp(dist_river_p)`). Access to river gravels therefore appears to have been broadly comparable across the study area, so that differences in the raw materials actually used at these localities are unlikely to be explained by differential proximity to a source.
+
+Raw material use does not follow raw material abundance. On the gravel bars, sandstone is the most abundant lithology (`r f(sand_avail_pct, 1)`% of `r n_cobble` cobbles), with trachyte second (`r f(trach_avail_pct, 1)`%); among the artefacts, trachyte accounts for `r f(trach_used_pct, 1)`% (Table S1). The bars are not uniform in composition, however: raw material composition differs significantly between sampling points (*R*² = `r f(cobbleLoc_v["R2"], 3)`, pseudo-*F* = `r f(cobbleLoc_v["F"], 2)`, *p* `r fp(cobbleLoc_v["p"])`), and stratified analysis attributes this variation to differences between valleys (*R*² = `r f(cobbleRiver_v["R2"], 3)`, pseudo-*F* = `r f(cobbleRiver_v["F"], 2)`, *p* `r fp(cobbleRiver_v["p"])`) rather than within them (Table S3). Sandstone-dominated and trachyte-richer bars are therefore distributed unevenly across the study area, in a pattern that follows the contrast in bedrock described in Section 2 (@fig-geology). If knappers had simply worked whatever lay most abundantly at hand, the raw material composition of the artefacts should vary from valley to valley in the same way.
+
+That expectation is not met. The raw material composition of the Quina scrapers is uniform across the study area, differing neither between basins (*R*² = `r f(usedA_basin_v["R2"], 3)`, pseudo-*F* = `r f(usedA_basin_v["F"], 2)`, *p* `r fp(usedA_basin_v["p"])`) nor between valleys (*R*² = `r f(usedA_river_v["R2"], 3)`, pseudo-*F* = `r f(usedA_river_v["F"], 2)`, *p* `r fp(usedA_river_v["p"])`) (@fig-raw-material-composition; Table S3). The same material was selected wherever knappers used, although sandstone is more abundant on the bars and although the composition of those bars varies from valley to valley. Jacobs' electivity index puts the strength of that preference on a common scale (Table S2): trachyte is strongly selected (*D* = `r f(D_trach, 2)`) and sandstone strongly avoided (*D* = `r f(D_sand, 2)`), with quartz and mudstone likewise avoided (*D* = `r f(D_quartz, 2)` in each case, neither being used at all); andesite returns *D* = `r f(D_and, 2)`, but only because the `r andesite_n` andesite artefacts have no counterpart among the recorded cobbles, so that its index is undefined in practice rather than informative. Because D returns to zero only when a raw material is used in proportion to its availability, trachyte would have to make up some `r f(trach_used_pct, 0)`% of the gravel before its use could be read as neutral; no redistribution of availability among the valleys approaches that figure, so neither the direction nor the magnitude of the selection depends on how availability is pooled. The selection of trachyte, in other words, was made against local abundance rather than in step with it.
+
+```{r}
+#| label: fig-raw-material-composition
+#| fig-cap: "Raw material composition of river gravels and archaeological assemblages. Each bar is a 100% composition: the left panel gives the lithological composition of the available river cobbles, the right panel that of the surface-collected Quina scrapers, with the three valleys on a common row so that available and used composition can be read against each other. The sample size of each cell is given at the end of its bar."
+#| fig-width: 6.5
+#| fig-height: 2.5
+
+material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
+                         Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
+
+fig_theme <- theme_minimal(base_size = 9) +
+  theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
+        axis.ticks = element_line(color = "#202124", linewidth = 0.3),
+        axis.ticks.length = unit(2, "pt"),
+        axis.title = element_text(size = 9), axis.text = element_text(color = "#303238", size = 8),
+        strip.text = element_text(face = "bold", color = "#202124", size = 9),
+        strip.background = element_rect(fill = "#E8E8E8", color = NA),
+        legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
+        legend.key = element_blank(), legend.key.size = unit(10, "pt"),
+        plot.tag = element_text(face = "bold", size = 11),
+        plot.background = element_rect(color = NA, fill = "white"),
+        panel.background = element_rect(color = NA, fill = "white"))
+
+valley_order <- rev(river_levels)
+counts_lab <- transform(counts_fig, label = paste0("n = ", N))
+
+ggplot(comp_fig, aes(percent, river_ID, fill = Material)) +
+  geom_col(width = 0.8, color = "white", linewidth = 0.3, alpha = 0.8) +
+  geom_text(data = subset(comp_fig, percent >= 7),
+            aes(x = pos, label = sprintf("%.0f%%", percent)),
+            size = 2.5, colour = "white", fontface = "bold") +
+  geom_text(data = counts_lab, aes(x = 102, y = river_ID, label = label),
+            inherit.aes = FALSE, hjust = 0, size = 2.5, colour = "#5A5F66") +
+  facet_wrap(~ Layer, ncol = 2) +
+  scale_fill_manual(values = material_colors_fig, drop = FALSE) +
+  scale_y_discrete(limits = valley_order) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.17)),
+                     breaks = seq(0, 100, 25), labels = function(x) paste0(x, "%")) +
+  labs(x = NULL, y = "Valley", fill = NULL) +
+  fig_theme + theme(panel.grid.major = element_blank(), legend.position = "bottom",
+                    legend.title = element_blank(),
+                    legend.margin = margin(t = 0), legend.box.spacing = unit(11, "pt")) +
+  guides(fill = guide_legend(nrow = 1))
+```
+
+Two properties of the trachyte account for this preference, and a third can be excluded. Trachyte cobbles are significantly larger than sandstone cobbles (GM = `r f(gmT, 1)` mm against `r f(gmS, 1)` mm; *U* = `r f(size_U, 0)`, *p* `r fp(size_p)`; Table S4), giving a greater initial volume from which to sustain prolonged reduction. Their form does not distinguish them: treating the three axes as a composition, so that the comparison is invariant to size, the two lithologies are indistinguishable on Aitchison distances (*R*² = `r f(form_R2, 3)`, pseudo-*F* = `r f(form_F, 2)`, *p* `r fp(form_p)`), with no difference in dispersion (PERMDISP *F* = `r f(form_disp_F, 2)`, *p* `r fp(form_disp_p)`), and they occupy the same region of the Sneed and Folk form triangle (@fig-cobble-size-form). The preference cannot therefore have turned on the shapes in which the two raw materials occur on the bars. What remains is fracture predictability. In thin section the trachyte is porphyritic, with euhedral tabular to prismatic K-feldspar phenocrysts (\~0.3–5.0 mm, \~1–10% of the rock) set in a hyalopilitic groundmass of K-feldspar microlites, chlorite or altered mafic minerals, magnetite and about 50% devitrified glass (@fig-thin-section). Assessed on the criteria conventionally applied to volcanic rock, groundmass texture together with the size and abundance of phenocrysts [@stoutRawMaterialSelectivity2005], it is a fine-grained rock with a low phenocryst content, properties associated elsewhere with predictable conchoidal fracture and hence with long, continuous and acute edges. Size and fracture quality are the two properties on which prolonged resharpening most directly depends.
+
+```{r}
+#| label: fig-cobble-size-form
+#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles. The three vertices represent the three end-member forms: compact, platy, and elongate. Statistical significance in (A) is indicated as follows: ns, not significant; * p < 0.05; ** p < 0.01; *** p < 0.001; **** p < 0.0001."
+#| fig-width: 6.5
+#| fig-height: 2.63
+
+# fig-height is set so the fixed-aspect ternary panel exactly fills its cell,
+# which stops it being centred; reset it if the width or the layout changes.
+#
+material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
+                         Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
+
+fig_theme <- theme_minimal(base_size = 9) +
+  theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
+        axis.ticks = element_line(color = "#202124", linewidth = 0.3),
+        axis.ticks.length = unit(2, "pt"),
+        axis.title = element_text(size = 9), axis.text = element_text(color = "#303238", size = 8),
+        strip.text = element_text(face = "bold", color = "#202124", size = 8.5),
+        strip.background = element_rect(fill = "#E8E8E8", color = NA),
+        legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
+        legend.key = element_blank(), legend.key.size = unit(10, "pt"),
+        plot.tag = element_text(face = "bold", size = 11),
+        plot.background = element_rect(color = NA, fill = "white"),
+        panel.background = element_rect(color = NA, fill = "white"))
+
+# the frame is one rectangle drawn inside the panel, so that its foot lands on
+# the base of the triangles rather than on the foot of the panel: f_base is
+# where that base sits, as a fraction of the ternary panel's height
+tri_h     <- sqrt(3) / 2               # height of the unit equilateral triangle
+tern_ylim <- c(-0.235, tri_h + 0.34)   # the ternary panels use these limits
+f_base    <- -tern_ylim[1] / diff(tern_ylim)
+frame_lwd  <- 0.4
+# the height of a real strip, measured rather than guessed, so the two headings
+# of (B) match those of the composition figure whatever the figure is scaled to
+strip_pt  <- local({
+  g <- ggplotGrob(ggplot(data.frame(x = 1, f = levels(sz$G)[1]), aes(x, x)) +
+                    facet_wrap(~ f) + fig_theme)
+  convertHeight(g$heights[g$layout$t[grepl("^strip-t", g$layout$name)][1]],
+                "pt", valueOnly = TRUE)
+})
+frame_grob <- rectGrob(x = unit(0.5, "npc"), y = unit(f_base, "npc"),
+                       width = unit(1, "npc"), height = unit(1 - f_base, "npc"),
+                       just = c("centre", "bottom"),
+                       gp = gpar(col = "#202124", fill = NA,
+                                 lwd = frame_lwd * .pt, lineend = "square"))
+
+size_gm  <- sz |> group_by(G) |> summarise(size = gm(size), .groups = "drop")
+size_br  <- max(sz$size) * 1.06        # bracket height, clear of the largest clast
+sz_span  <- log10(size_br) - log10(min(sz$size))
+base_y   <- log10(min(sz$size)) - 0.05 * sz_span   # the baseline, in log10 mm
+top_y    <- log10(size_br)        + 0.10 * sz_span
+low_y    <- base_y - f_base / (1 - f_base) * (top_y - base_y)
+
+p_size <- ggplot(sz, aes(G, size)) +
+  geom_jitter(aes(color = G), size = 0.9, alpha = 0.35, shape = 16,
+              position = position_jitter(width = 0.24, height = 0, seed = 2226)) +
+  geom_boxplot(color = "#202124", fill = NA, width = 0.55, linewidth = 0.4,
+               outlier.shape = NA) +
+  geom_point(data = size_gm, shape = 16, size = 1.8, color = "#202124") +
+  annotate("segment", x = 1, xend = 2, y = size_br, yend = size_br,
+           linewidth = 0.3, color = "#202124") +
+  annotate("segment", x = c(1, 2), xend = c(1, 2), y = size_br, yend = size_br * 0.94,
+           linewidth = 0.3, color = "#202124") +
+  annotate("text", x = 1.5, y = size_br, label = psig(size_p),
+           vjust = 0.1, size = 2.8, color = "#202124") +
+  annotate("segment", x = c(1, 2), xend = c(1, 2), y = 10^base_y,
+           yend = 10^(base_y - 0.017 * (top_y - low_y)),
+           linewidth = frame_lwd, color = "#202124") +
+  annotate("text", x = c(1, 2), y = 10^(base_y - 0.054 * (top_y - low_y)),
+           label = c("Trachyte", "Sandstone"), vjust = 1,
+           size = 2.4, color = "#303238") +
+  # given in full: the infinite default is NaN through a log scale
+  annotation_custom(frame_grob, xmin = 0.4, xmax = 2.6,
+                    ymin = 10^low_y, ymax = 10^top_y) +
+  scale_color_manual(values = material_colors_fig, guide = "none") +
+  scale_x_discrete(limits = c("Trachyte", "Sandstone")) +
+  scale_y_log10(breaks = c(25, 50, 100, 200, 400),
+                limits = 10^c(low_y, top_y), expand = expansion(0)) +
+  coord_cartesian(clip = "off") +
+  labs(x = NULL, y = "Geometric mean size (mm)") +
+  fig_theme + theme(panel.grid.major = element_blank(),
+                    panel.border = element_blank(),
+                    axis.line = element_blank(),
+                    axis.ticks.x = element_blank(),
+                    axis.ticks.y = element_line(color = "#202124",
+                                                linewidth = frame_lwd),
+                    axis.text.x = element_blank())
+
+to_xy  <- function(compact, elongate) {  # barycentric -> plane
+  data.frame(x = elongate + compact / 2, y = tri_h * compact)
+}
+tri_out <- rbind(to_xy(0, 0), to_xy(0, 1), to_xy(1, 0), to_xy(0, 0))
+sf_pts  <- cbind(to_xy(sz$sf_compact, sz$sf_elongate), G = sz$G)
+
+ca_cuts <- c(0.3, 0.5, 0.7)                 # c/a
+ab_cuts <- c(1 / 3, 2 / 3)                  # (a - b)/(a - c)
+ca_top  <- max(ca_cuts)                     # the apex field is not subdivided
+grid_ca <- do.call(rbind, lapply(ca_cuts, function(k)
+  data.frame(g = paste0("ca", k), x = c(k / 2, 1 - k / 2), y = tri_h * k)))
+grid_ab <- do.call(rbind, lapply(ab_cuts, function(t)
+  data.frame(g = paste0("ab", round(t, 2)),
+             x = c(t, (1 - ca_top) * t + ca_top / 2),
+             y = c(0, tri_h * ca_top))))
+
+gx  <- seq(0, 1, length.out = 300)
+gy  <- seq(0, tri_h, length.out = 260)
+grd <- expand.grid(x = gx, y = gy)
+grd <- transform(grd, compact = y / tri_h)
+grd <- transform(grd, elongate = x - compact / 2)
+grd <- transform(grd, platy = 1 - compact - elongate,
+                 ba_ratio = 1 - (x - compact / 2))          # b/a
+grd$psi <- with(grd, ifelse(compact >= 0 & elongate >= 0 & platy >= 0 &
+                              ba_ratio > 0,
+                            (compact^2 / ba_ratio)^(1 / 3), NA_real_))
+psi_lines <- contourLines(gx, gy, matrix(grd$psi, length(gx), length(gy)),
+                          levels = seq(0.3, 0.9, by = 0.2))
+psi_df <- do.call(rbind, lapply(seq_along(psi_lines), function(i)
+  data.frame(g = i, level = psi_lines[[i]]$level,
+             x = psi_lines[[i]]$x, y = psi_lines[[i]]$y)))
+
+n_out    <- c(-tri_h, 0.5)                  # outward normal of the left edge
+ca_ticks <- c(0.3, 0.5, 0.7, 1)          # 0 is carried by the base scale
+tick_ca  <- data.frame(x0 = ca_ticks / 2, y0 = tri_h * ca_ticks,
+                       label = formatC(ca_ticks, format = "f", digits = 1))
+tick_ca  <- transform(tick_ca,
+                      x1 = x0 + 0.030 * n_out[1], y1 = y0 + 0.030 * n_out[2],
+                      xl = x0 + 0.070 * n_out[1], yl = y0 + 0.070 * n_out[2])
+ab_ticks <- c(0, 1 / 3, 2 / 3, 1)
+tick_ab  <- data.frame(x0 = ab_ticks, y0 = 0, x1 = ab_ticks, y1 = -0.030,
+                       xl = ab_ticks, yl = -0.072,
+                       label = c("0", "0.33", "0.67", "1.0"))
+vert_lab <- data.frame(
+  x = c(0, 1, 0.5), y = c(-0.175, -0.175, tri_h + 0.105),
+  label = c("Platy", "Elongate", "Compact"), vj = c(1, 1, 0))
+
+# one panel, not two facets: facets nest inside the panel row and no longer
+# align with (A). Everything is therefore drawn twice, shifted by tri_dx.
+tri_dx <- 1.30
+two <- function(d, xcols, gcol = NULL) {
+  right <- d
+  for (nm in xcols) right[[nm]] <- right[[nm]] + tri_dx
+  if (!is.null(gcol)) {
+    d[[gcol]] <- paste0(d[[gcol]], "_l"); right[[gcol]] <- paste0(right[[gcol]], "_r")
+  }
+  rbind(d, right)
+}
+tri_out$g  <- "o"
+psi_df$g   <- as.character(psi_df$g)
+sf_pts$x   <- sf_pts$x + ifelse(sf_pts$G == levels(sz$G)[2], tri_dx, 0)
+# each heading is a bar of strip height hung from the top of the panel, with its
+# label centred in it; both are absolute, so neither moves when the figure does
+head_grob <- function(label) {
+  grobTree(rectGrob(y = unit(1, "npc"), height = unit(strip_pt, "pt"),
+                    just = c("centre", "top"),
+                    gp = gpar(fill = "#E8E8E8", col = NA)),
+           textGrob(label, y = unit(1, "npc") - unit(strip_pt / 2, "pt"),
+                    gp = gpar(fontface = "bold", fontsize = 8.5, col = "#202124")))
+}
+
+p_form <- ggplot(sf_pts, aes(x, y)) +
+  geom_path(data = two(psi_df, "x", "g"), aes(x, y, group = g),
+            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
+            colour = "#C3C8CE") +
+  geom_line(data = two(grid_ca, "x", "g"), aes(x, y, group = g),
+            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
+            colour = "#9AA0A6") +
+  geom_line(data = two(grid_ab, "x", "g"), aes(x, y, group = g),
+            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
+            colour = "#9AA0A6") +
+  geom_path(data = two(tri_out, "x", "g"), aes(x, y, group = g),
+            inherit.aes = FALSE, linewidth = frame_lwd, colour = "#202124") +
+  geom_point(aes(colour = G), size = 1.0, alpha = 0.55, shape = 16) +
+  geom_segment(data = two(rbind(tick_ca[, c("x0", "y0", "x1", "y1")],
+                                tick_ab[, c("x0", "y0", "x1", "y1")]),
+                          c("x0", "x1")),
+               aes(x = x0, y = y0, xend = x1, yend = y1), inherit.aes = FALSE,
+               linewidth = frame_lwd, colour = "#202124") +
+  geom_text(data = two(tick_ca, "xl"), aes(xl, yl, label = label),
+            inherit.aes = FALSE, size = 2.4, colour = "#303238",
+            hjust = 1, vjust = 0.4) +
+  geom_text(data = two(tick_ab, "xl"), aes(xl, yl, label = label),
+            inherit.aes = FALSE, size = 2.4, colour = "#303238", vjust = 1) +
+  geom_text(data = two(vert_lab, "x"), aes(x, y, label = label, vjust = vj),
+            inherit.aes = FALSE, size = 2.5, colour = "#5A5F66") +
+  annotation_custom(head_grob(levels(sz$G)[1]), xmin = 0, xmax = 1,
+                    ymin = tern_ylim[1], ymax = tern_ylim[2]) +
+  annotation_custom(head_grob(levels(sz$G)[2]), xmin = tri_dx, xmax = 1 + tri_dx,
+                    ymin = tern_ylim[1], ymax = tern_ylim[2]) +
+  scale_colour_manual(values = material_colors_fig, guide = "none") +
+  coord_fixed(xlim = c(-0.17, 1.13 + tri_dx), ylim = tern_ylim,
+              expand = FALSE, clip = "off") +
+  labs(x = NULL, y = NULL) +
+  fig_theme +
+  theme(panel.grid.major = element_blank(), panel.border = element_blank(),
+        axis.text = element_blank(), axis.ticks = element_blank())
+
+(p_size + labs(tag = "A")) + (p_form + labs(tag = "B")) +
+  plot_layout(widths = c(1.1, 3))
+```
+
+![Petrography of the trachyte. (A) Hand specimens of five of the sampled trachyte cobbles. (B) Photomicrographs of thin sections cut from them, with the magnification and the scale given in each frame. The rock is porphyritic: euhedral tabular to prismatic K-feldspar phenocrysts, with subordinate quartz, augite and clay minerals, are set in a fine-grained groundmass of K-feldspar microlites and devitrified glass.](../figures/thin_section.png){#fig-thin-section width="5.9in"}
+
 [Landscape structure.]{.underline} Technological variation is not structured by position in the landscape. Across the `r n_localities` localities that yielded measurable Quina scrapers, no landscape variable accounts for an appreciable share of the variation in the six technological measures: assemblage size (*R*² = `r f(ls_size["R2"], 3)`, pseudo-*F* = `r f(ls_size["F"], 3)`, *p* `r fp(ls_size["p"])`), basin (*R*² = `r f(ls_basin["R2"], 3)`, pseudo-*F* = `r f(ls_basin["F"], 3)`, *p* `r fp(ls_basin["p"])`), distance to the nearest channel (*R*² = `r f(ls_dist["R2"], 3)`, pseudo-*F* = `r f(ls_dist["F"], 3)`, *p* `r fp(ls_dist["p"])`), and height above that channel (*R*² = `r f(ls_height["R2"], 3)`, pseudo-*F* = `r f(ls_height["F"], 3)`, *p* `r fp(ls_height["p"])`) (Table S12; the analysis frame itself is given in Table S11, and the localities are ordinated against each landscape variable in Fig. S6 and compared between basins in Fig. S8). These low *R*² indicate that landscape variables had little explanatory power for technological variation in Quina scrapers, provide no evidence for a structured spatial influence.
 
 One weak pattern nevertheless runs in a direction worth noting. All six technological measures correlate positively with distance to the nearest channel (Spearman's ρ = `r f(min(ls_dist_rho), 2)`–`r f(max(ls_dist_rho), 2)`; @tbl-distance-correlations, and Fig. S7 for the scatter behind each coefficient), so that Quina scrapers from localities further from a channel tend to be thicker and more heavily reduced. The direction is the one predicted by work on the European Quina, where prolonged reduction are more pronounced at localities without ready access to abundant raw materials [@turq2000; @hiscock2009]. Two qualifications limit what can be made of this. No individual correlation reaches significance at this sample size, and the six measures are not independent of one another: edge angle covaries with GIUR, with the proportion of retouched edge and with the number of retouch generations (Section 4.2.1; @fig-edge-angle-reduction), so that the concordance of six coefficients does not amount to six independent confirmations. We therefore record the pattern as consistent with an established expectation, and as a hypothesis for landscape-scale work with larger samples, rather than as a demonstrated gradient.
@@ -798,6 +794,10 @@ The exchange nonetheless concerned what a single assemblage can be asked to carr
 Quina-style artefacts are not confined to this region. Comparable material has been reported from Dahe in Fuyuan, Yunnan [@Ji2008], and Baicaoping in Liangshan, Sichuan [@ZhengEtAl2025Baicaoping], in southwestern China, and from Xinmiaozhuang in Yangyuan, Hebei [@WangEtAl2021XMZ1], in the north. Most of these assemblages have not been analysed technologically, and whether they represent the Quina system or Quina retouch alone remains open. They are best treated for the moment as leads rather than as established occurrences. The pattern documented here is of a different kind: within the Hengduan Mountains, the Quina system is a recurrent and identifiable regional entity, and the scattered reports elsewhere in China suggest that its distribution in East Asia may prove wider still.
 
 Whether the same technology in two regions implies any connection between the hominins who made it is a question the evidence cannot settle, and the more productive line is to ask what problem the technology solved. In Europe that problem is reasonably well understood. The prey on which Quina groups depended were partitioned by topography rather than distributed evenly, reindeer occupying the ground between uplands and plain in a landscape of plateaux dissected by deep valleys, other species holding lower or more sheltered positions [@delpechLenvironnementAnimalMousteriens1996], so that movement was scheduled rather than opportunistic [@delagnesShiftsNeandertalMobility2011]. Groups moving on such a schedule faced two problems at once: staying equipped while away from sources of stone, and not knowing in advance which tasks a given season and location would present. The three dimensions of the Quina system answer them in turn, in a reserve of volume that travels, an edge that can be restored without recourse to new stone, and a tool that can yield fresh edges of a different kind as needs change [@hiscock2009].
+
+The regional monsoon record places the occupation of these basins at a climatic transition rather than within a settled phase. The nearest palaeoclimate records covering this period come from the lacustrine sediments of the Heqing Basin, about 60 km north of the Huangping and Binchuan basins and some 650 m higher, which are among the longest and most continuous environmental sequences available for the Asian monsoon domain and are highly sensitive to variation in the Indian Summer Monsoon (ISM) [@xiaoVariationSouthwestMonsoon2010; @zhishengGlacialInterglacialIndianSummer2011]. Magnetic and geochemical proxies there, on a chronology built from geomagnetic palaeointensity [@xuMagneticProxyHeqing2025], record a return to aridity between 69 and 57 ka, corresponding to MIS 4, and a generally humid MIS 3 thereafter, punctuated by repeated arid events [@yangIndianSummerMonsoon2025]. A diatom sequence from the same basin, dated by AMS ¹⁴C and magnetostratigraphy, resolves the interval of interest here directly: its zone spanning 64.8 to 49.8 ka brackets the MIS 4/MIS 3 boundary, opening with a deeper and cooler lake of low productivity and passing towards indicators of increasing runoff from the catchment, with the boundary itself placed at about 59 ka; the succeeding zone, from 49.8 ka, records shallow water and low runoff under a weakened monsoon [@liDiatomResponseClimatic2015]. Millennial-scale weakenings of the monsoon, each corresponding to a North Atlantic cold event, have been resolved in the basin for the past 52 ka [@houDifferentCoercivityMagnetic2026]; the earliest of them post-dates the interval dated at Longtan, and we cite this record to show that the monsoon of this region was liable to interruption of this kind rather than to date any interruption within the period of human presence. These records are treated here as regional context rather than as a proxy for conditions at the localities themselves, and for three reasons: the distance and altitudinal offset just noted; the reconfiguration of the Heqing lake's hydrology by tectonic uplift of the basin from about 132 ka; and the contribution to its water balance, during the interval in question, of meltwater from glaciers in the Yulong Mountains, where moraines have been dated to between 54 and 41 ka [@liDiatomResponseClimatic2015]. Read at that scale, what matters is not whether a particular stage was on balance wetter or drier, but that the occupation falls across the MIS 4/MIS 3 boundary, where an arid phase gave way to a strengthening monsoon in a system that the record of the following 40 kyr shows to have been liable to abrupt interruption.
+
+Longtan provides the local counterpart to this regional picture, since it preserves both a robust chronology and a record of vegetation change. Optically stimulated luminescence (OSL) dating places its *in situ* cultural layer at \~60–50 ka [@ruanQuinaLithicTechnology2025a]; OSL ages of \~90–40 ka have been reported for the cultural layers at the nearby Tianhuadong Cave [@hu2020Tianhuadong], but neither its chronology nor its technological attribution is yet secure enough to carry weight here. The surface collections examined below have no independent age control, and the Longtan dates cannot be transferred to them: what those dates establish is when the Quina system was present in this landscape, not when any individual collection was formed. What Longtan adds beyond a date is a local environmental record. Pollen analysis of the terrace section at Longtan documents a shift from a pine–hemlock–grass assemblage to one in which arboreal pollen declines and herbs and wetland taxa rise, indicating a change from coniferous forest to a more open woodland-steppe; the Quina-bearing layer spans this transition [@ruanQuinaLithicTechnology2025a]. The spectrum is a mixture: wetland and herbaceous taxa record the immediate surroundings, while the montane conifers it contains, hemlock, spruce, fir and cedar, cannot have grown on a dry-hot valley floor and reach the site by the upslope and downslope air flows documented for the Hengduan Mountains [@zeng2025asian]. It is therefore read here as a relative shift towards more open conditions within the catchment rather than as a measure of the vegetation immediately around the site.
 
 The setting on the southeastern margin of the Tibetan Plateau is not the European one, but it is likely to have posed a problem of the same structure. The regional monsoon record places the occupation at the transition from MIS 4 to MIS 3, and the pollen record at Longtan registers a local shift towards more open vegetation across the same interval [@yangIndianSummerMonsoon2025; @liDiatomResponseClimatic2015; @ruanQuinaLithicTechnology2025a]; in relief of this amplitude a valley-floor pollen spectrum integrates several altitudinal belts, so that shift is better read as a relative trend than as a measure of how open the ground immediately around the site had become. What can be said about the structure of such a landscape comes from its modern counterparts. Dry-hot valleys of the Jinsha drainage today carry a strongly seasonal, rain-shadowed climate in which annual evaporation greatly exceeds rainfall, and in which surface water is concentrated onto the valley floors, where groundwater draining from the flanking uplands sustains the rivers [@li2025investigating; @yangReviewResearchVegetation2016]; their vegetation is zoned by altitude, from savanna on the valley floors through transitional formations to forest on the surrounding heights [@jiangSeasonalDynamicsSoil2024]. It is the topographic partitioning rather than the particular vegetation that is likely to have persisted: whatever the detailed palaeo-configuration, water and forage in a valley system of this relief would have been distributed unevenly with respect to elevation rather than uniformly across the terrain.
 
