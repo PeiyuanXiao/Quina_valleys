@@ -217,129 +217,7 @@ All analyses were carried out in `r R.version.string`, with the following packag
 
 Three resampling settings govern the results reported below. Permutation tests use `r n_fmt(PERM)` permutations throughout, PERMANOVA and PERMDISP alike. Percentile confidence intervals are taken from `r n_fmt(B_BOOT)` bootstrap replicates. Three quantities carry such an interval, all of them reported in the main text: the between-group ratios of the coefficient of variation and of the Fano factor, Spearman's ρ between each technological measure and distance to the nearest channel, and Cohen's *d* for the difference between scraper edge angle and the exterior platform angle of the resharpening flakes. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation is evaluated by Monte Carlo simulation with `r n_fmt(MSLR_NR)` iterations; its use of the random number stream is insulated, the state being saved and restored around each call, so that the bootstrap intervals do not depend on how many such tests preceded them. Every family of multiple comparisons carries a Bonferroni adjustment.
 
-The tables and figures follow the order of the Results and are grouped into four sections: raw material economy first, then the techno-typological characterisation of the retouch products, then the technological consistency of the surface collections with the excavated material at Longtan, and last the landscape structure of the technological variation. Each section opens with a short guide to what it contains. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
-
-\newpage
-
-# Raw material economy
-
-This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
-
-\newpage
-
-![The gravel-bar sampling points. (A) to (E) The five points at which the surveyed cobbles were recorded, each with the cleared quadrat marked out by string and a spirit level laid across it for scale. (F) A general view of one of the sampled channels. Every cobble longer than 30 mm exposed at the surface within the quadrat was recorded.](../figures/sample_point_photo.png){#fig-sample-points width="5.9in"}
-
-\newpage
-
-```{r}
-#| label: tbl-composition
-#| tbl-cap: "Raw material composition of the river-bar cobbles and of the surface-collected Quina scrapers, by valley. Cells give the count with the percentage of the row in parentheses."
-
-comp_tbl <- comp_fig |>
-  mutate(cell = ifelse(n == 0, "0", sprintf("%d (%s%%)", n, f(percent, 1)))) |>
-  select(Layer, river_ID, Material, cell) |>
-  pivot_wider(names_from = Material, values_from = cell) |>
-  left_join(counts_fig, by = c("Layer", "river_ID"))
-
-comp_out <- bind_rows(lapply(layer_levels, function(lay) {
-  d <- comp_tbl[comp_tbl$Layer == lay, ]
-  bind_rows(
-    data.frame(Valley = sprintf("**%s**", lay),
-               Trachyte = "", Sandstone = "", Quartz = "", Mudstone = "",
-               Andesite = "", N = ""),
-    data.frame(Valley = paste0(IND, as.character(d$river_ID)),
-               Trachyte = d$Trachyte, Sandstone = d$Sandstone, Quartz = d$Quartz,
-               Mudstone = d$Mudstone, Andesite = d$Andesite, N = as.character(d$N)))
-}))
-
-knitr::kable(comp_out, row.names = FALSE,
-             align = c("l", "r", "r", "r", "r", "r", "r"),
-             col.names = c("Valley", "Trachyte", "Sandstone", "Quartz",
-                           "Mudstone", "Andesite", "*n*"))
-```
-
-\newpage
-
-```{r}
-#| label: tbl-electivity
-#| tbl-cap: "Jacobs' electivity index for every raw material. *D* runs from −1, complete avoidance, through 0, use in proportion to availability, to +1, complete selection."
-
-elect_tbl <- tibble(Material = material_levels) |>
-  left_join(comp_avail |> transmute(Material, an = n, ap = p), by = "Material") |>
-  left_join(comp_used  |> transmute(Material, un = n, up = r), by = "Material") |>
-  left_join(jac |> transmute(Material, D), by = "Material") |>
-  mutate(across(c(an, un), ~ replace_na(.x, 0L)),
-         across(c(ap, up), ~ replace_na(.x, 0)),
-         Label = ifelse(Material == "Andesite", "Andesite†", Material))
-
-elect_out <- bind_rows(
-  data.frame(Material = elect_tbl$Label,
-             an = as.character(elect_tbl$an), ap = f(elect_tbl$ap, 1),
-             un = as.character(elect_tbl$un), up = f(elect_tbl$up, 1),
-             D  = f(elect_tbl$D, 2)),
-  data.frame(Material = "**Total**",
-             an = as.character(sum(elect_tbl$an)), ap = f(100, 1),
-             un = as.character(sum(elect_tbl$un)), up = f(100, 1), D = ""))
-
-knitr::kable(elect_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
-             col.names = c("Raw material", "Cobbles *n*", "Cobbles %",
-                           "Scrapers *n*", "Scrapers %", "*D*"))
-```
-
-\newpage
-
-```{r}
-#| label: tbl-rawmat-permanova
-#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second."
-
-perm_row <- function(model, a, pd) {
-  data.frame(Model = paste0(IND, model),
-             Df = sprintf("%d, %d", a$Df[1], a$Df[2]),
-             SS = f(a$SumOfSqs[1], 2),
-             R2 = f(a$R2[1], 3),
-             F  = f(a$F[1], 2),
-             p  = fpt(a$`Pr(>F)`[1]),
-             pdF = f(pd[["F"]], 2),
-             pdp = fpt(pd[["p"]]))
-}
-head_row <- function(label) data.frame(Model = sprintf("**%s**", label),
-  Df = "", SS = "", R2 = "", F = "", p = "", pdF = "", pdp = "")
-
-rawmat_out <- bind_rows(
-  head_row(sprintf("Available river cobbles (*n* = %d)", n_cobble)),
-  perm_row("~ sampling point", cobbleLoc,   pd_cobbleLoc),
-  perm_row("~ valley",         cobbleRiver, pd_cobbleRiver),
-  head_row(sprintf("Surface Quina scrapers (*n* = %d)", nrow(scA))),
-  perm_row("~ basin",  usedA_basin, pd_usedA_basin),
-  perm_row("~ valley", usedA_river, pd_usedA_river))
-
-knitr::kable(rawmat_out, row.names = FALSE,
-             align = c("l", "r", "r", "r", "r", "r", "r", "r"),
-             col.names = c("Model", "*df*", "SS", "*R*²", "pseudo-*F*", "*p*",
-                           "PERMDISP *F*", "PERMDISP *p*"))
-```
-
-\newpage
-
-```{r}
-#| label: tbl-clast-size
-#| tbl-cap: "Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology."
-
-size_row <- function(m) {
-  x <- cl$size[cl$Material == m]
-  if (!length(x)) return(NULL)
-  qs <- unname(quantile(x, c(.25, .75)))
-  data.frame(Material = m, n = as.character(length(x)),
-             GM = f(gm(x), 1), Median = f(median(x), 1),
-             IQR = sprintf("%s–%s", f(qs[1], 1), f(qs[2], 1)),
-             Range = sprintf("%s–%s", f(min(x), 1), f(max(x), 1)))
-}
-size_out <- bind_rows(lapply(material_levels, size_row))
-
-knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
-             col.names = c("Raw material", "*n*", "GM (mm)", "Median (mm)",
-                           "Q1–Q3 (mm)", "Range (mm)"))
-```
+The tables and figures follow the order of the Results and are grouped into four sections: the techno-typological characterisation of the retouch products first, then the technological consistency of the surface collections with the excavated material at Longtan, then the raw material economy, and last the landscape structure of the technological variation. Each section opens with a short guide to what it contains. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
 
 \newpage
 
@@ -750,6 +628,128 @@ p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
 (p_scores + labs(tag = "A")) + (p_loadings + labs(tag = "B")) +
   plot_layout(widths = c(1.7, 1), guides = "collect") &
   theme(legend.position = "bottom", legend.margin = margin(0, 0, 0, 0))
+```
+
+\newpage
+
+# Raw material economy
+
+This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
+
+\newpage
+
+![The gravel-bar sampling points. (A) to (E) The five points at which the surveyed cobbles were recorded, each with the cleared quadrat marked out by string and a spirit level laid across it for scale. (F) A general view of one of the sampled channels. Every cobble longer than 30 mm exposed at the surface within the quadrat was recorded.](../figures/sample_point_photo.png){#fig-sample-points width="5.9in"}
+
+\newpage
+
+```{r}
+#| label: tbl-composition
+#| tbl-cap: "Raw material composition of the river-bar cobbles and of the surface-collected Quina scrapers, by valley. Cells give the count with the percentage of the row in parentheses."
+
+comp_tbl <- comp_fig |>
+  mutate(cell = ifelse(n == 0, "0", sprintf("%d (%s%%)", n, f(percent, 1)))) |>
+  select(Layer, river_ID, Material, cell) |>
+  pivot_wider(names_from = Material, values_from = cell) |>
+  left_join(counts_fig, by = c("Layer", "river_ID"))
+
+comp_out <- bind_rows(lapply(layer_levels, function(lay) {
+  d <- comp_tbl[comp_tbl$Layer == lay, ]
+  bind_rows(
+    data.frame(Valley = sprintf("**%s**", lay),
+               Trachyte = "", Sandstone = "", Quartz = "", Mudstone = "",
+               Andesite = "", N = ""),
+    data.frame(Valley = paste0(IND, as.character(d$river_ID)),
+               Trachyte = d$Trachyte, Sandstone = d$Sandstone, Quartz = d$Quartz,
+               Mudstone = d$Mudstone, Andesite = d$Andesite, N = as.character(d$N)))
+}))
+
+knitr::kable(comp_out, row.names = FALSE,
+             align = c("l", "r", "r", "r", "r", "r", "r"),
+             col.names = c("Valley", "Trachyte", "Sandstone", "Quartz",
+                           "Mudstone", "Andesite", "*n*"))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-electivity
+#| tbl-cap: "Jacobs' electivity index for every raw material. *D* runs from −1, complete avoidance, through 0, use in proportion to availability, to +1, complete selection."
+
+elect_tbl <- tibble(Material = material_levels) |>
+  left_join(comp_avail |> transmute(Material, an = n, ap = p), by = "Material") |>
+  left_join(comp_used  |> transmute(Material, un = n, up = r), by = "Material") |>
+  left_join(jac |> transmute(Material, D), by = "Material") |>
+  mutate(across(c(an, un), ~ replace_na(.x, 0L)),
+         across(c(ap, up), ~ replace_na(.x, 0)),
+         Label = ifelse(Material == "Andesite", "Andesite†", Material))
+
+elect_out <- bind_rows(
+  data.frame(Material = elect_tbl$Label,
+             an = as.character(elect_tbl$an), ap = f(elect_tbl$ap, 1),
+             un = as.character(elect_tbl$un), up = f(elect_tbl$up, 1),
+             D  = f(elect_tbl$D, 2)),
+  data.frame(Material = "**Total**",
+             an = as.character(sum(elect_tbl$an)), ap = f(100, 1),
+             un = as.character(sum(elect_tbl$un)), up = f(100, 1), D = ""))
+
+knitr::kable(elect_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
+             col.names = c("Raw material", "Cobbles *n*", "Cobbles %",
+                           "Scrapers *n*", "Scrapers %", "*D*"))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-rawmat-permanova
+#| tbl-cap: "PERMANOVA and PERMDISP on raw material composition, on Bray–Curtis dissimilarities with 9,999 permutations. Sums of squares, degrees of freedom and residual degrees of freedom are those of the PERMANOVA; the last two columns give the pseudo-*F* and *p* of the test of homogeneity of dispersion on the same dissimilarity matrix. The unit is the individual cobble in the first panel and the individual artefact in the second."
+
+perm_row <- function(model, a, pd) {
+  data.frame(Model = paste0(IND, model),
+             Df = sprintf("%d, %d", a$Df[1], a$Df[2]),
+             SS = f(a$SumOfSqs[1], 2),
+             R2 = f(a$R2[1], 3),
+             F  = f(a$F[1], 2),
+             p  = fpt(a$`Pr(>F)`[1]),
+             pdF = f(pd[["F"]], 2),
+             pdp = fpt(pd[["p"]]))
+}
+head_row <- function(label) data.frame(Model = sprintf("**%s**", label),
+  Df = "", SS = "", R2 = "", F = "", p = "", pdF = "", pdp = "")
+
+rawmat_out <- bind_rows(
+  head_row(sprintf("Available river cobbles (*n* = %d)", n_cobble)),
+  perm_row("~ sampling point", cobbleLoc,   pd_cobbleLoc),
+  perm_row("~ valley",         cobbleRiver, pd_cobbleRiver),
+  head_row(sprintf("Surface Quina scrapers (*n* = %d)", nrow(scA))),
+  perm_row("~ basin",  usedA_basin, pd_usedA_basin),
+  perm_row("~ valley", usedA_river, pd_usedA_river))
+
+knitr::kable(rawmat_out, row.names = FALSE,
+             align = c("l", "r", "r", "r", "r", "r", "r", "r"),
+             col.names = c("Model", "*df*", "SS", "*R*²", "pseudo-*F*", "*p*",
+                           "PERMDISP *F*", "PERMDISP *p*"))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-clast-size
+#| tbl-cap: "Size of the surveyed river cobbles by lithology. Size is the geometric mean of length, breadth and thickness in millimetres, and GM is the geometric mean of that quantity within each lithology."
+
+size_row <- function(m) {
+  x <- cl$size[cl$Material == m]
+  if (!length(x)) return(NULL)
+  qs <- unname(quantile(x, c(.25, .75)))
+  data.frame(Material = m, n = as.character(length(x)),
+             GM = f(gm(x), 1), Median = f(median(x), 1),
+             IQR = sprintf("%s–%s", f(qs[1], 1), f(qs[2], 1)),
+             Range = sprintf("%s–%s", f(min(x), 1), f(max(x), 1)))
+}
+size_out <- bind_rows(lapply(material_levels, size_row))
+
+knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
+             col.names = c("Raw material", "*n*", "GM (mm)", "Median (mm)",
+                           "Q1–Q3 (mm)", "Range (mm)"))
 ```
 
 \newpage
