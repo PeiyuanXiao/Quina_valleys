@@ -204,7 +204,7 @@ Because the artefacts are made overwhelmingly on river cobbles, the straight-lin
 
 Raw material selection was quantified with Jacobs' electivity index *D* [@jacobs1974], a modification of Ivlev's index that corrects for the relative abundance of the available resources:
 
-$$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$
+$$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$\$\$D = \\frac{r - p}{\\,r + p - 2\\,r\\,p\\,}\$\$
 
 where *r* is the proportion of a given raw material among the artefacts and *p* is its proportion among the cobbles recorded in the gravel survey. *D* ranges from −1 (complete avoidance) through 0 (use in proportion to availability) to +1 (complete selection). It was computed for each raw material in the surface Quina scrapers against availability pooled across the gravel survey. Where either proportion is zero the index saturates: a material absent from the gravel survey returns *D* = +1, and one absent from the artefacts returns *D* = −1, whatever the value of the other proportion. In these cases *D* records the direction of the selection but not its strength, and a zero in the gravel survey is in any case a sampling zero rather than a demonstrated absence. Such values are therefore reported for completeness but are not read on the same scale as those computed from two non-zero proportions.
 
