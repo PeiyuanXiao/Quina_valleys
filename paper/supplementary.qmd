@@ -634,11 +634,15 @@ p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
 
 # Raw material economy
 
-This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
+This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded, and @fig-thin-section the petrography of the trachyte, the dominant raw material. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
 
 \newpage
 
 ![The gravel-bar sampling points. (A) to (E) The five points at which the surveyed cobbles were recorded, each with the cleared quadrat marked out by string and a spirit level laid across it for scale. (F) A general view of one of the sampled channels. Every cobble longer than 30 mm exposed at the surface within the quadrat was recorded.](../figures/sample_point_photo.png){#fig-sample-points width="5.9in"}
+
+\newpage
+
+![Petrography of the trachyte. (A) Hand specimens of five of the sampled trachyte cobbles. (B) Photomicrographs of thin sections cut from them, with the magnification and the scale given in each frame. The rock is porphyritic: euhedral tabular to prismatic K-feldspar phenocrysts, with subordinate quartz, augite and clay minerals, are set in a fine-grained groundmass of K-feldspar microlites and devitrified glass.](../figures/thin_section.png){#fig-thin-section width="5.9in"}
 
 \newpage
 
