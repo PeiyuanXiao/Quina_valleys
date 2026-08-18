@@ -8,7 +8,16 @@
 # by position along that valley's own principal axis, NOT by latitude: the
 # Liandong reach runs partly E-W, so ordering by latitude scrambles the
 # along-valley sequence (that was the flaw in the earlier profile this figure
-# replaced). The three transects are then chained end to end, nearest end first.
+# replaced). The three transects are then chained end to end, oriented so that
+# the connectors between them are as short as they can be.
+#
+# Transect sequence: Binchuan basin -> Liandong -> Huangping basin, i.e.
+# Sangyuan valley -> Liandong valley -> Caifeng valley. The names in the table
+# are the valleys, and each maps onto exactly one of those basin units:
+# Sangyuan is the Binchuan basin floor (6 sites, 1359-1542 m), Liandong the
+# upland valley behind it (16 sites, Binchuan basin), Caifeng the Huangping
+# (Heqing) basin (5 sites). The traverse therefore runs basin floor -> tributary
+# valley -> the neighbouring basin.
 #
 # Elevation is sampled from the SRTM DEM every 30 m along the route, so each
 # site plots at its own ground surface rather than being projected onto some
@@ -54,8 +63,8 @@ label_col       <- "#332F29"
 ground_fill     <- "#DCD6C8"
 ground_line     <- "#5E5849"
 
-# transect order along the traverse, NW -> NE -> S
-transect_levels <- c("Caifeng valley", "Sangyuan valley", "Liandong valley")
+# transect order along the traverse: Binchuan basin -> Liandong -> Huangping
+transect_levels <- c("Sangyuan valley", "Liandong valley", "Caifeng valley")
 
 # ==============================================================================
 # Sites
@@ -87,14 +96,30 @@ order_along_valley <- function(g) {
 groups <- lapply(transect_levels, function(tl)
   order_along_valley(sites[sites$transect == tl, ]))
 
-# chain them: flip a group if its far end is nearer to the previous group's end
-for (i in seq_along(groups)[-1]) {
-  prev_end <- st_coordinates(groups[[i - 1]])[nrow(groups[[i - 1]]), ]
-  this_xy  <- st_coordinates(groups[[i]])
-  d_first <- sum((this_xy[1, ] - prev_end)^2)
-  d_last  <- sum((this_xy[nrow(this_xy), ] - prev_end)^2)
-  if (d_last < d_first) groups[[i]] <- groups[[i]][rev(seq_len(nrow(groups[[i]]))), ]
-}
+# ---- orient the groups ------------------------------------------------------
+# The transect ORDER is fixed by transect_levels; only the direction each one is
+# walked in is free, and order_along_valley() returns an arbitrary direction
+# along the principal axis. With three groups there are just 2^3 = 8 ways to
+# orient them, so take the one with the shortest total connector length rather
+# than chaining greedily. Greedy chaining is locally optimal only: it enters
+# Liandong at its north end and then has to run 19 km across empty ground to
+# reach Caifeng, where entering Liandong from the south and leaving by the north
+# costs 6 km less over the traverse as a whole.
+ends <- lapply(groups, function(g) {
+  xy <- st_coordinates(g); list(first = xy[1, ], last = xy[nrow(xy), ])
+})
+combos <- expand.grid(rep(list(c(FALSE, TRUE)), length(groups)))
+connector_km <- apply(combos, 1, function(fl) {
+  e <- lapply(seq_along(ends), function(i)
+    if (fl[i]) list(first = ends[[i]]$last, last = ends[[i]]$first) else ends[[i]])
+  sum(vapply(seq_along(e)[-1], function(i)
+    sqrt(sum((e[[i]]$first - e[[i - 1]]$last)^2)), numeric(1))) / 1000
+})
+flip <- as.logical(combos[which.min(connector_km), ])
+for (i in seq_along(groups))
+  if (flip[i]) groups[[i]] <- groups[[i]][rev(seq_len(nrow(groups[[i]]))), ]
+cat("connectors between transects:", round(min(connector_km), 1), "km",
+    sprintf("(worst orientation: %.1f km)", max(connector_km)), "\n")
 ## `route_sites` and, further down, the plot object `p` are both read from
 ## outside this script: fig01_export_panels.R sources this file into its own
 ## environment and takes them by name — `p` to re-render panel C at its placed

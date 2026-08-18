@@ -142,17 +142,10 @@ stopifnot(isTRUE(all.equal(we_ph_full$p.adj, we_ph_full$p.adj.t)))
 
 # ---- 3. Landscape: dispersion between the basins --------------------------
 ls_basin_pd <- permdisp_one(dL, site_df$Basin)
-n_basin_site <- table(droplevels(site_df$Basin))
 
-# ---- 4. Locality-level ordination ----------------------------------------
-site_pca <- prcomp(scale(as.matrix(site_df[, variables])), center = TRUE, scale. = FALSE)
-site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
-site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
-
-# ---- 5. Each measure against each continuous landscape variable -----------
-land_vars <- c(Height_above_river = "Height above channel (m)",
-               Site_size          = "Assemblage size (n specimens)",
-               Distance_to_water  = "Distance to channel (m)")
+# ---- 4. Each measure against each continuous landscape variable -----------
+# land_vars, the ordination and the fitted surfaces come from _analysis.R,
+# the ordination itself being figured in the main text
 land_cor <- bind_rows(lapply(names(land_vars), function(lv) {
   fam <- bind_rows(lapply(variables, function(v) {
     d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df[[lv]]), ]
@@ -168,27 +161,7 @@ stopifnot(isTRUE(all.equal(land_cor$rho[land_cor$Landscape == "Distance_to_water
           isTRUE(all.equal(land_cor$p_adj[land_cor$Landscape == "Distance_to_water"],
                            ls_dist_cor$p_adj)))
 
-# ---- 6. Each landscape variable as a surface over the ordination ----------
-hull_i  <- chull(site_scores$PC1, site_scores$PC2)
-hull_xy <- as.matrix(site_scores[c(hull_i, hull_i[1]), c("PC1", "PC2")])
-surf_one <- function(v, n = 250) {
-  y <- site_scores[[v]]
-  g <- mgcv::gam(y ~ s(PC1, PC2, k = 10), data = site_scores,
-                 method = "REML", select = TRUE)
-  s <- summary(g)
-  rx <- range(site_scores$PC1); ry <- range(site_scores$PC2)
-  grd <- expand.grid(
-    PC1 = seq(rx[1] - 0.08 * diff(rx), rx[2] + 0.08 * diff(rx), length.out = n),
-    PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
-  grd$fit <- as.numeric(predict(g, newdata = grd))
-  grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
-  list(grid = grd, dev = 100 * s$dev.expl, p = s$s.table[1, "p-value"])
-}
-surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
-surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
-surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
-
-# ---- 7. Each measure between the two basins -------------------------------
+# ---- 5. Each measure between the two basins -------------------------------
 basin_cmp <- bind_rows(lapply(variables, function(v) {
   d <- bdf[is.finite(bdf[[v]]), c("Basin", v)]
   names(d) <- c("Basin", "Value")
@@ -223,7 +196,7 @@ The tables and figures follow the order of the Results and are grouped into four
 
 # Techno-typological characterisation of the retouch products
 
-This section describes the retouch products themselves. @fig-quina-scrapers-si illustrates further specimens beyond those figured in the main text. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. The typological attribution of the same specimens is reported in the main text.
+This section describes the retouch products themselves. @fig-quina-scrapers-si illustrates further specimens beyond those figured in the main text. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. @fig-edge-angle-reduction sets edge angle against the three measures of how far reduction was carried, the relationships summarised in the main text. The typological attribution of the same specimens is reported in the main text.
 
 \newpage
 
@@ -325,6 +298,54 @@ ggplot(cat_df, aes(pct, Level)) +
   theme(panel.grid.major.y = element_blank(),
         axis.text.y = element_text(size = 7.5),
         strip.text.y = element_text(size = 7.5, angle = -90))
+```
+
+\newpage
+
+```{r}
+#| label: fig-edge-angle-reduction
+#| fig-cap: "Relationship between Quina scraper edge angle and three measures (proportion of perimeter retouched, GIUR, and number of retouch generations). Each panel reports Spearman’s ρ and p-value. The dashed line represents an ordinary least-squares linear fit, shown only as a visual guide to the direction of the relationship."
+#| fig-width: 5.9
+#| fig-height: 2.44
+
+set.seed(2226)
+focal_ea    <- "Edge_Angle"
+corr_vars   <- c("Retouch_length_index", "Ave_GIUR", "Ave_RG")
+corr_labels <- c(Retouch_length_index = "Retouched perimeter",
+                 Ave_GIUR = "GIUR", Ave_RG = "Retouch generations")
+fmt_p_math  <- function(p) ifelse(p < 0.001, "italic(p) < 0.001",
+                                  sprintf("italic(p) == %.3f", p))
+
+quina_ea <- read_excel(sc_path, sheet = "Quina scraper") |>
+  mutate(across(all_of(c(focal_ea, corr_vars)), as.numeric))
+spearman_one <- function(v) {
+  pair <- quina_ea |> select(all_of(c(focal_ea, v))) |> drop_na()
+  ct <- suppressWarnings(cor.test(pair[[focal_ea]], pair[[v]], method = "spearman", exact = FALSE))
+  data.frame(Variable = v, rho = unname(ct$estimate), p_value = ct$p.value)
+}
+results_ea <- do.call(rbind, lapply(corr_vars, spearman_one))
+results_ea$p_value <- p.adjust(results_ea$p_value, "bonferroni")   # one family of three
+
+long_ea <- quina_ea |> select(all_of(c(focal_ea, corr_vars))) |>
+  pivot_longer(all_of(corr_vars), names_to = "Variable", values_to = "Value") |>
+  filter(!is.na(.data[[focal_ea]]), !is.na(Value)) |>
+  mutate(Variable = factor(Variable, levels = corr_vars),
+         x_plot = if_else(Variable == "Ave_RG", Value + runif(n(), -0.11, 0.11), Value))
+labels_ea <- results_ea |>
+  mutate(Variable = factor(Variable, levels = corr_vars),
+         label = sprintf("rho == %.2f * ',' ~ %s", rho, fmt_p_math(p_value)))
+
+ggplot(long_ea, aes(y = .data[[focal_ea]])) +
+  geom_smooth(aes(x = Value), method = "lm", formula = y ~ x, se = TRUE,
+              color = "#6BA8CE", fill = "#CBDCEA", linewidth = 0.6, linetype = "dashed") +
+  geom_point(aes(x = x_plot), color = "#565693", alpha = 0.5, size = 1.4, shape = 16) +
+  geom_text(data = labels_ea, aes(x = -Inf, y = Inf, label = label), parse = TRUE,
+            hjust = -0.08, vjust = 1.35, size = 2.5, color = "#202124", inherit.aes = FALSE) +
+  facet_wrap(~ Variable, scales = "free_x", ncol = 3, labeller = as_labeller(corr_labels)) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.14))) +
+  scale_x_continuous(expand = expansion(mult = 0.06)) +
+  labs(x = NULL, y = "Edge angle (°)") +
+  fig_theme + theme(panel.grid.major = element_blank())
 ```
 
 \newpage
@@ -760,7 +781,7 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 # Landscape structure
 
-This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the six measures, and @tbl-landscape-permanova tests each landscape variable against that space. The three figures show the same data in turn: @fig-site-pca as an ordination of the localities coloured by each landscape variable, @fig-landscape-scatter as each measure against each of the continuous variables, and @fig-basin-boxplot as a comparison between the two basins.
+This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the six measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins.
 
 \newpage
 
@@ -808,77 +829,6 @@ ls_out <- bind_rows(
 
 knitr::kable(ls_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
              col.names = c("Landscape variable", "*df*", "SS", "*R*²", "pseudo-*F*", "*p*"))
-```
-
-\newpage
-
-```{r}
-#| label: fig-site-pca
-#| fig-cap: "Locality-level ordination of the six technological measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel, (C) assemblage size and (D) distance to the nearest channel. The four panels are the same ordination and differ only in the landscape variable shown, which is named in the legend beneath each. The three continuous variables are carried by the colour gradient at their measured values, the form in which they enter every test reported here; the gradient runs between the two colours that distinguish the basins in (A), the colour scale is square-root, all three being right-skewed, and the legend ticks are in the original units. Behind the localities of (B) to (D), on that same scale, is a thin-plate spline of the variable fitted over the ordination plane and clipped to the area the localities cover. A landscape gradient would show as colour running in a direction across a panel. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids."
-#| fig-width: 5.9
-#| fig-height: 5.8
-
-site_panel <- function(grp, cols, legend_title) {
-  d <- site_scores |> mutate(G = .data[[grp]]) |> filter(!is.na(G))
-  cen <- d |> group_by(G) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
-  hul <- d |> group_by(G) |> filter(n() >= 3) |>
-    group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |> ungroup()
-  ggplot(d, aes(PC1, PC2, color = G)) +
-    geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-    geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-    geom_polygon(data = hul, aes(fill = G, group = G), alpha = 0.12, color = NA) +
-    geom_point(size = 1.5, alpha = 0.85, shape = 16) +
-    geom_point(data = cen, aes(cx, cy, fill = G), shape = 21, color = "#5A5F66",
-               size = 2.2, stroke = 0.5, inherit.aes = FALSE) +
-    scale_color_manual(values = cols, name = legend_title) +
-    scale_fill_manual(values = cols, name = legend_title) +
-    labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
-         y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
-    fig_theme +
-    theme(panel.grid.major = element_blank(), legend.position = "bottom",
-          legend.title.position = "top",
-          legend.title = element_text(size = 7.5, hjust = 0.5),
-          legend.key.size = unit(7, "pt"), legend.text = element_text(size = 7),
-          legend.margin = margin(0, 0, 0, 0)) +
-    guides(fill = "none", color = guide_legend(nrow = 1, override.aes = list(size = 1.6)))
-}
-# square-root scale: all three variables are right-skewed
-site_grad_panel <- function(var, legend_title, breaks) {
-  s <- surfaces[[var]]
-  # shared limits, so a flat surface is not stretched across the whole ramp
-  lims <- range(site_scores[[var]], na.rm = TRUE)
-  ggplot(site_scores, aes(PC1, PC2, color = .data[[var]])) +
-    geom_raster(data = s$grid, aes(PC1, PC2, fill = fit), alpha = 0.5,
-                inherit.aes = FALSE) +
-    geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-    geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-    geom_point(size = 1.8, shape = 16) +
-    scale_fill_gradient(low = grad_low, high = grad_high, transform = "sqrt",
-                        limits = lims, oob = scales::squish,
-                        na.value = "transparent", guide = "none") +
-    scale_color_gradient(low = grad_low, high = grad_high, name = legend_title,
-                         transform = "sqrt", breaks = breaks,
-                         limits = lims, oob = scales::squish) +
-    labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
-         y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
-    fig_theme +
-    theme(panel.grid.major = element_blank(), legend.position = "bottom",
-          legend.title.position = "top",
-          legend.title = element_text(size = 7.5, hjust = 0.5),
-          legend.text = element_text(size = 7),
-          legend.key.width = unit(34, "pt"), legend.key.height = unit(5, "pt"),
-          legend.margin = margin(0, 0, 0, 0)) +
-    guides(color = guide_colourbar())
-}
-
-(site_panel("Basin", basin_colors, "Basin") + labs(tag = "A", x = NULL)) +
-  (site_grad_panel("Height_above_river", "Height above channel (m)",
-                   c(30, 60, 100, 150)) + labs(tag = "B", x = NULL, y = NULL)) +
-  (site_grad_panel("Site_size", "Assemblage size (n specimens)",
-                   c(1, 3, 10, 30)) + labs(tag = "C")) +
-  (site_grad_panel("Distance_to_water", "Distance to channel (m)",
-                   c(250, 500, 1000, 2000)) + labs(tag = "D", y = NULL)) +
-  plot_layout(ncol = 2)
 ```
 
 \newpage

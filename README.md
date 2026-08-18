@@ -6,11 +6,11 @@
 
 </p>
 
-[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/) [![R >= 4.1](https://img.shields.io/badge/R-%3E%3D4.1-blue.svg)](https://www.r-project.org/)
+[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/) [![R \>= 4.1](https://img.shields.io/badge/R-%3E%3D4.1-blue.svg)](https://www.r-project.org/)
 
 This repository contains the data and code for our manuscript, **in preparation**:
 
-> **Xiao, P.-Y., Ruan, Q.-J., Jia, Z.-X., Peresani, M., Delpiano, D., & Marwick, B. (in prep.). The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau.**
+> **Xiao, P., Ruan, Q., Delpiano, D., Peresani, M., Jia, Z., Yang, L., Marwick, B., & Li, H. (in prep.). The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau.**
 
 The manuscript and its supplementary material are written in Quarto and live in [`paper/`](paper); every number they report is computed by [`paper/_analysis.R`](paper/_analysis.R).
 
@@ -18,30 +18,18 @@ The manuscript and its supplementary material are written in Quarto and live in 
 
 ### 👥 Authors and Affiliations
 
-**Pei-Yuan Xiao**<sup>a,b,c</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0009-0000-9733-5875), **Qi-Jun Ruan**<sup>d</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0009-0000-2143-5335)✉, **Zhen-Xiu Jia**<sup>a</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0002-7514-4514), **Marco Peresani**<sup>e,f</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0001-6562-6336), **Davide Delpiano**<sup>e</sup>✉, **Ben Marwick**<sup>c</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0001-7879-4531)✉
+**Peiyuan Xiao**<sup>a,b,c</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0009-0000-9733-5875), **Qijun Ruan**<sup>d</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0009-0000-2143-5335)✉, **Davide Delpiano**<sup>e</sup>, **Marco Peresani**<sup>e,f</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0001-6562-6336), **Zhenxiu Jia**<sup>a</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0002-7514-4514), **Lijing Yang**<sup>d</sup>, **Ben Marwick**<sup>c</sup>[<img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID iD" width="16" height="16"/>](https://orcid.org/0000-0001-7879-4531)✉, **Hao Li**<sup>a</sup>✉
 
--   <sup>a</sup> *Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China.*
--   <sup>b</sup> *University of Chinese Academy of Sciences, Beijing, China.*
--   <sup>c</sup> *Department of Anthropology, University of Washington, Seattle, WA, USA.*
--   <sup>d</sup> *Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, China.*
--   <sup>e</sup> *Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy.*
--   <sup>f</sup> *Consiglio Nazionale delle Ricerche–Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy.*
+- <sup>a</sup> *Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China.*
+- <sup>b</sup> *University of Chinese Academy of Sciences, Beijing, China.*
+- <sup>c</sup> *Department of Anthropology, University of Washington, Seattle, WA, USA.*
+- <sup>d</sup> *Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, China.*
+- <sup>e</sup> *Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy.*
+- <sup>f</sup> *Consiglio Nazionale delle Ricerche–Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy.*
 
-**✉ Corresponding Authors:** Qi-Jun Ruan \* Davide Delpiano ([dlpdvd\@unife.it](mailto:dlpdvd@unife.it)) \* Ben Marwick ([bmarwick\@uw.edu](mailto:bmarwick@uw.edu))
+**✉ Corresponding Authors:** Qijun Ruan \* Ben Marwick ([bmarwick\@uw.edu](mailto:bmarwick@uw.edu)) \* Hao Li ([lihao\@itpcas.ac.cn](mailto:lihao@itpcas.ac.cn))
 
-🔧 **Maintainers:** [Pei-yuan Xiao](mailto:xiaopeiyuan@itpcas.ac.cn) & [Ben Marwick](mailto:bmarwick@uw.edu)
-
-> **Note:** the author list, ORCIDs and affiliations above mirror the YAML of [`paper/manuscript.qmd`](paper/manuscript.qmd), which still carries a `TODO` to finalise them. Update the `.qmd`, [`paper/supplementary.qmd`](paper/supplementary.qmd) and this README together.
-
-------------------------------------------------------------------------
-
-### 📝 Abstract
-
-Middle Palaeolithic assemblages vary widely in technology, and whether that variability reflects separate cultural traditions or shared responses to environmental pressures is a long-standing question in the study of human evolution. Among the most distinctive of these technologies is Quina, a specific technological behaviour built around thick, asymmetric blanks and the prolonged resharpening and recycling of the tools made on them, and long understood as an adaptation to high mobility in open, seasonally structured environments. In Europe, where it has been studied for over a century, Quina documented within a narrow glacial interval; in the eastern Old World it was, until recently, unknown. The identification of a complete Quina system at Longtan, on the southeastern margin of the Tibetan Plateau, changed this, but rested on a single case. Here we show that Longtan is not an isolated occurrence but one instance of a regional practice. Analysing Quina scrapers and resharpening flakes surface collected across two basins, and testing them against the Longtan material, we find that they share the same technological concept and the same strong preference for a single raw material, without systematic variation across the landscape; we term this regional entity the Quina Valley. Its setting, a dry-hot valley on the plateau margin, is far removed from the cold, open landscapes of the European Quina, yet poses an ecological problem of the same structure, one of patchy, seasonally organised resources reached by moving through the terrain. The significance of this study lies not only in identifying a regional Quina entity on the eastern side of the Old World, but also in providing an environmental rationale for its emergence in this region. Future excavation, by recovering absolute ages and faunal remains, will be essential to building a regional chronological framework, identifying the people behind this technology and reconstructing the subsistence strategies it served.
-
-### 🔑 Keywords
-
-Middle Paleolithic; Southeastern Tibetan Plateau; Quina technology; Quina valleys
+🔧 **Maintainers:** [Peiyuan Xiao](mailto:xiaopeiyuan@itpcas.ac.cn) & [Ben Marwick](mailto:bmarwick@uw.edu)
 
 ------------------------------------------------------------------------
 
@@ -83,80 +71,43 @@ Middle Paleolithic; Southeastern Tibetan Plateau; Quina technology; Quina valley
 The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the development version.
 
 1.  Clone the repository and open the project:
-    ```sh
+
+    ``` sh
     git clone https://github.com/PeiyuanXiao/Quina_valleys.git
     cd Quina_valleys
     ```
+
     Open `Quina_valleys.Rproj` in RStudio — this sets the working directory that `here::here()` anchors to.
 
 2.  Install the R packages listed under [Computational environment](#-computational-environment).
 
-3.  **Build the spatial cache** (needed once, and only for Figure 1). This downloads the SRTM DEM and the administrative boundaries and extracts the channel network from the DEM, so it needs a network connection and the WhiteboxTools binary (installed on first run, ~70 MB):
-    ```r
+3.  **Build the spatial cache** (needed once, and only for Figure 1). This downloads the SRTM DEM and the administrative boundaries and extracts the channel network from the DEM, so it needs a network connection and the WhiteboxTools binary (installed on first run, \~70 MB):
+
+    ``` r
     source("scripts/figure1/setup.R")
     ```
+
     Everything it builds lands in `data/cache/` and is skipped on a re-run if already present; every later script reads that cache and needs no network.
 
 4.  **Render the documents.** This is the authoritative route: both `.qmd` files source `paper/_analysis.R`, so rendering recomputes every reported number from the raw data.
-    ```sh
+
+    ``` sh
     quarto render paper/manuscript.qmd
     quarto render paper/supplementary.qmd
     ```
 
 5.  **Or run the scripts individually.** Each analysis script is self-contained and reads only from `data/`, so the three analysis folders and the scripts within them can be run in any order. They mirror `_analysis.R` — same numbers, plus their diagnostic figures:
-    ```r
+
+    ``` r
     source("scripts/raw_material_analysis/raw_material_permanova.R")
     source("scripts/technological_consistency/surface_vs_longtan.R")
     # ... etc.
     ```
+
     The figure scripts come last: `scripts/figures/statistic_figures.R` reads the `.rds` files the analysis scripts cache, and the Figure 1 panels have to be built in the order given under [`figure1/`](scripts/figure1) above, since `fig01_export_panels.R` re-sources the two panel scripts.
-
-> **Not yet in place:** this compendium has no `renv.lock`, `DESCRIPTION` or `Dockerfile`, so the package library is not pinned and the environment is not containerised. Adding them is the next step towards full computational reproducibility.
-
-------------------------------------------------------------------------
-
-### 📤 Outputs
-
--   **Console:** the statistical tests and descriptive tables, printed as each script runs.
--   **`paper/manuscript.docx`** and **`paper/supplementary.docx`:** the rendered documents, with every figure and table.
--   **`output/figures/`:** the manuscript figures — `fig_raw_material_composition`, `fig_edge_angle_reduction`, `fig_technological_consistency`, `fig_traverse_profile`, and the two superseded panel candidates `fig_terrace_position` and `fig_liandong_section` (PNG at 600 dpi, several also PDF). **`fig01_panels/`** holds the Figure 1 parts at their final placed sizes — `panel_A_map`, `panel_A_map_with_route`, `panel_C_profile`, `legend`, `locator_globe` — for the manual Illustrator layout.
--   **`output/maps/`:** the cartographic products — `map_quina_sites` (Figure 1A) and `terrain_3d` (Figure 1B). The `map_geology*` and `ai_*` files still in this folder are earlier geology renders and the greyscale hillshade / georeferenced scan used as the base for the hand-drawn geology map; the scripts that made them have been deleted, so unlike everything else here they cannot be regenerated by re-running the pipeline.
--   **`output/cache/analysis/*.rds`:** tidy results cached by the analysis scripts so that the figure scripts can re-plot without re-running a permutation test.
--   **`output/<analysis folder>/`:** the diagnostic figures of each analysis script.
-
-The whole of `output/` is git-ignored, as is `asset/` (specimen photographs and Illustrator sources — large, binary, and not needed to reproduce any result).
-
-------------------------------------------------------------------------
-
-### 💻 Computational environment
-
--   **R:** developed under **R 4.5.2**; the code requires **R ≥ 4.1** (it uses the native pipe `|>`).
--   **Quarto** is needed to render the manuscript and supplement.
--   **R packages:**
-
-    | Package | Role |
-    |---|---|
-    | `tidyverse` | data wrangling and `ggplot2` graphics |
-    | `here` | project-root-relative paths |
-    | `readxl` | reading the `.xlsx` raw-data files |
-    | `vegan` | PERMANOVA, PERMDISP and the ordinations |
-    | `rstatix` | tidy wrappers for the univariate tests and effect sizes |
-    | `cvequality` | Krishnamoorthy–Lee MSLRT test of CV equality |
-    | `ggpubr`, `patchwork`, `ggrepel`, `ggnewscale`, `grid` | figure composition, labelling and multiple fill scales |
-    | `ragg`, `magick` | high-resolution PNG devices and the Figure 1 raster panel |
-    | `sf`, `terra`, `tidyterra`, `ggspatial` | vector/raster spatial data and map furniture |
-    | `elevatr`, `rnaturalearth`, `osmdata` | one-time downloads of the DEM, boundaries and waterways |
-    | `whitebox` | hydrological extraction of the channel network from the DEM |
-    | `rayshader` | the path-traced 3-D block model |
-
-    The spatial packages in the last four rows are needed only for `scripts/figure1/`; the analysis scripts and the two `.qmd` documents run without them.
-
-To capture your own session for the record, run `sessionInfo()` after sourcing the scripts.
 
 ------------------------------------------------------------------------
 
 ### 📄 License
 
-Code and data in this repository are intended for release under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license, matching the companion [Longtan compendium](https://github.com/PeiyuanXiao/Longtan_raw_data). You are free to share and adapt the material for any purpose, provided you give appropriate credit by citing the paper above.
-
-> **Note:** a `LICENSE` file has not yet been added to the repository. Add one before the compendium is made public.
+Code and data in this repository are intended for release under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.

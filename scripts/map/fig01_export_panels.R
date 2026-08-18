@@ -61,11 +61,13 @@ save_both <- function(p, name, w, h) {
 
 # ---- rebuild the two ggplot panels -----------------------------------------
 message("building panels ...")
+## these two live in scripts/map/ — the folder was called scripts/figure1/ before
+## the restructure, and this script was left pointing at the old path
+script_dir <- file.path(proj_dir, "scripts", "map")
 env_a <- new.env()
-sys.source(file.path(proj_dir, "scripts", "figure1", "terra_map_2D.R"), envir = env_a)
+sys.source(file.path(script_dir, "terra_map_2D.R"), envir = env_a)
 env_c <- new.env()
-sys.source(file.path(proj_dir, "scripts", "figure1", "traverse_profile_figure.R"),
-           envir = env_c)
+sys.source(file.path(script_dir, "traverse_profile_figure.R"), envir = env_c)
 
 # ==============================================================================
 # Panel A -- plan map at 81 mm

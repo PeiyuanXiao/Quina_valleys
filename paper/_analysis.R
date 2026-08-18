@@ -508,6 +508,40 @@ bdf <- site_df |> filter(!is.na(Basin))
 set.seed(2226); aB <- adonis2(dist(scale(as.matrix(bdf[, variables]))) ~ Basin, data = bdf, permutations = PERM)
 ls_basin <- c(R2 = aB$R2[1], F = aB$F[1], p = aB$`Pr(>F)`[1], Df = aB$Df[1], Df_res = aB$Df[2],
               SumOfSqs = aB$SumOfSqs[1], SumOfSqs_res = aB$SumOfSqs[2])
+n_basin_site <- table(droplevels(site_df$Basin))
+# the four one-variable models together, for the range quoted in the text
+ls_perm <- list(Site_size = ls_size, Basin = ls_basin,
+                Distance_to_water = ls_dist, Height_above_river = ls_height)
+ls_R2 <- vapply(ls_perm, function(v) unname(v[["R2"]]), numeric(1))
+ls_p  <- vapply(ls_perm, function(v) unname(v[["p"]]), numeric(1))
+
+# ---- locality-level ordination, and each landscape variable over it -------
+site_pca <- prcomp(scale(as.matrix(site_df[, variables])), center = TRUE, scale. = FALSE)
+site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
+site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
+land_vars <- c(Height_above_river = "Height above channel (m)",
+               Site_size          = "Assemblage size (n specimens)",
+               Distance_to_water  = "Distance to channel (m)")
+# thin-plate spline of each landscape variable over the ordination plane,
+# clipped to the area the localities cover
+hull_i  <- chull(site_scores$PC1, site_scores$PC2)
+hull_xy <- as.matrix(site_scores[c(hull_i, hull_i[1]), c("PC1", "PC2")])
+surf_one <- function(v, n = 250) {
+  y <- site_scores[[v]]
+  g <- mgcv::gam(y ~ s(PC1, PC2, k = 10), data = site_scores,
+                 method = "REML", select = TRUE)
+  s <- summary(g)
+  rx <- range(site_scores$PC1); ry <- range(site_scores$PC2)
+  grd <- expand.grid(
+    PC1 = seq(rx[1] - 0.08 * diff(rx), rx[2] + 0.08 * diff(rx), length.out = n),
+    PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
+  grd$fit <- as.numeric(predict(g, newdata = grd))
+  grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
+  list(grid = grd, dev = 100 * s$dev.expl, p = s$s.table[1, "p-value"])
+}
+surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
+surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
+surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
 # bootstrap interval on rho: at this n the interval, not the p-value, is what
 # shows how little the coefficients pin down
 ls_dist_cor <- bind_rows(lapply(variables, function(v) {
