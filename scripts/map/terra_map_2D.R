@@ -48,6 +48,57 @@ show_basin_tint   <- FALSE  # convex hulls read as marquee boxes
 show_river_labels <- FALSE
 rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp") (best)
 
+## ---- palette mode --------------------------------------------------------
+## Declared before the cartographic parameters because hyps_strength below
+## depends on it. A caller assigns PALETTE_MODE in the environment it sources
+## this script into; unset, everything behaves exactly as it always did.
+palette_mode <- if (exists("PALETTE_MODE", inherits = FALSE)) PALETTE_MODE else "sheet"
+
+## ---- optional frame override ---------------------------------------------
+## Unset, the map is drawn on data/cache/dem.tif, which is the site extent + 8 km
+## and is what every earlier version of this panel used. A caller can widen it by
+## assigning MAP_EXT (xmin, xmax, ymin, ymax) before sourcing — used to pull the
+## north edge up to the Jinsha. Any frame larger than dem.tif is served from the
+## regional cache that terra_map_2D_regional.R built for exactly this ground:
+## dem_regional.tif and its breached-and-routed channels reach 27.11 N.
+map_ext <- if (exists("MAP_EXT", inherits = FALSE)) MAP_EXT else NULL
+use_regional <- !is.null(map_ext)
+
+## ---- optional single-site highlight --------------------------------------
+## HIGHLIGHT_CODE names one locality to pick out: its marker ring turns from
+## white to yellow and its label from the common ink colour to red. Everything
+## else about the symbol — fill by basin, shape by geomorphic position, size —
+## is untouched, so the highlight adds emphasis without adding a category.
+highlight_code  <- if (exists("HIGHLIGHT_CODE", inherits = FALSE)) HIGHLIGHT_CODE else NA_character_
+highlight_label <- "#C62828"
+
+## The target ring around the highlighted site is off: the red label alone is
+## enough to pick it out, and at this density the ring necessarily enclosed its
+## neighbour 1 km away as well.
+highlight_ring_show <- FALSE
+highlight_ring      <- "#EFB537"
+
+## ---- bare-map options ----------------------------------------------------
+## Unset, both are TRUE and the sheet is drawn exactly as before. A caller can
+## strip the reference furniture — graticule, axis text, ticks, legend — for a
+## panel that is placed inside a composite figure where those are carried
+## elsewhere or not wanted at all. The scale bar and north arrow are NOT part of
+## this: they are the only things left that give the panel a scale.
+show_graticule <- if (exists("SHOW_GRID", inherits = FALSE)) SHOW_GRID else TRUE
+show_legend    <- if (exists("SHOW_LEGEND", inherits = FALSE)) SHOW_LEGEND else TRUE
+
+## Symbol and label size. The defaults are the values this sheet has always used;
+## a caller raises them when the panel is placed larger, or when the frame is
+## narrow enough that the old sizes read as specks.
+site_size  <- if (exists("SITE_SIZE",  inherits = FALSE)) SITE_SIZE  else 2.2
+site_stroke <- if (exists("SITE_STROKE", inherits = FALSE)) SITE_STROKE else 0.45
+label_size <- if (exists("LABEL_SIZE", inherits = FALSE)) LABEL_SIZE else 2.0
+
+## Panel border. 0.5 is the house hairline, shared with every analysis figure;
+## on a bare map, where the border is the only edge the sheet has left, it needs
+## to be a frame rather than a hairline.
+border_lw  <- if (exists("BORDER_WIDTH", inherits = FALSE)) BORDER_WIDTH else 0.5
+
 ## ---- cartographic parameters ---------------------------------------------
 z_exag        <- 1.8              # hillshade vertical exaggeration
 sun_angle     <- 35               # sun elevation (deg)
@@ -60,7 +111,10 @@ relief_hi     <- 0.42             # 0..1, pull toward white on lit faces
 relief_lo     <- 0.38             # 0..1, pull toward black in shadow
 warm_gain     <- 0.10             # warm tint added on lit slopes
 cool_gain     <- 0.20             # cool tint added in shadow
-hyps_strength <- 0.72             # 1 = full hypsometric tint, 0 = plain paper
+## 0.72 is right for the sheet ramp, which is only a wash under a hillshade that
+## carries the map. The landscape ramp has a job of its own — telling valley
+## floor from mountainside — and at 0.72 it washes into the paper neutral.
+hyps_strength <- if (identical(palette_mode, "landscape")) 0.88 else 0.72
 river_min_acc <- 60000            # min upstream cells for a channel to be drawn
 lake_min_ha   <- 5                # drop OSM ponds smaller than this
 cont_minor    <- 250              # contour intervals (m)
@@ -74,8 +128,31 @@ grat_step     <- 0.05             # graticule / axis-break spacing (degrees)
 ## symbols keep the strongest contrast on the page.
 ## the top stop is deliberately NOT near-white: the relief shading needs
 ## headroom above it, or the summits render as a featureless white blob
-hyps_cols  <- c("#7E8E74", "#93A184", "#A9B195", "#BFBCA4",
-                "#D1C9B3", "#DCD4C1", "#E6DECB")
+## TWO RAMPS. The default is unchanged, so nothing that sourced this script
+## before sees any difference; a caller that wants the landscape ramp assigns
+## PALETTE_MODE <- "landscape" in the environment before sourcing.
+##
+## "landscape" reverses the sense of the tint — pale grey-yellow low, green high
+## — because that is what is actually on the ground here: these are dry-hot
+## valleys whose floors at 1300-1500 m are sparsely vegetated tan, and it is the
+## flanking ranges that carry the forest. It is the same ramp the 3-D block uses
+## (scripts/map/terra_map_3D_hyps.R), on the same elevation anchors, so the two
+## panels agree about what a colour means.
+
+hyps_cols_sheet <- c("#7E8E74", "#93A184", "#A9B195", "#BFBCA4",
+                     "#D1C9B3", "#DCD4C1", "#E6DECB")
+hyps_cols_landscape <- c("#CFC49E", "#C6BC93", "#B9B489", "#A6AC80",
+                         "#8DA075", "#74936A", "#5C8460", "#46704F")
+hyps_cols  <- if (identical(palette_mode, "landscape"))
+  hyps_cols_landscape else hyps_cols_sheet
+
+## Landscape mode also takes the block's ramp anchors, gamma and HAND blend, so
+## that a given piece of ground is the same colour on the map and on the block.
+lsc_ramp       <- c(lo = 1203, hi = 3686)
+lsc_gamma      <- 0.65
+lsc_relief_mix <- 0.45     # weight on height above nearest drainage
+lsc_hand_ref   <- 420
+lsc_hand_gamma <- 0.80
 paper_col  <- "#E9E4D8"           # neutral the tint is blended toward
 ## the wash actually painted on the map, so the colourbar matches the sheet
 blend_to <- function(cols, to, k) {
@@ -113,25 +190,36 @@ hulls <- sites |>
 
 ## ---- cached DEM + rivers + (optional) lakes ------------------------------
 read_if <- function(f, reader) if (file.exists(f)) reader(f) else NULL
-dem <- read_if(file.path(cache_dir, "dem.tif"), terra::rast)
+dem <- if (use_regional) {
+  f <- file.path(cache_dir, "dem_regional.tif")
+  if (!file.exists(f))
+    stop("MAP_EXT set but data/cache/dem_regional.tif is missing - run ",
+         "scripts/map/terra_map_2D_regional.R once to build the regional cache.")
+  terra::crop(terra::rast(f), terra::ext(map_ext[c("xmin", "xmax", "ymin", "ymax")]))
+} else read_if(file.path(cache_dir, "dem.tif"), terra::rast)
 if (is.null(dem)) stop("data/cache/dem.tif not found — run setup.R first.")
 
 if (!is.na(rivers_local_path) && file.exists(rivers_local_path)) {
   rivers <- st_read(rivers_local_path, quiet = TRUE) |> st_transform(4326)
 } else {
-  rivers <- read_if(file.path(cache_dir, "rivers.gpkg"),
+  rivers <- if (use_regional)
+    read_if(file.path(cache_dir, "rivers_dem_regional.gpkg"),
+            function(f) st_read(f, quiet = TRUE)) else
+    read_if(file.path(cache_dir, "rivers.gpkg"),
                     function(f) st_read(f, quiet = TRUE)) %||%
             read_if(file.path(cache_dir, "rivers_dem.gpkg"),
                     function(f) st_read(f, quiet = TRUE))
 }
-lakes <- read_if(file.path(cache_dir, "water.gpkg"),
+lakes <- read_if(file.path(cache_dir,
+                           if (use_regional) "water_regional.gpkg" else "water.gpkg"),
                  function(f) st_read(f, quiet = TRUE))
 
 ## ---- thin the drainage: keep channels by upstream contributing area -------
 ## The WhiteboxTools network from setup.R is a full drainage net; at this scale every
 ## hillslope rill shows and the map reads as noise. Rank each line by the flow
 ## accumulation at its outlet, keep the trunks, and scale line width to it.
-acc_path <- file.path(cache_dir, "_d8_accum.tif")
+acc_path <- file.path(cache_dir,
+                      if (use_regional) "_d8_accum_regional.tif" else "_d8_accum.tif")
 river_km2 <- NA_real_
 if (!is.null(rivers) && file.exists(acc_path)) {
   acc <- terra::rast(acc_path)
@@ -192,7 +280,46 @@ hill   <- (terra::clamp(hill, hr[1], hr[2]) - hr[1]) / (hr[2] - hr[1])
 ## the highest ground (the NW ridges) onto a single ramp stop
 dem_lims <- as.numeric(terra::minmax(dem))
 ev <- terra::values(dem)[, 1]
-u  <- pmin(1, pmax(0, (ev - dem_lims[1]) / diff(dem_lims)))
+if (identical(palette_mode, "landscape")) {
+  ## fixed anchors, not this frame's own min/max, so the colour of a given
+  ## elevation does not move when the frame does
+  u <- pmin(1, pmax(0, (ev - lsc_ramp[["lo"]]) /
+                       (lsc_ramp[["hi"]] - lsc_ramp[["lo"]]))) ^ lsc_gamma
+  ## HAND, mixed in for the reason the block script sets out: absolute elevation
+  ## paints a 1800 m mountainside the same khaki as a basin floor 400 m below it,
+  ## because what the eye reads as "mountain" is height above the local valley,
+  ## not height above the sea. _hand.tif is already on this exact grid.
+  ## The tight frame's _hand.tif stops at 26.12 N, so a widened frame needs its
+  ## own. It is derived once from the regional breached DEM and stream raster the
+  ## drainage step already cached, then reused.
+  hand_f <- file.path(cache_dir, if (use_regional) "_hand_regional.tif" else "_hand.tif")
+  if (use_regional && !file.exists(hand_f)) {
+    message("Building _hand_regional.tif (height above nearest drainage) ...")
+    if (requireNamespace("whitebox", quietly = TRUE)) {
+      whitebox::wbt_elevation_above_stream(
+        dem     = file.path(cache_dir, "_dem_breached_regional.tif"),
+        streams = file.path(cache_dir, "_streams_regional.tif"),
+        output  = hand_f)
+    } else message("  whitebox not installed - the HAND term will be skipped")
+  }
+  if (file.exists(hand_f) && use_regional) {
+    hr <- terra::crop(terra::rast(hand_f), terra::ext(dem))
+    hr <- terra::resample(hr, dem, method = "bilinear")
+    terra::writeRaster(hr, file.path(cache_dir, "_hand_frame.tif"), overwrite = TRUE)
+    hand_f <- file.path(cache_dir, "_hand_frame.tif")
+  }
+  if (lsc_relief_mix > 0 && file.exists(hand_f)) {
+    hd <- terra::values(terra::rast(hand_f))[, 1]
+    hd[is.na(hd)] <- 0
+    stopifnot(length(hd) == length(ev))
+    uh <- pmin(1, pmax(0, hd / lsc_hand_ref)) ^ lsc_hand_gamma
+    u  <- (1 - lsc_relief_mix) * u + lsc_relief_mix * uh
+  }
+  message(sprintf("landscape ramp: %.0f-%.0f m, gamma %.2f, HAND mix %.2f",
+                  lsc_ramp[["lo"]], lsc_ramp[["hi"]], lsc_gamma, lsc_relief_mix))
+} else {
+  u <- pmin(1, pmax(0, (ev - dem_lims[1]) / diff(dem_lims)))
+}
 ok <- !is.na(u)
 base_hex <- rep(NA_character_, length(u))
 base_hex[ok] <- scales::colour_ramp(hyps_cols)(u[ok])
@@ -267,15 +394,18 @@ p <- p +
     data = dem_s, breaks = seq(1000, 5000, cont_index),
     color = contour_col, linewidth = 0.14, alpha = 0.30) +
   ## graticule drawn as layers so it floats above the terrain
-  geom_vline(xintercept = lon_breaks, color = grat_col, linewidth = 0.16) +
-  geom_hline(yintercept = lat_breaks, color = grat_col, linewidth = 0.16)
+  ## graticule drawn as layers so it floats above the terrain
+  {if (show_graticule)
+     list(geom_vline(xintercept = lon_breaks, color = grat_col, linewidth = 0.16),
+          geom_hline(yintercept = lat_breaks, color = grat_col, linewidth = 0.16))
+   else NULL}
 
 ## water: lakes (polygons) under rivers (lines)
 if (!is.null(lakes)) {
-  p <- p + geom_sf(data = lakes, fill = water_col,
-                   color = grDevices::adjustcolor(water_col, red.f = 0.8,
-                                                  green.f = 0.8, blue.f = 0.85),
-                   linewidth = 0.15, alpha = 0.9)
+  ## no outline: at this scale the darker rim read as a drawn boundary rather
+  ## than as a shoreline, and on the impounded reaches of the Jinsha it made the
+  ## reservoirs look like polygons someone had digitised over the river
+  p <- p + geom_sf(data = lakes, fill = water_col, color = NA, alpha = 0.9)
 }
 if (!is.null(rivers)) {
   p <- p +
@@ -294,7 +424,7 @@ if (show_basin_tint) {
 ## sites: one fixed size; fill = basin, shape = geomorphic position
 p <- p +
   geom_sf(data = sites, aes(fill = basin, shape = geomorph),
-          size = 2.2, color = "white", stroke = 0.45, alpha = 0.98) +
+          size = site_size, color = "white", stroke = site_stroke, alpha = 0.98) +
   scale_fill_manual(
     values = basin_cols, name = "Basin",
     ## display label only -- Site_information.xlsx still records "Heqing basin",
@@ -307,15 +437,44 @@ p <- p +
     guide = guide_legend(order = 2,
       override.aes = list(fill = "grey45", colour = "white", size = 2.6, stroke = 0.45)))
 
+## The highlight is a TARGET RING, not a thicker outline on the symbol. Painting
+## the marker's own ring yellow reads as a mistake — a symbol whose stroke does
+## not match the others — and at 0.9 stroke it also swelled the dot enough to
+## misplace it against its neighbours. Instead the marker keeps its white ring
+## and its basin fill exactly like every other locality, and the emphasis is put
+## OUTSIDE it, with a gap: a soft aura, then a hairline ring. The ring is fixed
+## at shape 21 so it stays circular whatever geomorphic symbol the site carries.
+if (highlight_ring_show && !is.na(highlight_code) &&
+    any(sites$code == highlight_code)) {
+  hl_site <- sites[sites$code == highlight_code, ]
+  p <- p +
+    geom_sf(data = hl_site, shape = 21, fill = NA, colour = highlight_ring,
+            size = 5.6, stroke = 1.5, alpha = 0.28, show.legend = FALSE) +
+    geom_sf(data = hl_site, shape = 21, fill = NA, colour = highlight_ring,
+            size = 4.1, stroke = 0.5, alpha = 0.95, show.legend = FALSE)
+}
+
 if (show_site_labels) {
   p <- p + ggrepel::geom_text_repel(
-    data = sites, aes(geometry = geometry, label = code),
-    stat = "sf_coordinates", size = 2.0, fontface = "bold", color = label_col,
+    ## one repel layer, not two: splitting the highlighted code into its own
+    ## layer would let the two sets repel independently and overlap. The colour
+    ## is carried as data and passed straight through by scale_colour_identity().
+    data = transform(sites,
+                     .lab_col  = ifelse(code == highlight_code,
+                                        highlight_label, label_col),
+                     ## the highlighted code is set a quarter larger again
+                     .lab_size = ifelse(code == highlight_code,
+                                        label_size * 1.25, label_size)),
+    aes(geometry = geometry, label = code, colour = .lab_col, size = .lab_size),
+    stat = "sf_coordinates", fontface = "bold",
     bg.color = grDevices::adjustcolor("white", alpha.f = 0.8), bg.r = 0.13,
+    ## point.padding lifted so the label clears the target ring rather than
+    ## being repelled only from the dot at its centre
     seed = 42, max.overlaps = Inf, force = 7, force_pull = 0.45,
-    box.padding = 0.28, point.padding = 0.14, min.segment.length = 0,
+    box.padding = 0.28, point.padding = 0.30, min.segment.length = 0,
     segment.color = "grey45", segment.size = 0.22,
-    segment.curvature = -0.12, segment.ncp = 3)
+    segment.curvature = -0.12, segment.ncp = 3) +
+    scale_colour_identity() + scale_size_identity()
 }
 if (show_river_labels && !is.null(rivers)) {
   river_labels <- data.frame(label = c("Sangyuan R.", "Liandong R.", "Caifeng R."),
@@ -351,8 +510,8 @@ p <- p +
     pad_x = unit(0.45, "cm"), pad_y = unit(0.45, "cm"),
     style = north_needle) +
   coord_sf(xlim = bbx[1:2], ylim = bbx[3:4], expand = FALSE) +
-  scale_x_continuous(breaks = lon_breaks) +
-  scale_y_continuous(breaks = lat_breaks)
+  scale_x_continuous(breaks = if (show_graticule) lon_breaks else NULL) +
+  scale_y_continuous(breaks = if (show_graticule) lat_breaks else NULL)
 
 ## ---- titles + theme (house style of scripts/figures/*.R) ------------------
 ttl <- list(title = "Quina sites of the Binchuan and Heqing basins",
@@ -372,14 +531,17 @@ p <- p +
        caption = ttl$caption) +
   theme_minimal(base_size = 9) +
   theme(
-    panel.border      = element_rect(color = "#202124", fill = NA, linewidth = 0.5),
+    panel.border      = element_rect(color = "#202124", fill = NA,
+                                     linewidth = border_lw),
     panel.grid        = element_blank(),
     panel.background  = element_rect(color = NA, fill = "white"),
     plot.background   = element_rect(color = NA, fill = "white"),
-    axis.ticks        = element_line(color = "#202124", linewidth = 0.3),
-    axis.ticks.length = unit(2, "pt"),
-    axis.text         = element_text(color = "#303238", size = 6),
-    legend.position   = "right",
+    axis.ticks        = if (show_graticule)
+      element_line(color = "#202124", linewidth = 0.3) else element_blank(),
+    axis.ticks.length = unit(if (show_graticule) 2 else 0, "pt"),
+    axis.text         = if (show_graticule)
+      element_text(color = "#303238", size = 6) else element_blank(),
+    legend.position   = if (show_legend) "right" else "none",
     legend.title      = element_text(size = 8.5),
     legend.text       = element_text(size = 8),
     legend.key        = element_blank(),
@@ -397,9 +559,19 @@ p <- p +
 FIG_W_MM <- 150
 FIG_H_MM <- 148   # no title/caption: just the panel + axis text
 FIG_DPI  <- 600
-ggsave(file.path(output_dir, "map_quina_sites.png"), p,
+map_stem <- paste0(if (identical(palette_mode, "landscape"))
+  "map_quina_sites_landscape" else "map_quina_sites",
+  if (use_regional) "_north" else "")
+
+## A caller that only wants the shaded raster — terra_map_3D_hyps.R drapes it on
+## the block — sets SKIP_EXPORT and skips two 600 dpi writes it would throw away.
+if (exists("SKIP_EXPORT", inherits = FALSE) && isTRUE(SKIP_EXPORT)) {
+  message("terra_map_2D.R: SKIP_EXPORT set, `shaded` built but nothing written")
+} else {
+ggsave(file.path(output_dir, paste0(map_stem, ".png")), p,
        width = FIG_W_MM, height = FIG_H_MM, units = "mm", dpi = FIG_DPI,
        device = ragg::agg_png)
-ggsave(file.path(output_dir, "map_quina_sites.pdf"), p,
+ggsave(file.path(output_dir, paste0(map_stem, ".pdf")), p,
        width = FIG_W_MM, height = FIG_H_MM, units = "mm", device = cairo_pdf)
-message("terra_map_2D.R done -> output/maps/map_quina_sites.(png|pdf)")
+message("terra_map_2D.R done -> output/maps/", map_stem, ".(png|pdf)")
+}

@@ -522,7 +522,7 @@ Two properties of trachyte plausibly explain its preferential use: size and frac
 
 ```{r}
 #| label: fig-cobble-size-form
-#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles. The three vertices represent the three end-member forms: compact, platy, and elongate. Statistical significance in (A) is indicated as follows: ns, not significant; * p < 0.05; ** p < 0.01; *** p < 0.001; **** p < 0.0001."
+#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles, each headed with its sample size. The three vertices represent the three end-member forms: compact, platy, and elongate; the left edge carries c/a and the base (a−b)/(a−c). The dotted lines divide the triangle into the ten Sneed–Folk form fields, named in grey at the centre of each: C, compact; CP, compact-platy; CB, compact-bladed; CE, compact-elongate; P, platy; B, bladed; E, elongate; and VP, VB and VE, the very platy, very bladed and very elongate fields. The solid grey arcs are contours of maximum projection sphericity, ψ = (c²/ab)^1/3^, labelled at the right edge. Because the two lithologies differ 2.5-fold in sample size, the spread of each is given as contours enclosing 50% and 90% of its kernel density (heavy and light coloured lines) rather than left to the density of the points; the grey dashed line repeated in each triangle is the 90% contour of the other lithology, so that the two can be compared without carrying one triangle across to the other. The diamond marks the compositional centre of each lithology, the closed geometric mean of the three axes used in the Aitchison tests. Statistical significance in (A) is indicated as follows: ns, not significant; * p < 0.05; ** p < 0.01; *** p < 0.001; **** p < 0.0001."
 #| fig-width: 6.5
 #| fig-height: 2.63
 
@@ -636,13 +636,15 @@ grd <- transform(grd, platy = 1 - compact - elongate,
 grd$psi <- with(grd, ifelse(compact >= 0 & elongate >= 0 & platy >= 0 &
                               ba_ratio > 0,
                             (compact^2 / ba_ratio)^(1 / 3), NA_real_))
+psi_lev   <- seq(0.3, 0.9, by = 0.2)
 psi_lines <- contourLines(gx, gy, matrix(grd$psi, length(gx), length(gy)),
-                          levels = seq(0.3, 0.9, by = 0.2))
+                          levels = psi_lev)
 psi_df <- do.call(rbind, lapply(seq_along(psi_lines), function(i)
   data.frame(g = i, level = psi_lines[[i]]$level,
              x = psi_lines[[i]]$x, y = psi_lines[[i]]$y)))
 
 n_out    <- c(-tri_h, 0.5)                  # outward normal of the left edge
+n_right  <- c(tri_h, 0.5)                   # and of the right edge
 ca_ticks <- c(0.3, 0.5, 0.7, 1)          # 0 is carried by the base scale
 tick_ca  <- data.frame(x0 = ca_ticks / 2, y0 = tri_h * ca_ticks,
                        label = formatC(ca_ticks, format = "f", digits = 1))
@@ -656,6 +658,69 @@ tick_ab  <- data.frame(x0 = ab_ticks, y0 = 0, x1 = ab_ticks, y1 = -0.030,
 vert_lab <- data.frame(
   x = c(0, 1, 0.5), y = c(-0.175, -0.175, tri_h + 0.105),
   label = c("Platy", "Elongate", "Compact"), vj = c(1, 1, 0))
+# both scales carry bare numbers otherwise, so each edge is named as well
+ax_ca <- data.frame(x = 0.25 + 0.235 * n_out[1],
+                    y = tri_h / 2 + 0.235 * n_out[2], label = "c/a")
+ax_ab <- data.frame(x = 0.5, y = -0.175, label = "(a−b)/(a−c)")
+
+# the sphericity contours are unreadable unlabelled. On the right edge platy is
+# 0, so b = c there and psi reduces to (c/a)^(1/3): the level meets that edge at
+# c/a = psi^3, which is where each label is hung
+psi_lab <- data.frame(level = psi_lev)
+psi_lab <- transform(psi_lab, x0 = 1 - level^3 / 2, y0 = tri_h * level^3)
+psi_lab <- transform(psi_lab,
+                     xl = x0 + 0.035 * n_right[1], yl = y0 + 0.035 * n_right[2],
+                     label = ifelse(level == max(psi_lev),
+                                    paste0("ψ = ",
+                                           formatC(level, format = "f", digits = 1)),
+                                    formatC(level, format = "f", digits = 1)))
+
+# the ten Sneed-Folk form fields, named at the centre of each. The apex field
+# runs from ca_top to 1 undivided, so it takes the whole of the top band
+sf_fields <- rbind(
+  data.frame(k = 0.855, t = 0.5,              lab = "C"),
+  data.frame(k = 0.640, t = c(1/6, 0.5, 5/6), lab = c("CP", "CB", "CE")),
+  data.frame(k = 0.415, t = c(1/6, 0.5, 5/6), lab = c("P", "B", "E")),
+  data.frame(k = 0.135, t = c(1/6, 0.5, 5/6), lab = c("VP", "VB", "VE")))
+sf_fields <- transform(sf_fields, x = (1 - k) * t + k / 2, y = tri_h * k)
+
+# highest-density regions, so that the comparison is not driven by the 2.5-fold
+# difference in n. The density is zeroed outside the triangle, which is what
+# makes the contours stop at its edges rather than run past them
+in_tri <- function(x, y) {
+  cp <- y / tri_h; el <- x - cp / 2
+  cp >= -1e-9 & el >= -1e-9 & (1 - cp - el) >= -1e-9
+}
+hdr_lines <- function(x, y, probs) {
+  h <- c(MASS::bandwidth.nrd(x), MASS::bandwidth.nrd(y)) * 1.1
+  k <- MASS::kde2d(x, y, h = h, n = 260, lims = c(-0.1, 1.1, -0.1, tri_h + 0.1))
+  cells <- expand.grid(x = k$x, y = k$y)
+  k$z[!in_tri(cells$x, cells$y)] <- 0
+  area <- diff(k$x[1:2]) * diff(k$y[1:2])
+  srt  <- sort(k$z); cum <- cumsum(srt) * area
+  lv   <- sapply(probs, function(p) approx(cum, srt, xout = 1 - p)$y)
+  do.call(rbind, lapply(seq_along(lv), function(i) {
+    cl <- contourLines(k$x, k$y, k$z, levels = lv[i])
+    do.call(rbind, lapply(seq_along(cl), function(j)
+      data.frame(g = paste(i, j), prob = probs[i],
+                 x = cl[[j]]$x, y = cl[[j]]$y)))
+  }))
+}
+hdr_by_G <- lapply(levels(sz$G), function(g) {
+  d   <- sf_pts[sf_pts$G == g, ]
+  out <- hdr_lines(d$x, d$y, c(0.5, 0.9))
+  out$G <- g
+  out$g <- paste(g, out$g)                  # ids unique across the lithologies
+  out
+})
+
+# the compositional centre of each lithology, on the closed geometric mean that
+# the Aitchison tests use, so that the figure and the tests report the same
+sf_cen <- sz |> group_by(G) |>
+  summarise(a = gm(a_ax), b = gm(b_ax), c = gm(c_ax), .groups = "drop") |>
+  mutate(compact = c / a, elongate = (1 - c / a) * (a - b) / (a - c))
+sf_cen <- cbind(to_xy(sf_cen$compact, sf_cen$elongate), G = sf_cen$G)
+sf_n   <- as.integer(table(sz$G))
 
 # one panel, not two facets: facets nest inside the panel row and no longer
 # align with (A). Everything is therefore drawn twice, shifted by tri_dx.
@@ -670,7 +735,18 @@ two <- function(d, xcols, gcol = NULL) {
 }
 tri_out$g  <- "o"
 psi_df$g   <- as.character(psi_df$g)
-sf_pts$x   <- sf_pts$x + ifelse(sf_pts$G == levels(sz$G)[2], tri_dx, 0)
+shift_r    <- function(g) ifelse(g == levels(sz$G)[2], tri_dx, 0)
+sf_pts$x   <- sf_pts$x + shift_r(sf_pts$G)
+sf_cen$x   <- sf_cen$x + shift_r(sf_cen$G)
+# each lithology keeps its own outlines in its own triangle, and the 90 % outline
+# of the other is repeated behind it: that is what makes the two comparable
+# without the reader having to carry one triangle across to the other
+hdr_own   <- rbind(hdr_by_G[[1]], transform(hdr_by_G[[2]], x = x + tri_dx))
+hdr_ghost <- rbind(transform(subset(hdr_by_G[[2]], prob == 0.9),
+                             x = x,          g = paste0(g, "_L")),
+                   transform(subset(hdr_by_G[[1]], prob == 0.9),
+                             x = x + tri_dx, g = paste0(g, "_R")))
+
 # each heading is a bar of strip height hung from the top of the panel, with its
 # label centred in it; both are absolute, so neither moves when the figure does
 head_grob <- function(label) {
@@ -680,37 +756,71 @@ head_grob <- function(label) {
            textGrob(label, y = unit(1, "npc") - unit(strip_pt / 2, "pt"),
                     gp = gpar(fontface = "bold", fontsize = 8.5, col = "#202124")))
 }
+# the field names sit where the data are densest, so each is set in a ring of
+# background colour and drawn last; the alternative is having them struck
+# through by whichever contour happens to pass
+halo_text <- function(d, size, colour, halo = "white", r = 0.0026) {
+  ring <- do.call(rbind, lapply(seq(0, 2 * pi, length.out = 13)[-13],
+                                function(a) transform(d, x = x + r * cos(a),
+                                                      y = y + r * sin(a))))
+  list(geom_text(data = ring, aes(x, y, label = lab), inherit.aes = FALSE,
+                 size = size, colour = halo, fontface = "bold"),
+       geom_text(data = d, aes(x, y, label = lab), inherit.aes = FALSE,
+                 size = size, colour = colour, fontface = "bold"))
+}
 
 p_form <- ggplot(sf_pts, aes(x, y)) +
-  geom_path(data = two(psi_df, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#C3C8CE") +
+  # the reference frame: class grid dotted, sphericity solid, so that the two
+  # are told apart by style rather than by a difference of grey
   geom_line(data = two(grid_ca, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#9AA0A6") +
+            inherit.aes = FALSE, linewidth = 0.2, linetype = "22",
+            colour = "#D3D7DC") +
   geom_line(data = two(grid_ab, "x", "g"), aes(x, y, group = g),
-            inherit.aes = FALSE, linewidth = 0.22, linetype = "22",
-            colour = "#9AA0A6") +
+            inherit.aes = FALSE, linewidth = 0.2, linetype = "22",
+            colour = "#D3D7DC") +
+  geom_path(data = two(psi_df, "x", "g"), aes(x, y, group = g),
+            inherit.aes = FALSE, linewidth = 0.25, colour = "#C7CCD2") +
   geom_path(data = two(tri_out, "x", "g"), aes(x, y, group = g),
             inherit.aes = FALSE, linewidth = frame_lwd, colour = "#202124") +
-  geom_point(aes(colour = G), size = 1.0, alpha = 0.55, shape = 16) +
+  # the data
+  geom_point(aes(colour = G), size = 0.8, alpha = 0.32, shape = 16) +
+  geom_path(data = hdr_ghost, aes(x, y, group = g), inherit.aes = FALSE,
+            linewidth = 0.32, linetype = "31", colour = "#9FA5AC") +
+  geom_path(data = hdr_own, aes(x, y, group = g, colour = G, linewidth = prob),
+            inherit.aes = FALSE, lineend = "round") +
+  geom_point(data = sf_cen, aes(x, y, fill = G), inherit.aes = FALSE,
+             shape = 23, size = 2.0, stroke = 0.4, colour = "#202124") +
+  # the scales
   geom_segment(data = two(rbind(tick_ca[, c("x0", "y0", "x1", "y1")],
                                 tick_ab[, c("x0", "y0", "x1", "y1")]),
                           c("x0", "x1")),
                aes(x = x0, y = y0, xend = x1, yend = y1), inherit.aes = FALSE,
                linewidth = frame_lwd, colour = "#202124") +
   geom_text(data = two(tick_ca, "xl"), aes(xl, yl, label = label),
-            inherit.aes = FALSE, size = 2.4, colour = "#303238",
+            inherit.aes = FALSE, size = 2.2, colour = "#303238",
             hjust = 1, vjust = 0.4) +
   geom_text(data = two(tick_ab, "xl"), aes(xl, yl, label = label),
-            inherit.aes = FALSE, size = 2.4, colour = "#303238", vjust = 1) +
+            inherit.aes = FALSE, size = 2.2, colour = "#303238", vjust = 1) +
+  geom_text(data = two(psi_lab, "xl"), aes(xl, yl, label = label),
+            inherit.aes = FALSE, size = 2.1, colour = "#9AA0A6",
+            hjust = 0, vjust = 0.4) +
+  geom_text(data = two(ax_ca, "x"), aes(x, y, label = label),
+            inherit.aes = FALSE, size = 2.5, colour = "#303238", angle = 60) +
+  geom_text(data = two(ax_ab, "x"), aes(x, y, label = label),
+            inherit.aes = FALSE, size = 2.5, colour = "#303238", vjust = 1) +
   geom_text(data = two(vert_lab, "x"), aes(x, y, label = label, vjust = vj),
-            inherit.aes = FALSE, size = 2.5, colour = "#5A5F66") +
-  annotation_custom(head_grob(levels(sz$G)[1]), xmin = 0, xmax = 1,
+            inherit.aes = FALSE, size = 2.5, colour = "#5A5F66",
+            fontface = "italic") +
+  halo_text(two(sf_fields, "x"), size = 2.0, colour = "#BCC2C9") +
+  annotation_custom(head_grob(sprintf("%s  (n = %d)", levels(sz$G)[1], sf_n[1])),
+                    xmin = 0, xmax = 1,
                     ymin = tern_ylim[1], ymax = tern_ylim[2]) +
-  annotation_custom(head_grob(levels(sz$G)[2]), xmin = tri_dx, xmax = 1 + tri_dx,
+  annotation_custom(head_grob(sprintf("%s  (n = %d)", levels(sz$G)[2], sf_n[2])),
+                    xmin = tri_dx, xmax = 1 + tri_dx,
                     ymin = tern_ylim[1], ymax = tern_ylim[2]) +
   scale_colour_manual(values = material_colors_fig, guide = "none") +
+  scale_fill_manual(values = material_colors_fig, guide = "none") +
+  scale_linewidth_continuous(range = c(0.55, 0.30), guide = "none") +
   coord_fixed(xlim = c(-0.17, 1.13 + tri_dx), ylim = tern_ylim,
               expand = FALSE, clip = "off") +
   labs(x = NULL, y = NULL) +
