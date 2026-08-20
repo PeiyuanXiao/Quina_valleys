@@ -13,49 +13,18 @@ output/
 # binary, and not needed to reproduce any result
 asset/
 
+# Spatial cache: ~51 MB of DEM-derived rasters, basemap tiles and vector layers.
+# Rebuildable by scripts/map/setup.R, which needs a network connection and
+# WhiteboxTools. Only the Figure 1 map pipeline reads it; nothing in the
+# manuscript or the supplementary material does.
+data/cache/
+
 # Python caches
 __pycache__/
 *.pyc
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
-.Rproj.user
+
+# Stray base-graphics device output (scripts regenerate it; never referenced)
+Rplots.pdf
 .Rproj.user
 .Rproj.user
 .Rproj.user

@@ -476,26 +476,44 @@ tc <- list(pca_scores = permA$pca_scores, pca_loadings = permA$pca_loadings,
 
 # --------------------------------------------------------------------------
 # 7. Landscape structure of technological variation (locality-level)
+#    The response set here is the six technological measures PLUS Quina scraper
+#    size, GM = (length * width * thickness)^(1/3): seven measures in all. GM
+#    enters in this section only; `variables`, the six-measure consistency space
+#    of section 6, is left untouched.
+#    The second basin is "Heqing" in Site_information.xlsx and "Huangping" in
+#    the prose; the prose name is the one reported.
 # --------------------------------------------------------------------------
+land_variables <- c("GM", variables)
+variable_labels_land <- c(GM = "Quina scraper size (mm)", variable_labels)
+variable_labels_land_bare <- sub(" \\(.*\\)$", "", variable_labels_land)
+names(variable_labels_land_bare) <- names(variable_labels_land)
+basin_levels_land <- c("Binchuan", "Huangping")
+
 site_land <- sites |>
   transmute(Site_ID = trimws(as.character(Code)),
             Name = gsub("_", " ", trimws(as.character(name))),
-            Basin = factor(strip_basin(basin), levels = basin_levels),
+            Basin = factor(recode(strip_basin(basin), Heqing = "Huangping"),
+                           levels = basin_levels_land),
             Distance_to_water = as.numeric(d_river_m),
             Height_above_river = as.numeric(h_river_m))
 scL <- q |>
-  mutate(Site_ID = trimws(as.character(Site_ID)), across(all_of(variables), as.numeric)) |>
+  mutate(Site_ID = trimws(as.character(Site_ID)),
+         across(all_of(c(variables, "Length", "Width")), as.numeric),
+         GM = (Length * Width * Thickness)^(1 / 3)) |>
   left_join(site_land, by = "Site_ID") |>
-  filter(if_all(all_of(variables), ~ !is.na(.x)))
+  filter(if_all(all_of(land_variables), ~ !is.na(.x)))
 site_size <- scL |> count(Site_ID, name = "Site_size")
 site_df <- scL |> group_by(Site_ID) |>
-  summarise(n_art = n(), across(all_of(variables), ~ median(.x, na.rm = TRUE)),
+  summarise(n_art = n(), across(all_of(land_variables), ~ median(.x, na.rm = TRUE)),
             Name = first(Name),
             Basin = first(Basin), Distance_to_water = first(Distance_to_water),
             Height_above_river = first(Height_above_river), .groups = "drop") |>
   left_join(site_size, by = "Site_ID")
 n_localities <- nrow(site_df)
-dL <- dist(scale(as.matrix(site_df[, variables])))
+ls_mat <- scale(as.matrix(site_df[, land_variables]))
+dL <- dist(ls_mat)
+
+# ---- each landscape variable in a model of its own ------------------------
 grad_permanova <- function(col) {
   set.seed(2226); a <- adonis2(dL ~ site_df[[col]], permutations = PERM)
   c(R2 = a$R2[1], F = a$F[1], p = a$`Pr(>F)`[1], Df = a$Df[1], Df_res = a$Df[2],
@@ -505,7 +523,7 @@ ls_size   <- grad_permanova("Site_size")
 ls_dist   <- grad_permanova("Distance_to_water")
 ls_height <- grad_permanova("Height_above_river")
 bdf <- site_df |> filter(!is.na(Basin))
-set.seed(2226); aB <- adonis2(dist(scale(as.matrix(bdf[, variables]))) ~ Basin, data = bdf, permutations = PERM)
+set.seed(2226); aB <- adonis2(dist(scale(as.matrix(bdf[, land_variables]))) ~ Basin, data = bdf, permutations = PERM)
 ls_basin <- c(R2 = aB$R2[1], F = aB$F[1], p = aB$`Pr(>F)`[1], Df = aB$Df[1], Df_res = aB$Df[2],
               SumOfSqs = aB$SumOfSqs[1], SumOfSqs_res = aB$SumOfSqs[2])
 n_basin_site <- table(droplevels(site_df$Basin))
@@ -515,36 +533,47 @@ ls_perm <- list(Site_size = ls_size, Basin = ls_basin,
 ls_R2 <- vapply(ls_perm, function(v) unname(v[["R2"]]), numeric(1))
 ls_p  <- vapply(ls_perm, function(v) unname(v[["p"]]), numeric(1))
 
-# ---- locality-level ordination, and each landscape variable over it -------
-site_pca <- prcomp(scale(as.matrix(site_df[, variables])), center = TRUE, scale. = FALSE)
+# ---- all four landscape variables in ONE model ----------------------------
+# The omnibus tests the whole model against its residual; the marginal table
+# gives each term after the other three. The design is collinear, so the
+# marginal terms rank relative structure and are not independent effects.
+land_form <- dL ~ Basin + Height_above_river + Distance_to_water + Site_size
+set.seed(2226)
+ls_full_omni <- adonis2(land_form, data = site_df, permutations = PERM, by = NULL)
+set.seed(2226)
+ls_full_margin <- adonis2(land_form, data = site_df, permutations = PERM, by = "margin")
+ls_full <- c(R2 = ls_full_omni$R2[1], F = ls_full_omni$F[1], p = ls_full_omni$`Pr(>F)`[1],
+             Df = ls_full_omni$Df[1], Df_res = ls_full_omni$Df[2],
+             SumOfSqs = ls_full_omni$SumOfSqs[1], SumOfSqs_res = ls_full_omni$SumOfSqs[2])
+ls_margin_terms <- rownames(ls_full_margin)[seq_along(ls_perm)]
+ls_margin_p <- setNames(ls_full_margin$`Pr(>F)`[seq_along(ls_perm)], ls_margin_terms)
+# every landscape p-value in the section: each term after the others, and each
+# term alone. The text quotes the smallest of them.
+ls_any_p_min <- min(c(ls_margin_p, ls_p), na.rm = TRUE)
+
+# ---- the same model as a constrained ordination ---------------------------
+# The response is z-scored and the distance Euclidean, so db-RDA on dL is an
+# RDA on ls_mat: the ordination and the PERMANOVA are one geometry.
+ls_rda <- rda(ls_mat ~ Basin + Height_above_river + Distance_to_water + Site_size,
+              data = site_df)
+ls_rda_r2 <- RsquareAdj(ls_rda)
+set.seed(2226)
+ls_rda_anova <- anova.cca(ls_rda, permutations = PERM)
+ls_rda_vexp <- ls_rda$CCA$eig / ls_rda$tot.chi * 100   # per cent of TOTAL variance
+
+# ---- unconstrained locality ordination, for the single-variable panels ----
+site_pca <- prcomp(ls_mat, center = TRUE, scale. = FALSE)
 site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
 site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
 land_vars <- c(Height_above_river = "Height above channel (m)",
                Site_size          = "Assemblage size (n specimens)",
                Distance_to_water  = "Distance to channel (m)")
-# thin-plate spline of each landscape variable over the ordination plane,
-# clipped to the area the localities cover
-hull_i  <- chull(site_scores$PC1, site_scores$PC2)
-hull_xy <- as.matrix(site_scores[c(hull_i, hull_i[1]), c("PC1", "PC2")])
-surf_one <- function(v, n = 250) {
-  y <- site_scores[[v]]
-  g <- mgcv::gam(y ~ s(PC1, PC2, k = 10), data = site_scores,
-                 method = "REML", select = TRUE)
-  s <- summary(g)
-  rx <- range(site_scores$PC1); ry <- range(site_scores$PC2)
-  grd <- expand.grid(
-    PC1 = seq(rx[1] - 0.08 * diff(rx), rx[2] + 0.08 * diff(rx), length.out = n),
-    PC2 = seq(ry[1] - 0.08 * diff(ry), ry[2] + 0.08 * diff(ry), length.out = n))
-  grd$fit <- as.numeric(predict(g, newdata = grd))
-  grd$fit[!as.logical(mgcv::in.out(hull_xy, as.matrix(grd[, c("PC1", "PC2")])))] <- NA_real_
-  list(grid = grd, dev = 100 * s$dev.expl, p = s$s.table[1, "p-value"])
-}
-surfaces <- setNames(lapply(names(land_vars), surf_one), names(land_vars))
-surf_dev_max <- max(vapply(surfaces, function(z) z$dev, numeric(1)))
-surf_p_min   <- min(vapply(surfaces, function(z) z$p,   numeric(1)))
+land_ranges <- lapply(names(land_vars), function(v) range(site_df[[v]], na.rm = TRUE))
+names(land_ranges) <- names(land_vars)
+
 # bootstrap interval on rho: at this n the interval, not the p-value, is what
 # shows how little the coefficients pin down
-ls_dist_cor <- bind_rows(lapply(variables, function(v) {
+ls_dist_cor <- bind_rows(lapply(land_variables, function(v) {
   d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df$Distance_to_water), ]
   ct <- suppressWarnings(cor.test(d[[v]], d$Distance_to_water, method = "spearman", exact = FALSE))
   set.seed(2226)

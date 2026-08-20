@@ -35,7 +35,7 @@ The manuscript and its supplementary material are written in Quarto and live in 
 
 ### 📁 Contents
 
-`scripts/` and `output/` mirror the manuscript's **Results** section, so each analysis folder maps to a Results subsection and each script writes into the matching `output/<same-subfolder>/`.
+`paper/_analysis.R` is the single source of every number, table and statistical figure in the two documents; `scripts/` now holds only the cartographic pipeline behind Figure 1, which is the one figure no document can draw for itself.
 
 - [:file_folder: data](data) — the source spreadsheets and CSVs, read by every script:
 
@@ -44,15 +44,13 @@ The manuscript and its supplementary material are written in Quarto and live in 
   - `Raw_mat_basin.xlsx` — river-gravel clast survey: lithology, size and shape of the *available* raw material.
   - `Site_information.xlsx` — the single source of truth for the localities: the 27 Quina-bearing localities as re-verified in the field record, with coordinates, elevation, geomorphic position and distance/height above the local channel. An earlier flat CSV of an older, larger site list (`Quina_sites_27_clean.csv`) was deleted on 2026-07-30; it named a different 27 and is superseded by this file. Nothing reads it and it remains in the git history.
   - `geology_scan.jpg` — scan of the 1:200,000 regional geological sheet (Yunnan Geological Bureau, 1973). The geology map is being drawn by hand from this sheet, so no script renders it; the scripts that once did (schematic, scan-based and classified variants) were removed on 2026-07-29 and remain in the git history.
-  - `cache/` — downloaded and DEM-derived spatial data (SRTM DEM, hillshade, channel network, admin boundaries). The core cache for the site extent is committed, so Figure 1 can be rebuilt without a network; `scripts/map/setup.R` regenerates it from scratch if it is missing. The wider `*_regional.*` cache is **not** committed — `scripts/map/terra_map_2D_regional.R` builds it, and `terra_map_2D.R` needs it whenever `MAP_EXT` widens the frame past the site extent, which is how the published panel A reaches the Jinsha. A third, `*_setibet.*` cache for an abandoned SE-Tibet overview was deleted on 2026-08-18 along with the scripts that read it.
+  - `cache/` — downloaded and DEM-derived spatial data (SRTM DEM, hillshade, channel network, admin boundaries). **Untracked since 2026-08-19** and no longer committed: it is ~51 MB of rebuildable binaries that only the Figure 1 pipeline reads, and nothing in the manuscript or the supplementary material touches it. `scripts/map/setup.R` regenerates it from scratch, which now means a clone needs a network connection and WhiteboxTools before Figure 1 can be redrawn. The wider `*_regional.*` cache is **not** committed — `scripts/map/terra_map_2D_regional.R` builds it, and `terra_map_2D.R` needs it whenever `MAP_EXT` widens the frame past the site extent, which is how the published panel A reaches the Jinsha. A third, `*_setibet.*` cache for an abandoned SE-Tibet overview was deleted on 2026-08-18 along with the scripts that read it.
 
 - [:file_folder: scripts](scripts) — all analysis code (R), grouped to match the Results:
 
   - [`map/`](scripts/map) — the whole cartographic / DEM pipeline behind Figure 1, in run order. `setup.R` prepares everything the panels read (the site table and the cached DEM, hillshade, DEM-derived channel network and administrative boundaries) and `terra_map_2D_regional.R` extends that cache north to the Jinsha; `terra_map_2D.R` draws the plan site map, `terra_map_3D_hyps.R` the path-traced oblique block model, `traverse_profile_figure.R` the traverse long profile and `locator_globe_figure.R` the orthographic locator inset; `fig01_export_panels.R` then re-renders the map and the profile at their final placed sizes into `output/figures/fig01_panels/`. `figures/study_area.png` is assembled by hand in Illustrator from four files: `panel_A_map_with_route_landscape_north_bare.png` and `panel_C_profile_landscape.png` from that folder, `locator_globe.png` beside them, and `output/maps/terrain_3d_hyps.png`. Earlier variants — a tiled basemap, a latitude-ordered elevation profile, three geology maps, an automatic patchwork composite — were deleted once superseded; a further round on 2026-08-18 removed the SE-Tibet overview maps, the regional locator and its composite, the pre-hypsometric 3-D block (`terra_map_3D.R`, still the baseline the comments in `terra_map_3D_hyps.R` refer to) and its v2 successor. The git history has them all.
-  - [`raw_material_analysis/`](scripts/raw_material_analysis) — **Results 4.1** (landscape distribution and raw-material economy): `raw_material_electivity.R`, `raw_material_permanova.R`, `rawmat_size_compare.R`, `raw_material_distance.R`.
-  - [`scraper_analysis/`](scripts/scraper_analysis) — **Results 4.2.1** (techno-typological features): `attribute_correlations.R`, `QSEA_vs_RFEPA.R`, `bordes_typology.R`, `retouch_product_attributes.R`.
-  - [`technological_consistency/`](scripts/technological_consistency) — **Results 4.2.2** (technical consistency): `surface_vs_longtan.R` (surface vs Longtan: Part 1 location, Part 2 dispersion), `landscape_structure.R`.
-  - [`figures/`](scripts/figures) — the remaining manuscript figures. `statistic_figures.R` contains **no analysis**: it reads the tidy results the analysis scripts cache under `output/cache/analysis/*.rds`, so re-styling a panel never re-runs a permutation test. `terrace_position_figure.R` and `liandong_section_figure.R` are superseded Figure 1 panel candidates, kept for what their headers record and sourced by nothing.
+  - `raw_material_analysis/`, `scraper_analysis/`, `technological_consistency/` — **removed on 2026-08-19.** These eleven scripts were a second, independently written implementation of analyses that `_analysis.R` already carries in full, and which the documents source directly; nothing outside them read their output. Keeping two implementations of a published statistic invites the two to drift apart, so the duplicate was retired. The git history has them. Note what went with them, since none of it is in `_analysis.R`: `landscape_structure.R` held the robustness work behind the "suggestive rather than conclusive" reading of the distance trend — the scraper-size correlation reweighted by specimens per locality (which reverses sign), its leave-one-locality-out range, an artefact-level test with localities permuted whole, PERMDISP across height bands, assemblage-size binning and a rank-transformed refit — together with the `_GUARDRAILS.txt` notes each analysis wrote beside its output.
+  - `figures/` — **removed on 2026-08-18.** Every statistical figure is now drawn inside the `.qmd` that carries it, from the objects `_analysis.R` leaves in the environment, so a figure can no longer drift from the numbers beside it. The folder had held five scripts that wrote PNGs into `output/figures/`: `statistic_figures.R`, `raw_material_composition_figure.R` and `edge_angle_reduction_figure.R`, whose figures the documents now draw inline (`fig-technological-consistency`, `fig-raw-material-composition`, `fig-edge-angle-reduction`), and `terrace_position_figure.R` and `liandong_section_figure.R`, two superseded Figure 1 panel candidates that nothing sourced. The git history has them, and with them the methodological notes their headers carried — that the edge-angle correlations are quoted unadjusted with the Bonferroni values sent to the console, and that `d_river_m` and `h_river_m` disagree with the DEM.
 
 - [:file_folder: paper](paper) — the manuscript (`manuscript.qmd`), the supplementary material (`supplementary.qmd`), `references.bib`, and the shared analysis:
 
@@ -96,15 +94,13 @@ The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the devel
     quarto render paper/supplementary.qmd
     ```
 
-5.  **Or run the scripts individually.** Each analysis script is self-contained and reads only from `data/`, so the three analysis folders and the scripts within them can be run in any order. They mirror `_analysis.R` — same numbers, plus their diagnostic figures:
+5.  **Rebuild the Figure 1 panels** (optional; only if the map itself changes). `figures/study_area.png` is assembled by hand from these, so the script run is one step of a two-step process — the run order is given under [`map/`](scripts/map) above, since `fig01_export_panels.R` re-sources the two panel scripts:
 
     ``` r
-    source("scripts/raw_material_analysis/raw_material_permanova.R")
-    source("scripts/technological_consistency/surface_vs_longtan.R")
-    # ... etc.
+    source("scripts/map/fig01_export_panels.R")
     ```
 
-    The figure scripts come last: `scripts/figures/statistic_figures.R` reads the `.rds` files the analysis scripts cache, and the Figure 1 panels have to be built in the order given under [`map/`](scripts/map) above, since `fig01_export_panels.R` re-sources the two panel scripts.
+    Step 4 does not depend on this: the documents read `figures/*.png` as finished images. No other script is needed to reproduce anything in the manuscript or the supplementary material — every reported number, table and statistical figure is computed by `_analysis.R` and drawn inside the `.qmd` that reports it.
 
 ------------------------------------------------------------------------
 

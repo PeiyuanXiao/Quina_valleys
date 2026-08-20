@@ -147,7 +147,7 @@ ls_basin_pd <- permdisp_one(dL, site_df$Basin)
 # land_vars, the ordination and the fitted surfaces come from _analysis.R,
 # the ordination itself being figured in the main text
 land_cor <- bind_rows(lapply(names(land_vars), function(lv) {
-  fam <- bind_rows(lapply(variables, function(v) {
+  fam <- bind_rows(lapply(land_variables, function(v) {
     d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df[[lv]]), ]
     ct <- suppressWarnings(cor.test(d[[v]], d[[lv]], method = "spearman", exact = FALSE))
     data.frame(Landscape = lv, variable = v, n = nrow(d),
@@ -162,7 +162,7 @@ stopifnot(isTRUE(all.equal(land_cor$rho[land_cor$Landscape == "Distance_to_water
                            ls_dist_cor$p_adj)))
 
 # ---- 5. Each measure between the two basins -------------------------------
-basin_cmp <- bind_rows(lapply(variables, function(v) {
+basin_cmp <- bind_rows(lapply(land_variables, function(v) {
   d <- bdf[is.finite(bdf[[v]]), c("Basin", v)]
   names(d) <- c("Basin", "Value")
   d$Basin <- droplevels(d$Basin)
@@ -173,12 +173,12 @@ basin_cmp <- bind_rows(lapply(variables, function(v) {
 basin_cmp$p_adj <- p.adjust(basin_cmp$p, "bonferroni")
 basin_cmp <- add_significance(basin_cmp, p.col = "p_adj", output.col = "p.adj.signif")
 basin_r_max <- basin_cmp[which.max(basin_cmp$r), ]
-basin_r_lab <- variable_labels_bare[[basin_r_max$variable]]
+basin_r_lab <- variable_labels_land_bare[[basin_r_max$variable]]
 if (grepl("^[A-Z][a-z]", basin_r_lab))
   basin_r_lab <- paste0(tolower(substr(basin_r_lab, 1, 1)), substring(basin_r_lab, 2))
-basin_iqr_wider <- sum(vapply(variables, function(v) {
+basin_iqr_wider <- sum(vapply(land_variables, function(v) {
   q <- tapply(bdf[[v]], droplevels(bdf$Basin), IQR, na.rm = TRUE)
-  q[["Binchuan"]] > q[["Heqing"]]
+  q[["Binchuan"]] > q[["Huangping"]]
 }, logical(1)))
 basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
                     "six")[basin_iqr_wider + 1]
@@ -781,13 +781,13 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 # Landscape structure
 
-This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the six measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins.
+This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the seven measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins.
 
 \newpage
 
 ```{r}
 #| label: tbl-locality-matrix
-#| tbl-cap: "Locality-level analysis frame. Each row is one Quina locality, with the number of Quina scrapers complete on all six variables and the median of those specimens on each. Distance and height are measured to and above the nearest channel."
+#| tbl-cap: "Locality-level analysis frame. Each row is one Quina locality, with the number of Quina scrapers complete on all seven measures and the median of those specimens on each. Distance and height are measured to and above the nearest channel."
 
 loc_out <- site_df |>
   arrange(Basin, desc(n_art), Name) |>
@@ -795,21 +795,22 @@ loc_out <- site_df |>
             n = as.character(n_art),
             d = as.character(round(Distance_to_water)),
             h = as.character(round(Height_above_river)),
+            GM = f(GM, 1),
             Th = f(Thickness, 1), RLI = f(Retouch_length_index, 2),
             GIUR = f(Ave_GIUR, 2), NS = f(N_Scar, 0),
             RG = f(Ave_RG, 2), EA = f(Edge_Angle, 1))
 
 knitr::kable(loc_out, row.names = FALSE,
-             align = c("l", "l", rep("r", 9)),
+             align = c("l", "l", rep("r", 10)),
              col.names = c("Locality", "Basin", "*n*", "Distance (m)", "Height (m)",
-                           unname(variable_labels)))
+                           unname(variable_labels_land)))
 ```
 
 \newpage
 
 ```{r}
 #| label: tbl-landscape-permanova
-#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored six-variable space with 9,999 permutations, together with the test of dispersion for the one categorical variable."
+#| tbl-cap: "Locality-level PERMANOVA for each landscape variable, on Euclidean distances in the z-scored seven-measure space with 9,999 permutations, together with the test of dispersion for the one categorical variable. Each variable is fitted in a model of its own; the four fitted together are given in the main text."
 
 ls_row <- function(label, v, indent = TRUE) {
   data.frame(Term = if (indent) paste0(IND, label) else sprintf("**%s**", label),
@@ -819,8 +820,8 @@ ls_row <- function(label, v, indent = TRUE) {
 }
 ls_out <- bind_rows(
   data.frame(Term = "**Basin**", Df = "", SS = "", R2 = "", F = "", p = ""),
-  ls_row(sprintf("PERMANOVA (Binchuan %d, Heqing %d)",
-                 n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]]), ls_basin),
+  ls_row(sprintf("PERMANOVA (Binchuan %d, Huangping %d)",
+                 n_basin_site[["Binchuan"]], n_basin_site[["Huangping"]]), ls_basin),
   data.frame(Term = paste0(IND, "PERMDISP"), Df = "", SS = "", R2 = "",
              F = f(ls_basin_pd[["F"]], 3), p = fpt(ls_basin_pd[["p"]])),
   ls_row("Height above channel (m)", ls_height, indent = FALSE),
@@ -835,19 +836,19 @@ knitr::kable(ls_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
 
 ```{r}
 #| label: fig-landscape-scatter
-#| fig-cap: "Each of the six technological measures against each of the three continuous landscape variables, at the scale of the locality: one row per measure, one column per landscape variable, all at measured values. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship. Each panel gives Spearman's ρ with its *p*-value, adjusted by the Bonferroni procedure within each column, every column being one family of six tests; the distance column is the family reported in the main text."
+#| fig-cap: "Each of the seven technological measures against each of the three continuous landscape variables, at the scale of the locality: one row per measure, one column per landscape variable, all at measured values. The dashed line is an ordinary least-squares fit, shown only as a guide to the direction of the relationship. Each panel gives Spearman's ρ with its *p*-value, adjusted by the Bonferroni procedure within each column, every column being one family of seven tests; the distance column is the family reported in the main text."
 #| fig-width: 5.9
 #| fig-height: 7.8
 
 grid_long <- site_df |>
-  select(all_of(c(names(land_vars), variables))) |>
-  pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
+  select(all_of(c(names(land_vars), land_variables))) |>
+  pivot_longer(all_of(land_variables), names_to = "Measure", values_to = "Value") |>
   pivot_longer(all_of(names(land_vars)), names_to = "Landscape", values_to = "X") |>
-  mutate(Measure = factor(variable_labels[Measure], levels = unname(variable_labels)),
+  mutate(Measure = factor(variable_labels_land[Measure], levels = unname(variable_labels_land)),
          Landscape = factor(land_vars[Landscape], levels = unname(land_vars)))
 
 rho_lab <- land_cor |>
-  mutate(Measure = factor(variable_labels[variable], levels = unname(variable_labels)),
+  mutate(Measure = factor(variable_labels_land[variable], levels = unname(variable_labels_land)),
          Landscape = factor(land_vars[Landscape], levels = unname(land_vars)),
          label = sprintf("rho == %.2f * ',' ~ %s", rho,
                          ifelse(p_adj < 0.001, "italic(p) < 0.001",
@@ -870,19 +871,19 @@ ggplot(grid_long, aes(X, Value)) +
 
 ```{r}
 #| label: fig-basin-boxplot
-#| fig-cap: "Each of the six technological measures between the two basins, at the scale of the locality: one panel per measure, each point one locality entered as the median of its Quina scrapers, the box giving the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled point the mean."
+#| fig-cap: "Each of the seven technological measures between the two basins, at the scale of the locality: one panel per measure, each point one locality entered as the median of its Quina scrapers, the box giving the median and the quartiles with whiskers reaching 1.5 times the interquartile range, and the filled point the mean."
 #| fig-width: 5.9
 #| fig-height: 5.4
 
 basin_long <- bdf |>
-  select(Basin, all_of(variables)) |>
+  select(Basin, all_of(land_variables)) |>
   mutate(Basin = droplevels(Basin)) |>
-  pivot_longer(all_of(variables), names_to = "Measure", values_to = "Value") |>
-  mutate(Measure = factor(variable_labels[Measure], levels = unname(variable_labels)))
+  pivot_longer(all_of(land_variables), names_to = "Measure", values_to = "Value") |>
+  mutate(Measure = factor(variable_labels_land[Measure], levels = unname(variable_labels_land)))
 
 basin_brackets <- basin_cmp |>
-  transmute(Measure = factor(variable_labels[variable], levels = unname(variable_labels)),
-            group1 = "Binchuan", group2 = "Heqing", label = p.adj.signif) |>
+  transmute(Measure = factor(variable_labels_land[variable], levels = unname(variable_labels_land)),
+            group1 = "Binchuan", group2 = "Huangping", label = p.adj.signif) |>
   left_join(basin_long |> group_by(Measure) |>
               summarise(ymax = max(Value, na.rm = TRUE),
                         yrange = diff(range(Value, na.rm = TRUE)), .groups = "drop"),

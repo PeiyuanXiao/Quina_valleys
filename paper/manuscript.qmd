@@ -157,9 +157,7 @@ At Longtan, optically stimulated luminescence (OSL) dating places the in situ cu
 
 ## Survey and selection of localities
 
-The surface material analysed here was recovered during four seasons of pedestrian survey in the Huangping and Binchuan basins in 2010, 2013, 2016 and 2022. Surveys followed the Caifeng River in the Huangping Basin and the Sangyuan and Liandong rivers in the Binchuan Basin, with successive terrace levels systematically walked. Routes were recorded with the 2bulu mobile GPS application, and each locality was documented for its position, terrace setting, distance to the river channel, and artefact composition.
-
-Localities were retained if they yielded diagnostic Quina scrapers and resharpening flakes. On this criterion, 22 of 33 Binchuan localities and all five Huangping localities were included (@tbl-localities). Selection was based on Quina presence rather than technological attributes, so none of the variables analysed below entered the selection process. The resulting analyses therefore concern patterns among Quina-bearing localities rather than the spatial density of Quina technology, which may be influenced by surface visibility and survey intensity. The surface collections lack independent age control; the Longtan dates establish the presence of Quina technology in the landscape but do not date individual surface collections.
+The surface material analysed here was recovered during four seasons of pedestrian survey in the Huangping and Binchuan basins in 2010, 2013, 2016 and 2022. Surveys followed the Caifeng River in the Huangping Basin and the Sangyuan and Liandong rivers in the Binchuan Basin, with successive terrace levels systematically walked. Each locality was documented for its position, terrace setting, distance to the river channel, and artefact composition. Localities were retained if they yielded diagnostic Quina scrapers and resharpening flakes. On this criterion, 22 of 33 Binchuan localities and all five Huangping localities were included (@tbl-localities). The surface collections lack independent age control; the Longtan dates establish the presence of Quina technology in the landscape but do not date individual surface collections.
 
 ```{r}
 #| label: tbl-localities
@@ -213,7 +211,9 @@ The techno-typological observations and measurements follow established practice
 
 To assess technological consistency, Quina scrapers from Longtan were used as the reference group and non-Quina scrapers from the same site as a control. Six variables were selected for multivariate analysis to represent the recorded technological dimensions while limiting redundancy: thickness, proportion of the perimeter retouched, GIUR, total scar count, retouch generations and edge angle. Variables were z-standardised and compared using Euclidean distances. Group differences were tested with PERMANOVA [@anderson2001new], with R² reported for pairwise comparisons, and dispersion with PERMDISP [@andersonDistanceBasedTestsHomogeneity2006]. At the univariate level, GIUR, total scar count and retouch generations were compared with Kruskal–Wallis tests followed by Dunn's post hoc tests, while thickness, proportion of the perimeter retouched and edge angle were compared with Welch's ANOVA followed by Welch's t-tests; all post hoc comparisons were Bonferroni-corrected. Test distributions are shown in Fig. S4. Variation in length, width, thickness, mass and edge angle was assessed using coefficients of variation and the Krishnamoorthy–Lee modified signed likelihood ratio test (KL-MSLRT) [@krishnamoorthy2014]; GIUR, proportion of the perimeter retouched, total scar count and retouch generations were instead compared using Fligner–Killeen tests [@fligner1976]. Finally, robustness was assessed by repeating the analyses after excluding surface specimens collected within the Longtan site area (Table S6; Fig. S5).
 
-## Survey and analysis of raw materials
+## Raw materials and landscape analysis
+
+### Survey and analysis of raw materials
 
 To characterise locally available raw materials, gravel bars were sampled at five points along three river channels (@fig-geology; Fig. S6). At each point, a 1–2 m² area was cleared and all surface cobbles longer than 30 mm recorded. Length, width, thickness, roundness and field-assigned shape were recorded for each cobble. For quantitative form analysis, the three axes were ordered as a ≥ b ≥ c and treated as compositional data, making form comparisons independent of size [@aitchison1986; @egozcue2003]. Form was compared between lithologies using PERMANOVA on Aitchison distances, with PERMDISP testing dispersion [@andersonDistanceBasedTestsHomogeneity2006]. Cobbles were also plotted on the Sneed–Folk ternary diagram [-@sneed1958], with contours of maximum projection sphericity (c²/ab)^1/3^. Size was represented by the geometric mean of the three axes and compared between lithologies using a Mann–Whitney U test [@erenRoleRawMaterial2014].
 
@@ -229,15 +229,17 @@ $$D = \frac{r - p}{\,r + p - 2\,r\,p\,}$$
 
 where *r* is the proportion of a given raw material among the artefacts and *p* is its proportion among the cobbles recorded in the gravel survey. *D* ranges from −1 (complete avoidance) through 0 (use in proportion to availability) to +1 (complete selection). It was computed for each raw material in the surface Quina scrapers against availability pooled across the gravel survey. Where either proportion is zero the index saturates: a material absent from the gravel survey returns *D* = +1, and one absent from the artefacts returns *D* = −1, whatever the value of the other proportion. In these cases *D* records the direction of the selection but not its strength, and a zero in the gravel survey is in any case a sampling zero rather than a demonstrated absence. Such values are therefore reported for completeness but are not read on the same scale as those computed from two non-zero proportions.
 
-## Landscape structure
+### Landscape analysis
 
-To test whether technological variation was structured by the landscape, analyses were repeated at the locality level, with each locality represented by the median values of its Quina scrapers for the same six technological variables. Four landscape variables were considered: basin, height above the present-day channel, distance to the channel, and assemblage size. Height above the channel was used instead of terrace category or absolute elevation because it is continuous and locally referenced, avoiding differences in basin base level. Basin was tested with PERMANOVA and PERMDISP, and the three continuous variables with Spearman rank correlations and locality-level PERMANOVA on Euclidean distances.
+To test whether technological variation was structured by the landscape, we repeated the analyses at the locality level, representing each locality by the median values of its Quina scrapers. The response set here adds overall scraper size, the geometric mean of length, width and thickness, to the six technological variables, giving seven measures in all. Four landscape variables were considered: basin, height above the channel, distance to the channel, and assemblage size. Height above the channel was used instead of terrace category or absolute elevation because it is a continuous, locally referenced measure that avoids differences in basin base level. The four were fitted together in one PERMANOVA on Euclidean distances in the z-scored space, reported both as the model as a whole and as each term after the other three, and the same model was drawn as a redundancy analysis (RDA); because the space is z-scored and the distance Euclidean, that RDA is the constrained ordination corresponding to the PERMANOVA rather than a separate analysis. Each landscape variable was also fitted in a model of its own, with PERMDISP alongside for basin, and the three continuous variables were additionally assessed using Spearman rank correlations.
+
+We then fitted all four landscape variables jointly in a single PERMANOVA based on Euclidean distances, with each term tested marginally after controlling for the other three. Overall size was also included in the statistical model. It was calculated as the geometric mean of Quina scraper length, width, and thickness, using the same measure as for the gravel cobbles.
 
 All analyses were carried out in R 4.5.2 [@rcoreteam2025]. Package versions, permutation, Monte Carlo and bootstrap settings, and the random seed are given in Supplementary Information.
 
 ## Reproducibility and open materials
 
-Computational reproducibility remains a challenge in archaeological science, yet it underpins both the credibility of quantitative results and their re-use by others [@marwickComputationalReproducibilityArchaeological2017; @marwick2017openscience]. All materials needed to reproduce the analyses reported here are therefore available in a version-controlled online repository at \[\[OSF DOI\]\]. These comprise the raw data underlying every reported result together with the complete code used for the analyses and for the figures derived from them. The repository is organised with a logical folder structure and relative file paths, so that the code runs without manual modification.
+Computational reproducibility remains a challenge in archaeological science, but it is essential for assessing the reliability of quantitative results and enabling their reuse by other researchers [@marwickComputationalReproducibilityArchaeological2017; @marwick2017openscience; @marwick2018packaging]. All analyses in our study were carried out in R 4.5.2 [@rcoreteam2025]. Package versions, permutation, Monte Carlo and bootstrap settings, and the random seed are reported in the Supplementary Information. To facilitate reproducibility, all materials required to reproduce the analyses reported here are available in a version-controlled online repository at [[OSF DOI]], following established recommendations for reproducible data analysis workflows in R [@marwick2018packaging]. The repository includes the raw data underlying all reported results, the complete analysis code, and the code used to generate the figures. It is organised using a logical folder structure and relative file paths, allowing the code to run without manual modification.
 
 # Results
 
@@ -522,7 +524,7 @@ Two properties of trachyte plausibly explain its preferential use: size and frac
 
 ```{r}
 #| label: fig-cobble-size-form
-#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles, each headed with its sample size. The three vertices represent the three end-member forms: compact, platy, and elongate; the left edge carries c/a and the base (a−b)/(a−c). The dotted lines divide the triangle into the ten Sneed–Folk form fields, named in grey at the centre of each: C, compact; CP, compact-platy; CB, compact-bladed; CE, compact-elongate; P, platy; B, bladed; E, elongate; and VP, VB and VE, the very platy, very bladed and very elongate fields. The solid grey arcs are contours of maximum projection sphericity, ψ = (c²/ab)^1/3^, labelled at the right edge. Because the two lithologies differ 2.5-fold in sample size, the spread of each is given as contours enclosing 50% and 90% of its kernel density (heavy and light coloured lines) rather than left to the density of the points; the grey dashed line repeated in each triangle is the 90% contour of the other lithology, so that the two can be compared without carrying one triangle across to the other. The diamond marks the compositional centre of each lithology, the closed geometric mean of the three axes used in the Aitchison tests. Statistical significance in (A) is indicated as follows: ns, not significant; * p < 0.05; ** p < 0.01; *** p < 0.001; **** p < 0.0001."
+#| fig-cap: "Comparison of size and form between trachyte and sandstone cobbles from river gravels. (A) Comparison of cobble size between trachyte and sandstone, expressed as the geometric mean of length, width, and thickness on a logarithmic scale. Boxes indicate the median and interquartile range, whiskers extend to 1.5 times the interquartile range, and filled circles represent mean values. (B) Sneed–Folk ternary diagram showing the form distribution of the same cobbles. Trachyte and sandstone are plotted separately on two identical triangles, each headed with its sample size. The three vertices represent the three end-member forms: compact, platy, and elongate; the left edge carries c/a and the base (a−b)/(a−c). The dotted lines divide the triangle into the ten Sneed–Folk form fields, named in grey at the centre of each: C, compact; CP, compact-platy; CB, compact-bladed; CE, compact-elongate; P, platy; B, bladed; E, elongate; and VP, VB and VE, the very platy, very bladed and very elongate fields. The solid grey arcs are contours of maximum projection sphericity, ψ = (c²/ab)^1/3^, labelled at the right edge. Because the two lithologies differ 2.5-fold in sample size, the spread of each is given as a contour enclosing 90% of its kernel density (the coloured line) rather than left to the density of the points; the grey dashed line repeated in each triangle is the 90% contour of the other lithology, so that the two can be compared without carrying one triangle across to the other. The ringed point marks the compositional centre of each lithology, the closed geometric mean of the three axes used in the Aitchison tests."
 #| fig-width: 6.5
 #| fig-height: 2.63
 
@@ -708,7 +710,7 @@ hdr_lines <- function(x, y, probs) {
 }
 hdr_by_G <- lapply(levels(sz$G), function(g) {
   d   <- sf_pts[sf_pts$G == g, ]
-  out <- hdr_lines(d$x, d$y, c(0.5, 0.9))
+  out <- hdr_lines(d$x, d$y, 0.9)
   out$G <- g
   out$g <- paste(g, out$g)                  # ids unique across the lithologies
   out
@@ -786,10 +788,10 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
   geom_point(aes(colour = G), size = 0.8, alpha = 0.32, shape = 16) +
   geom_path(data = hdr_ghost, aes(x, y, group = g), inherit.aes = FALSE,
             linewidth = 0.32, linetype = "31", colour = "#9FA5AC") +
-  geom_path(data = hdr_own, aes(x, y, group = g, colour = G, linewidth = prob),
-            inherit.aes = FALSE, lineend = "round") +
+  geom_path(data = hdr_own, aes(x, y, group = g, colour = G),
+            inherit.aes = FALSE, linewidth = 0.5, lineend = "round") +
   geom_point(data = sf_cen, aes(x, y, fill = G), inherit.aes = FALSE,
-             shape = 23, size = 2.0, stroke = 0.4, colour = "#202124") +
+             shape = 21, size = 2.2, stroke = 0.5, colour = "#202124") +
   # the scales
   geom_segment(data = two(rbind(tick_ca[, c("x0", "y0", "x1", "y1")],
                                 tick_ab[, c("x0", "y0", "x1", "y1")]),
@@ -820,7 +822,6 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
                     ymin = tern_ylim[1], ymax = tern_ylim[2]) +
   scale_colour_manual(values = material_colors_fig, guide = "none") +
   scale_fill_manual(values = material_colors_fig, guide = "none") +
-  scale_linewidth_continuous(range = c(0.55, 0.30), guide = "none") +
   coord_fixed(xlim = c(-0.17, 1.13 + tri_dx), ylim = tern_ylim,
               expand = FALSE, clip = "off") +
   labs(x = NULL, y = NULL) +
@@ -834,39 +835,61 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
 
 ### Technological variation across the landscape
 
-Technological variation shows little spatial structure. Across the `r n_localities` localities with measurable Quina scrapers, assemblage size, basin, distance to the nearest channel, and elevation above the channel each explain little variation in the six technological measures (R² = `r f(min(ls_R2), 3)`–`r f(max(ls_R2), 3)`, all *p* ≥ `r f(min(ls_p), 2)`; @tbl-landscape-permanova; @fig-site-pca; Table S12; Fig. S9). Landscape position therefore provides no clear explanation for technological variation.
+Technological variation shows little spatial structure. Across the `r n_localities` localities, the four landscape variables considered together explain little of the variation in the seven technological measures (R² = `r f(ls_full[["R2"]], 3)`, pseudo-F = `r f(ls_full[["F"]], 2)`, p `r fp(ls_full[["p"]])`; @tbl-landscape-permanova; @fig-site-pca). This explanatory power is no greater than expected by chance, the adjusted R² being negative (`r f(ls_rda_r2$adj.r.squared, 3)`), and no individual landscape variable shows a significant relationship with technological variation, either when controlling for the other variables or when considered alone (all p ≥ `r f(ls_any_p_min, 2)`; Table S12). Landscape position therefore provides no clear explanation for technological variation.
 
 ```{r}
 #| label: tbl-landscape-permanova
-#| tbl-cap: "Locality-level PERMANOVA of the six-variable technological space against each landscape variable. The unit is the locality, not the specimen: each locality that yielded measurable Quina scrapers is entered as the median of those scrapers, and the count of localities is given in the text. Each variable is fitted in a model of its own, on Euclidean distances in the z-scored space with 9,999 permutations; degrees of freedom and sums of squares are given as the term followed by the residual. Basin is categorical, with the number of localities in each given in parentheses, and the other three are fitted at their measured values. Distance and height are measured to and above the nearest channel."
+#| tbl-cap: "Locality-level PERMANOVA of the seven-measure technological space against the four landscape variables fitted together."
 
-ls_row <- function(label, v) {
-  data.frame(Term = label,
-             Df = sprintf("%d, %d", as.integer(v["Df"]), as.integer(v["Df_res"])),
-             SS = sprintf("%s, %s", f(v["SumOfSqs"], 2), f(v["SumOfSqs_res"], 2)),
-             R2 = f(v["R2"], 3), F = f(v["F"], 3),
-             p = sub("^= ", "", fp(v["p"])))
-}
+ls_term_labels <- c(
+  Basin              = sprintf("Basin (Binchuan %d, Huangping %d)",
+                               n_basin_site[["Binchuan"]], n_basin_site[["Huangping"]]),
+  Height_above_river = "Height above channel (m)",
+  Distance_to_water  = "Distance to channel (m)",
+  Site_size          = "Assemblage size (n specimens)")
+ls_res_df <- as.integer(ls_full_margin$Df[nrow(ls_full_margin) - 1])
+
 ls_perm_fmt <- bind_rows(
-  ls_row("Assemblage size (n specimens)", ls_size),
-  ls_row(sprintf("Basin (Binchuan %d, Heqing %d)",
-                 n_basin_site[["Binchuan"]], n_basin_site[["Heqing"]]), ls_basin),
-  ls_row("Distance to channel (m)", ls_dist),
-  ls_row("Height above channel (m)", ls_height))
+  data.frame(Term = "**All four together**",
+             Df = sprintf("%d, %d", as.integer(ls_full[["Df"]]), as.integer(ls_full[["Df_res"]])),
+             SS = sprintf("%s, %s", f(ls_full[["SumOfSqs"]], 2), f(ls_full[["SumOfSqs_res"]], 2)),
+             R2 = f(ls_full[["R2"]], 3), F = f(ls_full[["F"]], 3),
+             p = sub("^= ", "", fp(ls_full[["p"]]))),
+  bind_rows(lapply(seq_along(ls_margin_terms), function(i) {
+    data.frame(Term = paste0(IND, unname(ls_term_labels[ls_margin_terms[i]])),
+               Df = sprintf("%d, %d", as.integer(ls_full_margin$Df[i]), ls_res_df),
+               SS = f(ls_full_margin$SumOfSqs[i], 2),
+               R2 = f(ls_full_margin$R2[i], 3), F = f(ls_full_margin$F[i], 3),
+               p = sub("^= ", "", fp(ls_full_margin$`Pr(>F)`[i])))
+  })))
 
 knitr::kable(ls_perm_fmt, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"),
              col.names = c("Landscape variable", "*df*", "SS", "*R*²", "pseudo-*F*", "*p*"))
 ```
 
 ```{r}
-#| label: fig-site-pca
-#| fig-cap: "Locality-level ordination of the six technological measures, each locality entered as the median of its Quina scrapers, coloured by (A) basin, (B) height above the channel, (C) assemblage size and (D) distance to the nearest channel. The four panels are the same ordination and differ only in the landscape variable shown, which is named in the legend beneath each. The three continuous variables are carried by the colour gradient at their measured values, the form in which they enter every test reported here; the gradient runs between the two colours that distinguish the basins in (A), the colour scale is square-root, all three being right-skewed, and the legend ticks are in the original units. Behind the localities of (B) to (D), on that same scale, is a thin-plate spline of the variable fitted over the ordination plane and clipped to the area the localities cover. A landscape gradient would show as colour running in a direction across a panel. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids."
-#| fig-width: 5.9
-#| fig-height: 5.8
+#| include: false
 
-basin_colors <- c(Binchuan = "#6BA8CE", Heqing = "#E07C90")
-grad_low     <- "#6BA8CE"
-grad_high    <- "#E07C90"
+# the caption carries numbers, so it is built rather than typed
+rng_txt <- function(v, unit) sprintf("%s to %s %s", f(land_ranges[[v]][1], 0),
+                                     f(land_ranges[[v]][2], 0), unit)
+fig8_cap <- sprintf(
+  "Locality-level ordination of the seven technological measures, each locality entered as the median of its Quina scrapers. (A) The constrained ordination (RDA) of all four landscape variables fitted together, which is the model of @tbl-landscape-permanova drawn out: grey arrows are the seven technological measures, black arrows the three continuous landscape variables, and the two ringed points the basin centroids, with hulls enclosing each basin. (B) to (E) The unconstrained ordination of the same localities, the four panels differing only in the landscape variable shown. Basin, the one categorical variable, has hulls enclosing each group and filled points marking group centroids; the other three are carried by a single-hue colour ramp at their measured values, on a square-root scale as all three are right-skewed, running from the palest tone at the lowest value to the fullest at the highest: %s in (C), %s in (D) and %s in (E). A landscape gradient would show as colour running in a direction across a panel.",
+  f(ls_rda_r2$r.squared * 100, 1), f(ls_rda_r2$adj.r.squared, 3),
+  rng_txt("Height_above_river", "m"), rng_txt("Site_size", "specimens"),
+  rng_txt("Distance_to_water", "m"))
+```
+
+```{r}
+#| label: fig-site-pca
+#| fig-cap: !expr fig8_cap
+#| fig-width: 7.5
+#| fig-height: 4.0
+
+basin_colors <- c(Binchuan = "#6BA8CE", Huangping = "#E07C90")
+# C-E carry a single-hue ramp built on #E69F00: it shares no hue with the two
+# basin colours, so a continuous panel cannot be read as the categorical one
+grad_ramp <- c("#FBE3B0", "#E69F00")
 
 fig_theme <- theme_minimal(base_size = 9) +
   theme(panel.grid.major = element_line(color = "#E6E8EB", linewidth = 0.3),
@@ -875,84 +898,176 @@ fig_theme <- theme_minimal(base_size = 9) +
         axis.ticks = element_line(color = "#202124", linewidth = 0.3),
         axis.ticks.length = unit(2, "pt"),
         axis.title = element_text(size = 9), axis.text = element_text(color = "#303238", size = 8),
-        strip.text = element_text(face = "bold", color = "#202124", size = 8),
-        strip.background = element_rect(fill = "#E8E8E8", color = NA),
         legend.title = element_blank(), legend.text = element_text(size = 8),
         legend.key = element_blank(), plot.tag = element_text(face = "bold", size = 11),
+        plot.title = element_text(size = 7, hjust = 0.5, color = "#202124",
+                                  margin = margin(b = 2.5)),
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-site_panel <- function(grp, cols, legend_title) {
-  d <- site_scores |> mutate(G = .data[[grp]]) |> filter(!is.na(G))
-  cen <- d |> group_by(G) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
-  hul <- d |> group_by(G) |> filter(n() >= 3) |>
-    group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |> ungroup()
-  ggplot(d, aes(PC1, PC2, color = G)) +
+# panel A is a column twice as wide as a 2x2 cell, so its points are drawn at
+# twice the 2x2 point size and carry the same visual weight
+RDA_PT <- 2.1
+
+# the axis furniture that would repeat inside the 2x2 block is dropped
+strip_axes <- function(show_x, show_y) {
+  th <- theme()
+  if (!show_x) th <- th + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+  if (!show_y) th <- th + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
+  th
+}
+
+# ---- panel B: basin, the one categorical variable ------------------------
+site_panel <- function(show_x, show_y) {
+  d <- site_scores |> filter(!is.na(Basin))
+  cen <- d |> group_by(Basin) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
+  hul <- d |> group_by(Basin) |> filter(n() >= 3) |>
+    group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |>
+    ungroup()
+  ggplot(d, aes(PC1, PC2, color = Basin)) +
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-    geom_polygon(data = hul, aes(fill = G, group = G), alpha = 0.12, color = NA) +
+    geom_polygon(data = hul, aes(fill = Basin, group = Basin), alpha = 0.12, color = NA) +
     geom_point(size = 1.5, alpha = 0.85, shape = 16) +
-    geom_point(data = cen, aes(cx, cy, fill = G), shape = 21, color = "#5A5F66",
+    geom_point(data = cen, aes(cx, cy, fill = Basin), shape = 21, color = "#5A5F66",
                size = 2.2, stroke = 0.5, inherit.aes = FALSE) +
-    scale_color_manual(values = cols, name = legend_title) +
-    scale_fill_manual(values = cols, name = legend_title) +
-    labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
+    geom_text_repel(data = cen, aes(cx, cy, label = as.character(Basin), color = Basin),
+                    size = 2.3, fontface = "bold", inherit.aes = FALSE, seed = 2226,
+                    box.padding = 0.45, point.padding = 0.28, force = 5,
+                    segment.color = "#B8BBC0", segment.size = 0.2,
+                    min.segment.length = 0.3, show.legend = FALSE) +
+    scale_color_manual(values = basin_colors, guide = "none") +
+    scale_fill_manual(values = basin_colors, guide = "none") +
+    labs(title = "Basin", x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
          y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
-    fig_theme +
-    theme(panel.grid.major = element_blank(), legend.position = "bottom",
-          legend.title.position = "top",
-          legend.title = element_text(size = 7.5, hjust = 0.5),
-          legend.key.size = unit(7, "pt"), legend.text = element_text(size = 7),
-          legend.margin = margin(0, 0, 0, 0)) +
-    guides(fill = "none", color = guide_legend(nrow = 1, override.aes = list(size = 1.6)))
+    fig_theme + theme(panel.grid.major = element_blank(), legend.position = "none") +
+    strip_axes(show_x, show_y)
 }
-# square-root scale: all three variables are right-skewed
-site_grad_panel <- function(var, legend_title, breaks) {
-  s <- surfaces[[var]]
-  # shared limits, so a flat surface is not stretched across the whole ramp
-  lims <- range(site_scores[[var]], na.rm = TRUE)
+
+# ---- panels C-E: one continuous landscape variable each ------------------
+site_grad_panel <- function(var, heading, show_x, show_y) {
   ggplot(site_scores, aes(PC1, PC2, color = .data[[var]])) +
-    geom_raster(data = s$grid, aes(PC1, PC2, fill = fit), alpha = 0.5,
-                inherit.aes = FALSE) +
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
     geom_point(size = 1.8, shape = 16) +
-    scale_fill_gradient(low = grad_low, high = grad_high, transform = "sqrt",
-                        limits = lims, oob = scales::squish,
-                        na.value = "transparent", guide = "none") +
-    scale_color_gradient(low = grad_low, high = grad_high, name = legend_title,
-                         transform = "sqrt", breaks = breaks,
-                         limits = lims, oob = scales::squish) +
-    labs(x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
+    scale_color_gradientn(colours = grad_ramp, transform = "sqrt",
+                          limits = range(site_scores[[var]], na.rm = TRUE),
+                          oob = scales::squish, guide = "none") +
+    labs(title = heading, x = sprintf("PC1 (%.1f%%)", site_vexp[1]),
          y = sprintf("PC2 (%.1f%%)", site_vexp[2])) +
-    fig_theme +
-    theme(panel.grid.major = element_blank(), legend.position = "bottom",
-          legend.title.position = "top",
-          legend.title = element_text(size = 7.5, hjust = 0.5),
-          legend.text = element_text(size = 7),
-          legend.key.width = unit(34, "pt"), legend.key.height = unit(5, "pt"),
-          legend.margin = margin(0, 0, 0, 0)) +
-    guides(color = guide_colourbar())
+    fig_theme + theme(panel.grid.major = element_blank(), legend.position = "none") +
+    strip_axes(show_x, show_y)
 }
 
-(site_panel("Basin", basin_colors, "Basin") + labs(tag = "A", x = NULL)) +
-  (site_grad_panel("Height_above_river", "Height above channel (m)",
-                   c(30, 60, 100, 150)) + labs(tag = "B", x = NULL, y = NULL)) +
-  (site_grad_panel("Site_size", "Assemblage size (n specimens)",
-                   c(1, 3, 10, 30)) + labs(tag = "C")) +
-  (site_grad_panel("Distance_to_water", "Distance to channel (m)",
-                   c(250, 500, 1000, 2000)) + labs(tag = "D", y = NULL)) +
-  plot_layout(ncol = 2)
+# ---- panel A: the constrained ordination ---------------------------------
+# one scalar per arrow set: the arrows fill the panel without changing angles
+arrow_mul <- function(site_xy, arr_xy, fill = 0.9) {
+  lim <- c(max(abs(site_xy[, 1]), na.rm = TRUE), max(abs(site_xy[, 2]), na.rm = TRUE))
+  amx <- c(max(abs(arr_xy[, 1]), na.rm = TRUE), max(abs(arr_xy[, 2]), na.rm = TRUE))
+  m <- min(fill * lim / pmax(amx, 1e-9))
+  if (!is.finite(m) || m <= 0) 1 else m
+}
+constraint_labels <- c(Height_above_river = "Height above channel",
+                       Distance_to_water  = "Distance to channel",
+                       Site_size          = "Assemblage size")
+
+sit <- as.data.frame(scores(ls_rda, display = "sites", scaling = 2, choices = 1:2))
+names(sit) <- c("RDA1", "RDA2"); sit$Basin <- site_df$Basin
+spe <- as.data.frame(scores(ls_rda, display = "species", scaling = 2, choices = 1:2))
+names(spe) <- c("RDA1", "RDA2")
+spe$Label <- unname(variable_labels_land_bare[rownames(spe)])
+bp <- as.data.frame(scores(ls_rda, display = "bp", scaling = 2, choices = 1:2))
+names(bp) <- c("RDA1", "RDA2"); bp$Term <- rownames(bp)
+cn <- as.data.frame(scores(ls_rda, display = "cn", scaling = 2, choices = 1:2))
+names(cn) <- c("RDA1", "RDA2"); cn$Term <- rownames(cn)
+# a factor appears in both bp (contrast) and cn (centroids): keep the centroids
+bp <- bp |> filter(!Term %in% cn$Term)
+bp$Label <- unname(constraint_labels[bp$Term])
+cn$Basin <- factor(sub("^Basin", "", cn$Term), levels = basin_levels_land)
+
+xy    <- as.matrix(sit[, c("RDA1", "RDA2")])
+spe_d <- spe |> mutate(m = arrow_mul(xy, as.matrix(spe[, 1:2]), 0.78), x = RDA1 * m, y = RDA2 * m)
+bp_d  <- bp  |> mutate(m = arrow_mul(xy, as.matrix(bp[, 1:2]),  0.92), x = RDA1 * m, y = RDA2 * m)
+
+# every label in ONE repel layer: separate layers cannot see one another and
+# pile up around the origin. Responses plain, landscape terms bold.
+lab_df <- bind_rows(spe_d |> transmute(x, y, Label, face = "plain"),
+                    bp_d  |> transmute(x, y, Label, face = "bold"))
+# seed each label a step outward along its own arrow before repelling, so the
+# short arrows (the weak terms) clear the cluster of points at the origin
+rad <- sqrt(lab_df$x^2 + lab_df$y^2)
+lab_df$nx <- lab_df$x / pmax(rad, 1e-9) * 0.5
+lab_df$ny <- lab_df$y / pmax(rad, 1e-9) * 0.5
+# half-width of the square panel: furthest of points, arrow tips and seeded
+# label positions, plus room for the label text
+sq_lim <- max(abs(c(sit$RDA1, sit$RDA2, spe_d$x, spe_d$y, bp_d$x, bp_d$y,
+                    lab_df$x + lab_df$nx, lab_df$y + lab_df$ny)), na.rm = TRUE) * 1.16
+hul_a <- sit |> group_by(Basin) |> filter(n() >= 3) |>
+  group_modify(function(g, k) { h <- chull(g$RDA1, g$RDA2); bind_rows(g[h, ], g[h[1], ]) }) |>
+  ungroup()
+
+pA <- ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
+  geom_polygon(data = hul_a, aes(RDA1, RDA2, fill = Basin, group = Basin),
+               alpha = 0.12, color = NA) +
+  geom_segment(data = spe_d, aes(x = 0, y = 0, xend = x, yend = y),
+               arrow = arrow(length = unit(0.05, "in"), type = "closed"),
+               color = "#9AA0A6", linewidth = 0.3) +
+  geom_segment(data = bp_d, aes(x = 0, y = 0, xend = x, yend = y),
+               arrow = arrow(length = unit(0.06, "in"), type = "open"),
+               color = "#303238", linewidth = 0.45) +
+  geom_point(data = sit, aes(RDA1, RDA2, color = Basin), size = RDA_PT,
+             alpha = 0.85, shape = 16) +
+  geom_point(data = cn, aes(RDA1, RDA2, fill = Basin), shape = 21, color = "#5A5F66",
+             size = RDA_PT * 1.5, stroke = 0.7, inherit.aes = FALSE) +
+  geom_text_repel(data = lab_df, aes(x, y, label = Label, fontface = face),
+                  nudge_x = lab_df$nx, nudge_y = lab_df$ny,
+                  color = "#303238", size = 2.15, segment.color = "#B8BBC0",
+                  segment.size = 0.2, min.segment.length = 0.2, box.padding = 0.34,
+                  point.padding = 0.14, force = 3.5, max.iter = 20000,
+                  max.overlaps = 60, seed = 2226, show.legend = FALSE) +
+  scale_color_manual(values = basin_colors, name = NULL) +
+  scale_fill_manual(values = basin_colors, guide = "none") +
+  scale_x_continuous(expand = expansion(0)) + scale_y_continuous(expand = expansion(0)) +
+  labs(x = sprintf("RDA1 (%.1f%%)", ls_rda_vexp[1]),
+       y = sprintf("RDA2 (%.1f%%)", ls_rda_vexp[2])) +
+  # square panel on symmetric limits. coord_fixed alone gives equal aspect, which
+  # an ordination needs so that between-locality distances read true; matching
+  # the limits as well is what makes the panel itself square.
+  coord_fixed(xlim = c(-sq_lim, sq_lim), ylim = c(-sq_lim, sq_lim)) +
+  fig_theme +
+  theme(panel.grid.major = element_blank(),
+        legend.position = "inside", legend.position.inside = c(0.02, 0.02),
+        legend.justification.inside = c(0, 0), legend.title = element_blank(),
+        legend.text = element_text(size = 7, color = "#202124"),
+        legend.key.size = unit(8, "pt"), legend.key.spacing.y = unit(0.5, "pt"),
+        legend.background = element_rect(fill = alpha("white", 0.72), color = NA),
+        legend.margin = margin(2, 5, 2, 2)) +
+  guides(color = guide_legend(override.aes = list(size = RDA_PT, alpha = 1)))
+
+# 2.29, not 2: panel A is forced square by coord_fixed, so unless the column it
+# sits in is itself square the square is centred in a taller slot and its top and
+# bottom edges pull away from the 2x2 block. At 7.5 x 4.0 in this is the ratio
+# that makes A's slot square. Re-derive it if the figure size or type size changes.
+(pA + labs(tag = "A")) +
+  (site_panel(show_x = FALSE, show_y = TRUE) + labs(tag = "B")) +
+  (site_grad_panel("Height_above_river", "Height above channel", FALSE, FALSE) +
+     labs(tag = "C")) +
+  (site_grad_panel("Site_size", "Assemblage size", TRUE, TRUE) + labs(tag = "D")) +
+  (site_grad_panel("Distance_to_water", "Distance to channel", TRUE, FALSE) +
+     labs(tag = "E")) +
+  plot_layout(design = "ABC\nADE", widths = c(2.29, 1, 1))
 ```
 
-A weak but consistent pattern is nevertheless apparent: all six measures correlate positively with distance to the nearest channel (Spearman's ρ = `r f(min(ls_dist_rho), 2)`–`r f(max(ls_dist_rho), 2)`; @tbl-distance-correlations; Fig. S8), with more distant localities tending to yield thicker and more heavily reduced Quina scrapers. This direction accords with European Quina, where prolonged reduction is associated with poorer access to raw materials [@turq2000; @hiscock2009]. However, none of the individual correlations is significant, and the six measures are not independent because several covary with edge angle (Section 5.1.1; Fig. S3). We therefore treat this pattern as a tentative hypothesis rather than a demonstrated spatial gradient.
+A weak but consistent pattern is nevertheless apparent: all seven measures show positive correlations with distance to the nearest channel (Spearman's ρ = `r f(min(ls_dist_rho), 2)`–`r f(max(ls_dist_rho), 2)`; @tbl-distance-correlations; Fig. S8), with more distant localities tending to yield thicker and more heavily reduced Quina scrapers. The weaker relationship with overall size than with thickness (ρ = `r f(ls_dist_rho[["GM"]], 2)` vs. `r f(ls_dist_rho[["Thickness"]], 2)`) suggests that this is not simply a matter of larger blanks being transported farther; more distant specimens tend to retain greater thickness relative to their size, consistent with greater volume being retained for resharpening. This direction accords with European Quina, where high reduction is associated with poorer access to raw materials [@turq2000; @hiscock2009]. However, none of the correlations is significant after correction. The pattern is therefore suggestive rather than conclusive, and we treat it as a plausible exploratory hypothesis with the potential to be supported by future evidence.
 
 ```{r}
 #| label: tbl-distance-correlations
-#| tbl-cap: "Spearman rank correlation of each measure with distance to the nearest channel. The unit is the locality, not the specimen: each locality that yielded measurable Quina scrapers is represented by the median of those scrapers, and the count of localities is given in the text. The interval on ρ is a bootstrap percentile interval over localities; adjusted *p* is the Bonferroni adjustment across the six tests."
+#| tbl-cap: "Spearman rank correlation of each measure with distance to the nearest channel. The unit is the locality, not the specimen: each locality that yielded measurable Quina scrapers is represented by the median of those scrapers, and the count of localities is given in the text. The interval on ρ is a bootstrap percentile interval over localities; adjusted *p* is the Bonferroni adjustment across the seven tests."
 
 ls_fmt <- data.frame(
-  Measure = unname(variable_labels[ls_dist_cor$variable]),
+  Measure = unname(variable_labels_land[ls_dist_cor$variable]),
   rho = f(ls_dist_cor$rho, 2),
   ci  = sprintf("%s to %s", f(ls_dist_cor$lo, 2), f(ls_dist_cor$hi, 2)),
   p   = sub("^= ", "", vapply(ls_dist_cor$p, fp, character(1))),
@@ -975,7 +1090,7 @@ Longtan is therefore no longer a single case. Its interpretation has been questi
 
 How that system was organised across the landscape can be read from the same material. The localities occupy the lower terraces of the valley systems and lie close to the channels, at a median of a few hundred metres, so that the gravel bars rather than the bedrock outcrops were the source of stone throughout, and access to them was broadly comparable across the study area. What was taken from those bars was not what lay most abundantly upon them. Trachyte was selected and sandstone passed over, against rather than in step with local abundance, and the same choice was made in every valley although the composition of the bars differs significantly between them. 
 
-The technology itself was practised in the same way wherever it occurs. The technological measurements do not vary systematically with the basin in which a locality lies, its height above the channel, its distance from water or the size of the assemblage it has yielded, which is the pattern expected of a technological system maintained to a consistent standard, its concept unchanged from locality to locality. One weak trend nevertheless runs in an intelligible direction: all six measures increase with distance from the nearest channel, so that scrapers from localities further from a source tend to be thicker and more heavily reduced, as work on the European Quina would predict [@turq2000; @hiscock2009]. No single correlation is significant at this sample size and the six are not independent of one another, so we record it as a hypothesis for landscape-scale work with larger samples rather than as a demonstrated gradient. Across two basins, three valleys and several terrace levels, then, the same technological system was practised in the same way and provisioned from the same landscape in the same way.
+The technology itself was practised in the same way wherever it occurs. The technological measurements do not vary systematically with the basin in which a locality lies, its height above the channel, its distance from water or the size of the assemblage it has yielded, which is the pattern expected of a technological system maintained to a consistent standard, its concept unchanged from locality to locality. One weak but coherent trend nevertheless deserves attention: all seven measures, including overall size, increase with distance from the nearest channel, with more distant localities tending to yield larger, thicker, and more heavily reduced scrapers. Including overall size helps clarify how the technology was organised across the landscape. The co-occurrence of greater size and reduction suggests that hominins may have selected larger blanks at more distant localities, thereby retaining more stone for subsequent reduction and repeated resharpening. This interpretation is consistent with observations from European Quina, where prolonged reduction is associated with the use of larger blanks under more limited raw-material access. The present sample cannot establish the relative roles of blank selection and reduction, and none of the individual correlations is significant. We therefore treat this pattern as a plausible exploratory hypothesis for future landscape-scale testing rather than a demonstrated spatial gradient. Across two basins, three valleys, and several terrace levels, however, the broader pattern is one of technological consistency: the same technological system was practised in similar ways and drew on raw-material resources in similar ways.
 
 ## Resource structure and technological convergence
 
