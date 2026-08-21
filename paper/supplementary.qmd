@@ -1,6 +1,6 @@
 ---
 title: "Supplementary material"
-subtitle: "The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
+subtitle: "The Quina Landscape: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
 author:
   - Peiyuan Xiao:
       correspondence: "no"
@@ -14,35 +14,45 @@ author:
       orcid: 0009-0000-2143-5335
       institute:
         - YPICRA
-  - Zhenxiu Jia:
+  - Davide Delpiano:
       correspondence: "no"
-      orcid: 0000-0002-7514-4514
       institute:
-        - ALPHA
+        - FERRARA
   - Marco Peresani:
       correspondence: "no"
       orcid: 0000-0001-6562-6336
       institute:
         - FERRARA
         - IGAG
-  - Davide Delpiano:
-      correspondence: "yes"
+  - Zhenxiu Jia:
+      correspondence: "no"
+      orcid: 0000-0002-7514-4514
       institute:
-        - FERRARA
+        - ALPHA
+  - Lijing Yang:
+      correspondence: "no"
+      institute:
+        - BCRMI
   - Ben Marwick:
       correspondence: "yes"
       email: bmarwick@uw.edu
       orcid: 0000-0001-7879-4531
       institute:
         - UW
-# <!-- the author list mirrors paper/manuscript.qmd; update both together -->
+  - Hao Li:
+      correspondence: "yes"
+      email: lihao@itpcas.ac.cn
+      institute:
+        - ALPHA
+# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
   - UCAS: University of Chinese Academy of Sciences, Beijing, China
   - UW: Department of Anthropology, University of Washington, Seattle, WA, USA
-  - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, China
+  - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, Yunnan, China
   - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
   - IGAG: Consiglio Nazionale delle Ricerche-Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
+  - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
 date: now
 date-format: long
 format:
@@ -53,6 +63,11 @@ crossref:
   fig-prefix: "Fig. S"
   tbl-title: "Table S"
   tbl-prefix: "Table S"
+# packages.bib is written by the setup chunk from the installed packages
+bibliography:
+  - references.bib
+  - packages.bib
+csl: "../templates/elsevier-harvard.csl"
 number-sections: false
 execute:
   echo: false
@@ -101,15 +116,46 @@ fig_theme <- theme_minimal(base_size = 9) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-# versions are read from the rendering session, not typed out
-si_pkgs <- c("tidyverse", "dplyr", "tidyr", "ggplot2", "readxl", "here",
-             "vegan", "rstatix", "ggpubr", "patchwork", "ggrepel",
-             "cvequality", "mgcv", "knitr")
-si_pkg_list <- paste(sprintf("%s %s", si_pkgs,
-                             vapply(si_pkgs,
-                                    function(p) as.character(packageVersion(p)),
-                                    character(1))),
-                     collapse = ", ")
+# the packages the reported results depend on, each with the part of the work it
+# carries. Versions are read from the rendering session, not typed out. The
+# tidyverse meta-package is not listed in its own right, its three components
+# that are actually called being listed instead. The citation key is the one
+# each package asks to be cited by: the manual for most, the book for the two
+# whose CITATION file names one
+si_pkg_tbl <- tribble(
+  ~Package,     ~Citation,           ~Purpose,
+  "vegan",      "[@R-vegan]",        "Distance matrices, PERMANOVA, PERMDISP and redundancy analysis",
+  "rstatix",    "[@R-rstatix]",      "Rank and Welch tests, post hoc comparisons and effect sizes",
+  "cvequality", "[@R-cvequality]",   "Krishnamoorthy–Lee test for equality of coefficients of variation",
+  "MASS",       "[@MASS2002]",       "Kernel density for the cobble form contours",
+  "readxl",     "[@R-readxl]",       "Reading the recording sheets",
+  "dplyr",      "[@R-dplyr]",        "Data manipulation",
+  "tidyr",      "[@R-tidyr]",        "Reshaping between wide and long form",
+  "here",       "[@R-here]",         "Project-relative file paths",
+  "ggplot2",    "[@ggplot22016]",    "Graphics",
+  "ggpubr",     "[@R-ggpubr]",       "Significance brackets on the distribution panels",
+  "ggrepel",    "[@R-ggrepel]",      "Labels placed clear of the points they name",
+  "patchwork",  "[@R-patchwork]",    "Composition of the multi-panel figures",
+  "scales",     "[@R-scales]",       "Axis and colour-scale transformation",
+  "knitr",      "[@R-knitr]",        "Tables and document rendering") |>
+  mutate(Version = vapply(Package, function(p) as.character(packageVersion(p)),
+                          character(1)), .after = Package)
+
+# the bibliography entries are written out from the installed packages, so the
+# references cannot drift from the versions reported in the table. knitr runs
+# before pandoc, so the file is in place by the time the citations are resolved
+si_bib <- here("paper", "packages.bib")
+knitr::write_bib(c("base", si_pkg_tbl$Package), file = si_bib)
+# the style sentence-cases titles, which would print "Vegan" for a name that is
+# lowercase by definition and "with s" for the S language. Braces mark a word as
+# not to be re-cased: one pair round the name heading each title, one round each
+# standalone capital. Braced text is skipped, so a second pass changes nothing
+si_lines <- readLines(si_bib)
+si_ttl   <- grepl("^  title = ", si_lines)
+si_lines[si_ttl] <- sub("^(  title = \\{)([^{:]+)(:)", "\\1{\\2}\\3",
+                        si_lines[si_ttl])
+si_lines[si_ttl] <- gsub(" ([A-Z])([ ,}])", " {\\1}\\2", si_lines[si_ttl])
+writeLines(si_lines, si_bib)
 n_fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
 ```
 
@@ -184,17 +230,44 @@ basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
                     "six")[basin_iqr_wider + 1]
 ```
 
-This document reports the full statistical output behind the results summarised in the main text, together with the diagnostic and robustness analyses that support them. Every number here is computed from the same data, in the same run and on the same fixed seed (2226) as the corresponding number in the paper: both documents source a single analysis file, so a value can never differ between them. The data and the code needed to regenerate this document are deposited with the research compendium.
+\newpage
 
-All analyses were carried out in `r R.version.string`, with the following packages: `r si_pkg_list`. The seed 2226 is set once at the head of the analysis file and again immediately before each permutation, Monte Carlo or bootstrap procedure, so that no result depends on the order in which the others were evaluated.
+This document accompanies the main text and provides the complete statistical output underlying the reported results, together with the diagnostic and robustness analyses that support their interpretation. It is divided into two parts.
 
-Three resampling settings govern the results reported below. Permutation tests use `r n_fmt(PERM)` permutations throughout, PERMANOVA and PERMDISP alike. Percentile confidence intervals are taken from `r n_fmt(B_BOOT)` bootstrap replicates. Three quantities carry such an interval, all of them reported in the main text: the between-group ratios of the coefficient of variation and of the Fano factor, Spearman's ρ between each technological measure and distance to the nearest channel, and Cohen's *d* for the difference between scraper edge angle and the exterior platform angle of the resharpening flakes. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation is evaluated by Monte Carlo simulation with `r n_fmt(MSLR_NR)` iterations; its use of the random number stream is insulated, the state being saved and restored around each call, so that the bootstrap intervals do not depend on how many such tests preceded them. Every family of multiple comparisons carries a Bonferroni adjustment.
-
-The tables and figures follow the order of the Results and are grouped into four sections: the techno-typological characterisation of the retouch products first, then the technological consistency of the surface collections with the excavated material at Longtan, then the raw material economy, and last the landscape structure of the technological variation. Each section opens with a short guide to what it contains. Each caption is written to stand on its own, so that no table or figure depends on the text of the paper to be read.
+The first part describes the computational environment and parameter settings in detail, ensuring that every reported value can be reproduced exactly. The second part presents the tables and figures, which are arranged in the order in which the results are discussed in the main text and grouped into four sections: the techno-typological characterisation of the retouch products; the technological consistency of the surface collections with the excavated assemblage from Longtan; the organisation of raw material use; and the landscape structure of technological variation. Each section begins with a brief guide to its contents, and each table and figure caption is written to be self-contained, allowing the materials to be understood without reference to the main text.
 
 \newpage
 
-# Techno-typological characterisation of the retouch products
+# Computational environment and settings
+
+Every value reported here is computed from the same data, in the same analysis run, and using the same fixed random seed (2226) as its corresponding value in the main text. Both documents are generated from a single analysis file, ensuring that no numerical result can differ between them. The data and code required to reproduce this document are deposited with the research compendium at OSF.
+
+All analyses were conducted in `r R.version.string` [@R-base], with the packages given in @tbl-software.
+
+```{r}
+#| label: tbl-software
+#| tbl-cap: "The R packages on which the reported results depend, each with the version used in the run that produced this document, the citation the package asks for, and the part of the analysis it carries. The complete session, including the transitive dependencies not listed here, is recorded in the colophon of the main text."
+
+# pandoc sizes the docx columns from the width of the pipe table it reads, and a
+# citation is far wider set than the `[@key]` that stands for it in the source,
+# so the headers are padded to hold each column open; the trailing spaces are
+# dropped on the way into docx
+pad <- function(x, n) formatC(x, width = n, flag = "-")
+
+knitr::kable(si_pkg_tbl, row.names = FALSE, align = c("l", "l", "l", "l"),
+             col.names = c(pad("Package", 15), pad("Version", 12),
+                           pad("Citation", 23), "Purpose"))
+```
+
+The random seed (2226) is set once at the beginning of the analysis file and reset immediately before each permutation, Monte Carlo, or bootstrap procedure. This ensures that the results are reproducible and do not depend on the order in which analyses are executed.
+
+Three resampling settings govern the results reported in Part 2. All permutation tests, including PERMANOVA and PERMDISP, use `r n_fmt(PERM)` permutations. Percentile confidence intervals are based on `r n_fmt(B_BOOT)` bootstrap replicates. These intervals are reported in the main text for three quantities: the between-group ratios of the coefficient of variation and Fano factor; Spearman's ρ between each technological measure and distance to the nearest channel; and Cohen's d for the difference between scraper edge angle and the exterior platform angle of resharpening flakes. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation is evaluated using `r n_fmt(MSLR_NR)` Monte Carlo iterations. To prevent these simulations from affecting subsequent random-number-dependent results, the random-number generator state is saved and restored around each test. Consequently, the bootstrap confidence intervals are independent of the number or order of Krishnamoorthy–Lee tests performed previously. All families of multiple comparisons are adjusted using the Bonferroni method.
+
+\newpage
+
+# Detailed results
+
+## Techno-typological characterisation of the retouch products
 
 This section describes the retouch products themselves. @fig-quina-scrapers-si illustrates further specimens beyond those figured in the main text. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. @fig-edge-angle-reduction sets edge angle against the three measures of how far reduction was carried, the relationships summarised in the main text. The typological attribution of the same specimens is reported in the main text.
 
@@ -350,7 +423,7 @@ ggplot(long_ea, aes(y = .data[[focal_ea]])) +
 
 \newpage
 
-# Technological consistency
+## Technological consistency
 
 This section compares the surface Quina scrapers with the excavated Quina scrapers from Longtan, against the Longtan non-Quina scrapers as a control. @fig-qq shows the distribution of each of the six technological variables within each group, the check that stands behind the choice of test. @tbl-tc-permanova to @tbl-tc-pca give the full output of the comparison: the pairwise tests of group position and of group spread, the variable-by-variable tests, and the loadings of the ordination. @tbl-tc-sensitivity and @fig-sensitivity-pca then repeat the analysis with the surface specimens collected from within the area of the Longtan site removed.
 
@@ -610,8 +683,8 @@ arr_s <- ld_s |> mutate(Label = variable_labels_bare[Variable])
 p_scores <- ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
   geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  geom_polygon(data = hull_s, aes(fill = Group, group = Group), alpha = 0.12, color = NA) +
-  geom_path(data = hull_s, aes(group = Group), linewidth = 0.4, alpha = 0.65) +
+  # fill alone, no outline, as in the corresponding figure in the main text
+  geom_polygon(data = hull_s, aes(fill = Group, group = Group), alpha = 0.18, color = NA) +
   geom_point(size = 1.1, alpha = 0.7, shape = 16) +
   geom_point(data = cent_s, aes(cx, cy, fill = Group), shape = 21, color = "#5A5F66",
              size = 2.4, stroke = 0.6, inherit.aes = FALSE) +
@@ -653,7 +726,7 @@ p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
 
 \newpage
 
-# Raw material economy
+## Raw material economy
 
 This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded, and @fig-thin-section the petrography of the trachyte, the dominant raw material. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
 
@@ -779,7 +852,7 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 \newpage
 
-# Landscape structure
+## Landscape structure
 
 This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the seven measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins.
 
@@ -906,3 +979,10 @@ ggplot(basin_long, aes(Basin, Value)) +
   fig_theme +
   theme(panel.grid.major = element_blank())
 ```
+
+\newpage
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
