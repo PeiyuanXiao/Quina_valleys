@@ -9,12 +9,14 @@ library(tidyverse)
 library(here)
 library(readxl)
 library(vegan)
+library(coin)
 library(rstatix)
 library(ggpubr)
 library(patchwork)
 library(ggrepel)
 library(grid)
 library(cvequality)
+
 
 set.seed(2226)
 PERM    <- 9999
