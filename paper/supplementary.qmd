@@ -91,10 +91,7 @@ editor_options:
 #| include: false
 
 source(here::here("paper", "_analysis.R"))
-
-# p-value formatter for table cells: fp() with its leading "= " removed
 fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
-
 group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
 group_labels <- c(SC_Quina = "Surface Quina", LT_Quina = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
@@ -116,12 +113,6 @@ fig_theme <- theme_minimal(base_size = 9) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-# the packages the reported results depend on, each with the part of the work it
-# carries. Versions are read from the rendering session, not typed out. The
-# tidyverse meta-package is not listed in its own right, its three components
-# that are actually called being listed instead. The citation key is the one
-# each package asks to be cited by: the manual for most, the book for the two
-# whose CITATION file names one
 si_pkg_tbl <- tribble(
   ~Package,     ~Citation,           ~Purpose,
   "vegan",      "[@R-vegan]",        "Distance matrices, PERMANOVA, PERMDISP and redundancy analysis",
@@ -141,15 +132,8 @@ si_pkg_tbl <- tribble(
   mutate(Version = vapply(Package, function(p) as.character(packageVersion(p)),
                           character(1)), .after = Package)
 
-# the bibliography entries are written out from the installed packages, so the
-# references cannot drift from the versions reported in the table. knitr runs
-# before pandoc, so the file is in place by the time the citations are resolved
 si_bib <- here("paper", "packages.bib")
 knitr::write_bib(c("base", si_pkg_tbl$Package), file = si_bib)
-# the style sentence-cases titles, which would print "Vegan" for a name that is
-# lowercase by definition and "with s" for the S language. Braces mark a word as
-# not to be re-cased: one pair round the name heading each title, one round each
-# standalone capital. Braced text is skipped, so a second pass changes nothing
 si_lines <- readLines(si_bib)
 si_ttl   <- grepl("^  title = ", si_lines)
 si_lines[si_ttl] <- sub("^(  title = \\{)([^{:]+)(:)", "\\1{\\2}\\3",
@@ -190,8 +174,6 @@ stopifnot(isTRUE(all.equal(we_ph_full$p.adj, we_ph_full$p.adj.t)))
 ls_basin_pd <- permdisp_one(dL, site_df$Basin)
 
 # ---- 4. Each measure against each continuous landscape variable -----------
-# land_vars, the ordination and the fitted surfaces come from _analysis.R,
-# the ordination itself being figured in the main text
 land_cor <- bind_rows(lapply(names(land_vars), function(lv) {
   fam <- bind_rows(lapply(land_variables, function(v) {
     d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df[[lv]]), ]
@@ -232,13 +214,15 @@ basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
 
 \newpage
 
+# Introduction
+
 This document accompanies the main text and provides the complete statistical output underlying the reported results, together with the diagnostic and robustness analyses that support their interpretation. It is divided into two parts.
 
 The first part describes the computational environment and parameter settings in detail, ensuring that every reported value can be reproduced exactly. The second part presents the tables and figures, which are arranged in the order in which the results are discussed in the main text and grouped into four sections: the techno-typological characterisation of the retouch products; the technological consistency of the surface collections with the excavated assemblage from Longtan; the organisation of raw material use; and the landscape structure of technological variation. Each section begins with a brief guide to its contents, and each table and figure caption is written to be self-contained, allowing the materials to be understood without reference to the main text.
 
 \newpage
 
-# Computational environment and settings
+# Part 1: Computational environment and settings
 
 Every value reported here is computed from the same data, in the same analysis run, and using the same fixed random seed (2226) as its corresponding value in the main text. Both documents are generated from a single analysis file, ensuring that no numerical result can differ between them. The data and code required to reproduce this document are deposited with the research compendium at OSF.
 
@@ -248,10 +232,6 @@ All analyses were conducted in `r R.version.string` [@R-base], with the packages
 #| label: tbl-software
 #| tbl-cap: "The R packages on which the reported results depend, each with the version used in the run that produced this document, the citation the package asks for, and the part of the analysis it carries. The complete session, including the transitive dependencies not listed here, is recorded in the colophon of the main text."
 
-# pandoc sizes the docx columns from the width of the pipe table it reads, and a
-# citation is far wider set than the `[@key]` that stands for it in the source,
-# so the headers are padded to hold each column open; the trailing spaces are
-# dropped on the way into docx
 pad <- function(x, n) formatC(x, width = n, flag = "-")
 
 knitr::kable(si_pkg_tbl, row.names = FALSE, align = c("l", "l", "l", "l"),
@@ -265,15 +245,11 @@ Three resampling settings govern the results reported in Part 2. All permutation
 
 \newpage
 
-# Detailed results
+# Part 2: Detailed results
 
 ## Techno-typological characterisation of the retouch products
 
-This section describes the retouch products themselves. @fig-quina-scrapers-si illustrates further specimens beyond those figured in the main text. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. @fig-edge-angle-reduction sets edge angle against the three measures of how far reduction was carried, the relationships summarised in the main text. The typological attribution of the same specimens is reported in the main text.
-
-\newpage
-
-![Quina scrapers from the surface collections. (A) and (B) simple scrapers. (C) convergent scraper. (D) alternate scraper. (E) *limace*](../figures/quina_scraper_SI_.png){#fig-quina-scrapers-si width="5.9in"}
+This section describes the retouch products themselves. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. @fig-edge-angle-reduction sets edge angle against the three measures of how far reduction was carried, the relationships summarised in the main text. The typological attribution of the same specimens is reported in the main text.
 
 \newpage
 
@@ -442,7 +418,7 @@ dist_long <- variable_long |>
                         levels = unname(group_labels)))
 lab_colors <- setNames(unname(group_colors), unname(group_labels))
 
-INSET_GAP <- unit(1.4, "mm")     # the same clearance at the left and the top
+INSET_GAP <- unit(1.4, "mm")
 inset_theme <- theme_minimal(base_size = 6) +
   theme(panel.grid = element_blank(),
         panel.border = element_rect(color = "#202124", fill = NA, linewidth = 0.3),
@@ -452,7 +428,6 @@ inset_theme <- theme_minimal(base_size = 6) +
         plot.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(0, 0, 0, 0))
 
-# one cell carries the legend for all three groups, via transparent points
 qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
   d <- dist_long[dist_long$Variable == vlab & dist_long$Group == glab, ]
   legend_key <- data.frame(
@@ -471,7 +446,6 @@ qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
     scale_color_manual(values = unname(group_colors),
                        limits = unname(group_labels), drop = FALSE) +
     scale_x_continuous(expand = expansion(mult = 0.06)) +
-    # headroom under the inset, which is opaque and would otherwise cover points
     scale_y_continuous(expand = expansion(mult = c(0.06, 0.34))) +
     labs(x = NULL, y = ylab) +
     fig_theme +
@@ -485,7 +459,6 @@ qq_cell <- function(vlab, glab, ylab, carries_legend = FALSE) {
                  inherit.aes = FALSE, alpha = 0, size = 0.7, shape = 16,
                  show.legend = TRUE)
   }
-  # millimetres, not a fraction: the panels are wider than they are tall
   p_qq + inset_element(p_hist,
                        left   = INSET_GAP,
                        bottom = unit(0.63, "npc"),
@@ -683,7 +656,6 @@ arr_s <- ld_s |> mutate(Label = variable_labels_bare[Variable])
 p_scores <- ggplot(sc_s, aes(PC1, PC2, color = Group)) +
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
   geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  # fill alone, no outline, as in the corresponding figure in the main text
   geom_polygon(data = hull_s, aes(fill = Group, group = Group), alpha = 0.18, color = NA) +
   geom_point(size = 1.1, alpha = 0.7, shape = 16) +
   geom_point(data = cent_s, aes(cx, cy, fill = Group), shape = 21, color = "#5A5F66",

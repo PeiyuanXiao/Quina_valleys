@@ -164,7 +164,6 @@ The surface material analysed here was recovered during four seasons of pedestri
 #| label: tbl-localities
 #| tbl-cap: "The Quina localities retained for analysis. Code is the abbreviation by which the locality is labelled in @fig-study-area. Landform is the position within the terrace sequence, T2 the lowest terrace, with the three localities standing well above that sequence entered as hilltops. Coordinates are degrees, minutes and seconds, and elevation is metres above sea level. The last two columns give the assemblage on which the analyses below are based."
 
-# rounds to 0.1 s before splitting, so no second can round up to 60
 dms <- function(x, hemi) {
   tot <- round(x * 3600, 1)
   d   <- floor(tot / 3600)
@@ -177,9 +176,7 @@ sites_tbl <- read_excel(here("data", "Site_information.xlsx"))
 names(sites_tbl) <- trimws(names(sites_tbl))
 sites_tbl <- sites_tbl |>
   transmute(name = gsub("_", " ", trimws(as.character(name))),
-            # kept verbatim, underscore and all, so the column reads as the labels in Fig. 1
             code = trimws(as.character(Code)),
-            # the data file names this basin after the county, the text after the basin
             basin = ifelse(grepl("^Heqing", trimws(basin)), "Huangping Basin", "Binchuan Basin"),
             valley = trimws(as.character(river_ID)),
             geomorph = trimws(as.character(geomorph)),
@@ -201,11 +198,6 @@ loc_fmt <- bind_rows(lapply(c("Binchuan Basin", "Huangping Basin"), function(b) 
                        lat = "", lon = "", elev = "",
                        n_sc = as.character(sum(sites_tbl$n_sc)),
                        n_rf = as.character(sum(sites_tbl$n_rf))))
-
-# pandoc takes the docx column widths from the width of the pipe table it reads,
-# which is the widest cell in each column, so a column of short entries is given
-# too little room; padding the header holds each column open wide enough for its
-# own content, the trailing spaces themselves being dropped on the way into docx
 pad <- function(x, n) formatC(x, width = n, flag = "-")
 
 knitr::kable(loc_fmt, row.names = FALSE,
@@ -220,15 +212,25 @@ knitr::kable(loc_fmt, row.names = FALSE,
 
 The techno-typological observations and measurements follow established practice in the study of Quina assemblages [@Bourguignon1997; @peresani2023; @ruanQuinaLithicTechnology2025a; @hiscock2008construction]. For each Quina scraper we recorded length, width, thickness, mass, cortex position, platform type and depth (PD), interior platform angle (IPA), retouch generations <!-- I think we need a bit more detail about how we define this, is it actually the 'average number of retouch generations across each scraper's edges'? -->, numbers of convex and concave scars, GIUR [@kuhnGeometricIndexReduction1990], proportion of the perimeter retouched, edge angle, and Bordes typology [@bordes1961; @debenath1994]. For each resharpening flake we recorded ength, width, thickness, platform type, PD, IPA and exterior platform angle (EPA). Associations between edge angle and GIUR, proportion of the perimeter retouched, and retouch generations were tested with Spearman rank correlations, with Bonferroni correction. EPA of resharpening flakes was compared with scraper edge angle using Welch's t-test [@welch1947generalization], with Cohen's d and a bootstrap percentile confidence interval.
 
+<<<<<<< HEAD
 To assess technological consistency, Quina scrapers from Longtan were used as the reference group and non-Quina scrapers from the same site as a control. Six variables were selected for multivariate analysis to represent the recorded technological dimensions most sensitive to Quina scraper technological variation, while limiting redundancy: thickness, proportion of the perimeter retouched, GIUR, total scar count, retouch generations  and edge angle. Variables were z-standardised and compared using Euclidean distances. Group differences were tested with PERMANOVA [@anderson2001new], with R² reported for pairwise comparisons, and dispersion with PERMDISP [@andersonDistanceBasedTestsHomogeneity2006]. At the univariate level, GIUR, total scar count and retouch generations were compared with Kruskal–Wallis tests followed by Dunn's post hoc tests, while thickness, proportion of the perimeter retouched and edge angle were compared with Welch's ANOVA followed by Welch's t-tests; all post hoc comparisons were Bonferroni-corrected. Test distributions are shown in Fig. S4. Variation in length, width, thickness, mass and edge angle was assessed using coefficients of variation and the Krishnamoorthy–Lee modified signed likelihood ratio test (KL-MSLRT) [@krishnamoorthy2014; @marwick2019cvequality]; GIUR, proportion of the perimeter retouched, total scar count and retouch generations <!-- I think we need to treat retouch generations differently from total scar count because it's fractional and bounded, perhaps we should use one chi-square on the generation × group contingency table for RG, to answer the question 'do surface and Longtan scrapers show the same reduction-stage profile?' Probably no difference to the results and outcome, worth a try? --> were instead compared using Fligner–Killeen tests [@fligner1976]. Finally, robustness was assessed by repeating the analyses after excluding surface specimens collected within the Longtan site area (Table S7; Fig. S5).
+=======
+To assess technological consistency, Quina scrapers from Longtan were used as the reference group and non-Quina scrapers from the same site as a control. Six variables were selected for multivariate analysis to represent the recorded technological dimensions while limiting redundancy: thickness, proportion of the perimeter retouched, GIUR, total scar count, retouch generations and edge angle. Variables were z-standardised and compared using Euclidean distances. Group differences were tested with PERMANOVA [@anderson2001new], with R² reported for pairwise comparisons, and dispersion with PERMDISP [@andersonDistanceBasedTestsHomogeneity2006]. At the univariate level, GIUR, total scar count and retouch generations were compared with Kruskal–Wallis tests followed by Dunn's post hoc tests, while thickness, proportion of the perimeter retouched and edge angle were compared with Welch's ANOVA followed by Welch's t-tests; all post hoc comparisons were Bonferroni-corrected. Test distributions are shown in Fig. S3. Variation in length, width, thickness, mass and edge angle was assessed using coefficients of variation and the Krishnamoorthy–Lee modified signed likelihood ratio test (KL-MSLRT) [@krishnamoorthy2014]; GIUR, proportion of the perimeter retouched, total scar count and retouch generations were instead compared using Fligner–Killeen tests [@fligner1976]. Finally, robustness was assessed by repeating the analyses after excluding surface specimens collected within the Longtan site area (Table S7; Fig. S4).
+>>>>>>> 652927b8ddbfcc4f9f8aaf03fe4878e5f5c05d24
 
 ## Raw materials and landscape analysis
 
 ### Survey and analysis of raw materials
 
+<<<<<<< HEAD
 To characterise locally available raw materials, gravel bars were sampled at five points along three river channels (@fig-geology; Fig. S6). At each point, a 1–2 m² area was cleared and all surface cobbles longer than 30 mm recorded. Length, width, thickness, roundness <!-- what metric or categorical scale was used for this? --> and field-assigned shape <!-- can we give more details on this in the SI? --> were recorded for each cobble. For quantitative form analysis, the three axes were ordered as a ≥ b ≥ c and treated as compositional data, making form comparisons independent of size [@aitchison1986; @egozcue2003]. Form was compared between lithologies using PERMANOVA on Aitchison distances, with PERMDISP testing dispersion [@andersonDistanceBasedTestsHomogeneity2006]. Cobbles were also plotted on the Sneed–Folk ternary diagram [-@sneed1958], with contours of maximum projection sphericity (c²/ab)^1/3^. Size was represented by the geometric mean of the three axes and compared between lithologies using a Mann–Whitney U test [@erenRoleRawMaterial2014].
 
 Five trachyte cobbles <!-- can we indicate the locations from where they were collected? --> were sectioned for petrographic examination, with mineral composition characterised by energy-dispersive spectroscopy (Fig. S7). Artefact raw materials were assigned macroscopically to the same lithological categories, using the surveyed cobbles as a reference collection. 
+=======
+To characterise locally available raw materials, gravel bars were sampled at five points along three river channels (@fig-geology; Fig. S5). At each point, a 1–2 m² area was cleared and all surface cobbles longer than 30 mm recorded. Length, width, thickness, roundness and field-assigned shape were recorded for each cobble. For quantitative form analysis, the three axes were ordered as a ≥ b ≥ c and treated as compositional data, making form comparisons independent of size [@aitchison1986; @egozcue2003]. Form was compared between lithologies using PERMANOVA on Aitchison distances, with PERMDISP testing dispersion [@andersonDistanceBasedTestsHomogeneity2006]. Cobbles were also plotted on the Sneed–Folk ternary diagram [-@sneed1958], with contours of maximum projection sphericity (c²/ab)^1/3^. Size was represented by the geometric mean of the three axes and compared between lithologies using a Mann–Whitney U test [@erenRoleRawMaterial2014].
+
+Five trachyte cobbles were sectioned for petrographic examination, with mineral composition characterised by energy-dispersive spectroscopy (Fig. S6). Artefact raw materials were assigned macroscopically to the same lithological categories, using the surveyed cobbles as a reference collection.
+>>>>>>> 652927b8ddbfcc4f9f8aaf03fe4878e5f5c05d24
 
 Differences in raw material composition among gravel bars and artefact assemblages, and among spatial units, were tested with PERMANOVA, stratified by basin and valley.
 
@@ -268,15 +270,15 @@ The `r n_scraper` Quina scrapers from the surface collections are consistent wit
 
 ![Quina scrapers from the surface collections. (A) and (B) simple scrapers. (C) a simple scraper with a Clactonian notch, indicated by the yellow outline and arrow. (D) a convergent scraper. (E) and (F) *limaces*. Note that the ventral face of the blank in (F) preserves previous centripetal removals, indicating that this specimen underwent different stages of functional transformation, that is “mixed-matrix”.](../figures/quina_scraper_1.png){#fig-quina-scrapers width="5.9in"}
 
-![Further Quina scrapers from the surface collections, each shown in four views with the section outline at right. (A), (B) and (C) [description to be completed].](../figures/quina_scraper_2.png){#fig-quina-scrapers-2 width="5.9in"}
+![Limaces with Quina retouch from the surface collections.](../figures/quina_scraper_2.png){#fig-quina-scrapers-2 width="5.9in"}
 
-[Blank selection.]{.underline} Quina flaking yields thick flakes with markedly asymmetric cross-sections (Section 2), and the blanks used here carry the attributes that this strategy produces (@fig-quina-scrapers; Fig. S2; further specimens are figured in Fig. S1). Most scrapers retain cortex to some degree (*n* = `r cortex_bearing_n`, `r f(cortex_bearing_pct, 1)`%), and where cortex survives it lies most often on a lateral margin (*n* = `r lateral_n` of `r cortex_bearing_n`, `r f(lateral_pct, 1)`%), opposite the retouched edge, forming a thick back. Some were made directly on cortical flakes, with cortex covering most of the dorsal face (*n* = `r primary_n`, `r f(primary_pct, 1)`%); among specimens without cortex, a lateral thick back usually formed by previous removals (*n* = `r nocortex_n`, `r f(nocortex_pct, 1)`%). The asymmetric distribution of volume is therefore present whether or not the original surface of the cobble survives. These are not ordinary flakes that happened to be retouched, but blanks carrying a reserve of volume that were selected by knappers.
+[Blank selection.]{.underline} Quina flaking yields thick flakes with markedly asymmetric cross-sections (Section 2), and the blanks used here carry the attributes that this strategy produces (@fig-quina-scrapers; Fig. S1). Most scrapers retain cortex to some degree (*n* = `r cortex_bearing_n`, `r f(cortex_bearing_pct, 1)`%), and where cortex survives it lies most often on a lateral margin (*n* = `r lateral_n` of `r cortex_bearing_n`, `r f(lateral_pct, 1)`%), opposite the retouched edge, forming a thick back. Some were made directly on cortical flakes, with cortex covering most of the dorsal face (*n* = `r primary_n`, `r f(primary_pct, 1)`%); among specimens without cortex, a lateral thick back usually formed by previous removals (*n* = `r nocortex_n`, `r f(nocortex_pct, 1)`%). The asymmetric distribution of volume is therefore present whether or not the original surface of the cobble survives. These are not ordinary flakes that happened to be retouched, but blanks carrying a reserve of volume that were selected by knappers.
 
-Platform observations point the same way. In all, `r plat_n` Quina scrapers (`r f(plat_pct, 1)`%) retain the platform of the original blank, and these are characteristically wide and oblique, with a median platform depth of `r f(pd_median, 1)` mm (Q1–Q3 = `r f(pd_q1, 1)`–`r f(pd_q3, 1)` mm) and a mean IPA of `r f(ipa_mean, 0)`° (*SD* = `r f(ipa_sd, 1)`°); both follow from the invasive percussion by which thick blanks are removed by plan-secant flaking. Plain platforms predominate (*n* = `r plain_n`, `r f(plain_pct, 1)`%), with cortical (*n* = `r natural_n`, `r f(natural_pct, 1)`%) and dihedral platforms (*n* = `r dihedral_n`, `r f(dihedral_pct, 1)`%) less common (Fig. S2). Four of the dihedral specimens are *talons à pans*, on which the platform preserves parallel removal scars running approximately orthogonal to the axis of percussion. Few though they are, these carry the most direct information in the assemblage about the reduction strategy behind the blanks: a platform of this kind records a surface that had itself previously served as a flaking surface, which is what the alternating plan-secant exploitation.
+Platform observations point the same way. In all, `r plat_n` Quina scrapers (`r f(plat_pct, 1)`%) retain the platform of the original blank, and these are characteristically wide and oblique, with a median platform depth of `r f(pd_median, 1)` mm (Q1–Q3 = `r f(pd_q1, 1)`–`r f(pd_q3, 1)` mm) and a mean IPA of `r f(ipa_mean, 0)`° (*SD* = `r f(ipa_sd, 1)`°); both follow from the invasive percussion by which thick blanks are removed by plan-secant flaking. Plain platforms predominate (*n* = `r plain_n`, `r f(plain_pct, 1)`%), with cortical (*n* = `r natural_n`, `r f(natural_pct, 1)`%) and dihedral platforms (*n* = `r dihedral_n`, `r f(dihedral_pct, 1)`%) less common (Fig. S1). Four of the dihedral specimens are *talons à pans*, on which the platform preserves parallel removal scars running approximately orthogonal to the axis of percussion. Few though they are, these carry the most direct information in the assemblage about the reduction strategy behind the blanks: a platform of this kind records a surface that had itself previously served as a flaking surface, which is what the alternating plan-secant exploitation.
 
-[Edge maintenance.]{.underline} The convex-to-concave rhythm by which a Quina edge is sustained (Section 2) is clearly expressed in this assemblage. Quina scrapers carry a mean of `r f(rg_mean, 2)` retouch generations (*SD* = `r f(rg_sd, 2)`), with a mean of `r f(cxs_mean, 1)` convex scars (*SD* = `r f(cxs_sd, 1)`) and `r f(cvs_mean, 1)` concave scars (*SD* = `r f(cvs_sd, 1)`) per specimen. Convex scars are concentrated in the first generation, concave scars in the second and third. The imbalance between the two, better than four concave removals for every convex one, is the quantitative signature of an edge maintained far beyond its initial production.
+[Edge maintenance.]{.underline} The convex-to-concave rhythm by which a Quina edge is sustained (Section 2) is clearly expressed in this assemblage. Quina scrapers carry a mean of `r f(rg_mean, 2)` retouch generations (*SD* = `r f(rg_sd, 2)`), with a mean of `r f(cxs_mean, 1)` convex scars (*SD* = `r f(cxs_sd, 1)`) and `r f(cvs_mean, 1)` concave scars (*SD* = `r f(cvs_sd, 1)`) per specimen. Convex scars are concentrated in the first generation, concave scars in the second and third. The imbalance between the two, more than four concave removals for every convex one, is the quantitative signature of an edge maintained far beyond its initial production.
 
-Two measures quantify how far that process was carried. The GIUR has a median of `r f(giur_median, 2)` (Q1–Q3 = `r f(giur_q1, 2)`–`r f(giur_q3, 2)`), indicating that retouch commonly extended into the zone of maximum blank thickness; the proportion of the perimeter retouched has a median of `r f(rli_median, 2)` (Q1–Q3 = `r f(rli_q1, 2)`–`r f(rli_q3, 2)`), consistent with the thick back retained on most specimens. A minority were worked more extensively across the whole piece, among them the triple scrapers and *limaces*. Mean edge angle is `r f(ea_mean, 1)`° (*SD* = `r f(ea_sd, 1)`°). Because the angle produced by the final generation alone cannot be isolated, what we measured is the angle of the edge as a whole, and this is better read as an index of cumulative reduction than as a direct measure of function [@linQuinaRetouchDoes2021]; edge angle shows significant positive correlation with GIUR (ρ = `r f(ea_giur["rho"], 2)`, *p* `r fp(ea_giur["p"])`), with the proportion of the perimeter retouched (ρ = `r f(ea_rli["rho"], 2)`, *p* `r fp(ea_rli["p"])`) and with the number of retouch generations (ρ = `r f(ea_rg["rho"], 2)`, *p* `r fp(ea_rg["p"])`) (Fig. S3), which supports that reading.
+Two measures quantify how far that process was carried. The GIUR has a median of `r f(giur_median, 2)` (Q1–Q3 = `r f(giur_q1, 2)`–`r f(giur_q3, 2)`), indicating that retouch commonly extended into the zone of maximum blank thickness; the proportion of the perimeter retouched has a median of `r f(rli_median, 2)` (Q1–Q3 = `r f(rli_q1, 2)`–`r f(rli_q3, 2)`), consistent with the thick back retained on most specimens. A minority were worked more extensively across the whole piece, among them the triple scrapers and *limaces*. Mean edge angle is `r f(ea_mean, 1)`° (*SD* = `r f(ea_sd, 1)`°). Because the angle produced by the final generation alone cannot be isolated, what we measured is the angle of the edge as a whole, and this is better read as an index of cumulative reduction than as a direct measure of function [@linQuinaRetouchDoes2021]; edge angle shows significant positive correlation with GIUR (ρ = `r f(ea_giur["rho"], 2)`, *p* `r fp(ea_giur["p"])`), with the proportion of the perimeter retouched (ρ = `r f(ea_rli["rho"], 2)`, *p* `r fp(ea_rli["p"])`) and with the number of retouch generations (ρ = `r f(ea_rg["rho"], 2)`, *p* `r fp(ea_rg["p"])`) (Fig. S2), which supports that reading.
 
 Within this common scheme the Quina scrapers vary typologically: `r styp_n["Single"]` of them (`r f(styp_p["Single"], 1)`%) carry retouch on a single edge, `r styp_n["Double"]` (`r f(styp_p["Double"], 1)`%) on two, and `r styp_n["Multi"]` (`r f(styp_p["Multi"], 1)`%) on three or more, and their attributions across Bordes' type list are given in @tbl-bordes-typology. Since every specimen conforms to the Quina retouch, this variation is more plausibly a matter of knappers adjusting to the blanks in front of them than evidence of distinct technological concept [@hiscock2008construction].
 
@@ -284,7 +286,6 @@ Within this common scheme the Quina scrapers vary typologically: `r styp_n["Sing
 #| label: tbl-bordes-typology
 #| tbl-cap: "Attribution of the surface Quina scrapers within Bordes' type list, grouped by type family. The triple scraper is not a type of Bordes' list and is entered without a number."
 
-# the two orderings of the straight/convex double scraper are one Bordes type
 bordes <- gsub("\\s+", " ", trimws(as.character(q$Bordes_typology)))
 bordes[bordes == "Double convex-straight scraper"] <- "Double straight-convex scraper"
 
@@ -317,7 +318,6 @@ bordes_fam <- tribble(
   "Convergent and déjeté scrapers", "18–21",
   "Transverse scrapers",            "22–24",
   "Other forms",                    "")
-# a label recorded outside the key would drop specimens from the table
 stopifnot(setequal(unique(bordes), bordes_key$recorded))
 
 bordes_key$n <- vapply(bordes_key$recorded, function(l) sum(bordes == l), integer(1))
@@ -386,8 +386,6 @@ EXP_X <- expansion(mult = 0.20); EXP_Y <- expansion(mult = 0.10)
 p_a <- ggplot(scores, aes(PC1, PC2, color = Group)) +
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
   geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  # fill alone, no outline: the hulls read as the extent of each group without
-  # a border competing with the points for attention
   geom_polygon(data = hulls, aes(fill = Group, group = Group), alpha = 0.18, color = NA) +
   geom_point(size = 1.1, alpha = 0.7, shape = 16) +
   geom_point(data = centroids, aes(cx, cy, fill = Group), shape = 21, color = "#5A5F66",
@@ -474,7 +472,7 @@ knitr::kable(disp_fmt, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
                            "Statistic", "*p*"))
 ```
 
-These results are robust to the possible contribution of surface material collected within the Longtan site area. Excluding those specimens leaves the two Quina groups indistinguishable in both centroid position (R² = `r f(sens_perm_scltq_R2, 3)`, pseudo-F = `r f(sens_perm_scltq_F, 2)`, p `r fp(sens_perm_scltq_p)`) and dispersion (F = `r f(sens_scltq_F, 2)`, p `r fp(sens_scltq_p)`), while both remain distinct from the non-Quina scrapers in centroid position (R² = `r f(min(sens_perm_nonq_R2), 3)`–`r f(max(sens_perm_nonq_R2), 3)`, pseudo-F = `r f(min(sens_perm_nonq_F), 1)`–`r f(max(sens_perm_nonq_F), 1)`, p `r fp(sens_perm_nonq_p)`) and dispersion (F = `r f(min(sens_nonq_F), 1)`–`r f(max(sens_nonq_F), 1)`, p `r fp(sens_nonq_p)`) (Table S7; Fig. S5).
+These results are robust to the possible contribution of surface material collected within the Longtan site area. Excluding those specimens leaves the two Quina groups indistinguishable in both centroid position (R² = `r f(sens_perm_scltq_R2, 3)`, pseudo-F = `r f(sens_perm_scltq_F, 2)`, p `r fp(sens_perm_scltq_p)`) and dispersion (F = `r f(sens_scltq_F, 2)`, p `r fp(sens_scltq_p)`), while both remain distinct from the non-Quina scrapers in centroid position (R² = `r f(min(sens_perm_nonq_R2), 3)`–`r f(max(sens_perm_nonq_R2), 3)`, pseudo-F = `r f(min(sens_perm_nonq_F), 1)`–`r f(max(sens_perm_nonq_F), 1)`, p `r fp(sens_perm_nonq_p)`) and dispersion (F = `r f(min(sens_nonq_F), 1)`–`r f(max(sens_nonq_F), 1)`, p `r fp(sens_nonq_p)`) (Table S7; Fig. S4).
 
 Taken together, the surface and excavated Quina scrapers occupy the same technological space and show comparable within-group variation, while both remain distinct from the non-Quina scrapers. They are therefore most economically understood as products of a single technological concept.
 
@@ -534,7 +532,7 @@ ggplot(comp_fig, aes(percent, river_ID, fill = Material)) +
   guides(fill = guide_legend(nrow = 1))
 ```
 
-Two properties of trachyte plausibly explain its preferential use: size and fracture quality. Trachyte cobbles are significantly larger than sandstone cobbles (GM = `r f(gmT, 1)` mm vs. `r f(gmS, 1)` mm; U = `r f(size_U, 0)`, p `r fp(size_p)`; Table S11), providing greater initial volume for prolonged reduction. Their shape, however, does not differ: when the three axes are treated compositionally, the two lithologies are indistinguishable in Aitchison space (R² = `r f(form_R2, 3)`, pseudo-F = `r f(form_F, 2)`, p `r fp(form_p)`), with no difference in dispersion (PERMDISP F = `r f(form_disp_F, 2)`, p `r fp(form_disp_p)`), and they occupy the same region of the Sneed–Folk form triangle (@fig-cobble-size-form). Shape therefore does not account for the preference. Thin-section analysis shows that the trachyte is fine-grained and low in phenocryst content, with euhedral K-feldspar phenocrysts (~0.3–5.0 mm; ~1–10% of the rock) in a hyalopilitic groundmass containing K-feldspar microlites, chlorite or altered mafic minerals, magnetite, and about 50% devitrified glass (Fig. S7). These properties are associated with predictable conchoidal fracture and the production of long, continuous and acute edges [@stoutRawMaterialSelectivity2005]. Thus, the preference for trachyte is plausibly related to its greater volume and more predictable fracture, both advantageous for prolonged resharpening.
+Two properties of trachyte plausibly explain its preferential use: size and fracture quality. Trachyte cobbles are significantly larger than sandstone cobbles (GM = `r f(gmT, 1)` mm vs. `r f(gmS, 1)` mm; U = `r f(size_U, 0)`, p `r fp(size_p)`; Table S11), providing greater initial volume for prolonged reduction. Their shape, however, does not differ: when the three axes are treated compositionally, the two lithologies are indistinguishable in Aitchison space (R² = `r f(form_R2, 3)`, pseudo-F = `r f(form_F, 2)`, p `r fp(form_p)`), with no difference in dispersion (PERMDISP F = `r f(form_disp_F, 2)`, p `r fp(form_disp_p)`), and they occupy the same region of the Sneed–Folk form triangle (@fig-cobble-size-form). Shape therefore does not account for the preference. Thin-section analysis shows that the trachyte is fine-grained and low in phenocryst content, with euhedral K-feldspar phenocrysts (~0.3–5.0 mm; ~1–10% of the rock) in a hyalopilitic groundmass containing K-feldspar microlites, chlorite or altered mafic minerals, magnetite, and about 50% devitrified glass (Fig. S6). These properties are associated with predictable conchoidal fracture and the production of long, continuous and acute edges [@stoutRawMaterialSelectivity2005]. Thus, the preference for trachyte is plausibly related to its greater volume and more predictable fracture, both advantageous for prolonged resharpening.
 
 ```{r}
 #| label: fig-cobble-size-form
@@ -542,9 +540,6 @@ Two properties of trachyte plausibly explain its preferential use: size and frac
 #| fig-width: 6.5
 #| fig-height: 2.63
 
-# fig-height is set so the fixed-aspect ternary panel exactly fills its cell,
-# which stops it being centred; reset it if the width or the layout changes.
-#
 material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
                          Quartz = "#E6C25C", Mudstone = "#9B87C4", Andesite = "#6FB98E")
 
@@ -563,15 +558,10 @@ fig_theme <- theme_minimal(base_size = 9) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-# the frame is one rectangle drawn inside the panel, so that its foot lands on
-# the base of the triangles rather than on the foot of the panel: f_base is
-# where that base sits, as a fraction of the ternary panel's height
-tri_h     <- sqrt(3) / 2               # height of the unit equilateral triangle
-tern_ylim <- c(-0.235, tri_h + 0.34)   # the ternary panels use these limits
+tri_h     <- sqrt(3) / 2              
+tern_ylim <- c(-0.235, tri_h + 0.34)   
 f_base    <- -tern_ylim[1] / diff(tern_ylim)
 frame_lwd  <- 0.4
-# the height of a real strip, measured rather than guessed, so the two headings
-# of (B) match those of the composition figure whatever the figure is scaled to
 strip_pt  <- local({
   g <- ggplotGrob(ggplot(data.frame(x = 1, f = levels(sz$G)[1]), aes(x, x)) +
                     facet_wrap(~ f) + fig_theme)
@@ -585,9 +575,9 @@ frame_grob <- rectGrob(x = unit(0.5, "npc"), y = unit(f_base, "npc"),
                                  lwd = frame_lwd * .pt, lineend = "square"))
 
 size_gm  <- sz |> group_by(G) |> summarise(size = gm(size), .groups = "drop")
-size_br  <- max(sz$size) * 1.06        # bracket height, clear of the largest clast
+size_br  <- max(sz$size) * 1.06        
 sz_span  <- log10(size_br) - log10(min(sz$size))
-base_y   <- log10(min(sz$size)) - 0.05 * sz_span   # the baseline, in log10 mm
+base_y   <- log10(min(sz$size)) - 0.05 * sz_span   
 top_y    <- log10(size_br)        + 0.10 * sz_span
 low_y    <- base_y - f_base / (1 - f_base) * (top_y - base_y)
 
@@ -626,15 +616,15 @@ p_size <- ggplot(sz, aes(G, size)) +
                                                 linewidth = frame_lwd),
                     axis.text.x = element_blank())
 
-to_xy  <- function(compact, elongate) {  # barycentric -> plane
+to_xy  <- function(compact, elongate) { 
   data.frame(x = elongate + compact / 2, y = tri_h * compact)
 }
 tri_out <- rbind(to_xy(0, 0), to_xy(0, 1), to_xy(1, 0), to_xy(0, 0))
 sf_pts  <- cbind(to_xy(sz$sf_compact, sz$sf_elongate), G = sz$G)
 
-ca_cuts <- c(0.3, 0.5, 0.7)                 # c/a
-ab_cuts <- c(1 / 3, 2 / 3)                  # (a - b)/(a - c)
-ca_top  <- max(ca_cuts)                     # the apex field is not subdivided
+ca_cuts <- c(0.3, 0.5, 0.7)                
+ab_cuts <- c(1 / 3, 2 / 3)                 
+ca_top  <- max(ca_cuts)                    
 grid_ca <- do.call(rbind, lapply(ca_cuts, function(k)
   data.frame(g = paste0("ca", k), x = c(k / 2, 1 - k / 2), y = tri_h * k)))
 grid_ab <- do.call(rbind, lapply(ab_cuts, function(t)
@@ -659,9 +649,9 @@ psi_df <- do.call(rbind, lapply(seq_along(psi_lines), function(i)
   data.frame(g = i, level = psi_lines[[i]]$level,
              x = psi_lines[[i]]$x, y = psi_lines[[i]]$y)))
 
-n_out    <- c(-tri_h, 0.5)                  # outward normal of the left edge
-n_right  <- c(tri_h, 0.5)                   # and of the right edge
-ca_ticks <- c(0.3, 0.5, 0.7, 1)          # 0 is carried by the base scale
+n_out    <- c(-tri_h, 0.5)              
+n_right  <- c(tri_h, 0.5)              
+ca_ticks <- c(0.3, 0.5, 0.7, 1)          
 tick_ca  <- data.frame(x0 = ca_ticks / 2, y0 = tri_h * ca_ticks,
                        label = formatC(ca_ticks, format = "f", digits = 1))
 tick_ca  <- transform(tick_ca,
@@ -674,33 +664,21 @@ tick_ab  <- data.frame(x0 = ab_ticks, y0 = 0, x1 = ab_ticks, y1 = -0.030,
 vert_lab <- data.frame(
   x = c(0, 1, 0.5), y = c(-0.175, -0.175, tri_h + 0.105),
   label = c("Platy", "Elongate", "Compact"), vj = c(1, 1, 0))
-# both scales carry bare numbers otherwise, so each edge is named as well
 ax_ca <- data.frame(x = 0.25 + 0.235 * n_out[1],
                     y = tri_h / 2 + 0.235 * n_out[2], label = "c/a")
 ax_ab <- data.frame(x = 0.5, y = -0.175, label = "(a−b)/(a−c)")
-
-# the sphericity contours are unreadable unlabelled. On the right edge platy is
-# 0, so b = c there and psi reduces to (c/a)^(1/3): the level meets that edge at
-# c/a = psi^3, which is where each label is hung
 psi_lab <- data.frame(level = psi_lev)
 psi_lab <- transform(psi_lab, x0 = 1 - level^3 / 2, y0 = tri_h * level^3)
 psi_lab <- transform(psi_lab,
                      xl = x0 + 0.035 * n_right[1], yl = y0 + 0.035 * n_right[2],
                      label = paste0("ψ = ",
                                     formatC(level, format = "f", digits = 1)))
-
-# the ten Sneed-Folk form fields, named at the centre of each. The apex field
-# runs from ca_top to 1 undivided, so it takes the whole of the top band
 sf_fields <- rbind(
   data.frame(k = 0.855, t = 0.5,              lab = "C"),
   data.frame(k = 0.640, t = c(1/6, 0.5, 5/6), lab = c("CP", "CB", "CE")),
   data.frame(k = 0.415, t = c(1/6, 0.5, 5/6), lab = c("P", "B", "E")),
   data.frame(k = 0.135, t = c(1/6, 0.5, 5/6), lab = c("VP", "VB", "VE")))
 sf_fields <- transform(sf_fields, x = (1 - k) * t + k / 2, y = tri_h * k)
-
-# highest-density regions, so that the comparison is not driven by the 2.5-fold
-# difference in n. The density is zeroed outside the triangle, which is what
-# makes the contours stop at its edges rather than run past them
 in_tri <- function(x, y) {
   cp <- y / tri_h; el <- x - cp / 2
   cp >= -1e-9 & el >= -1e-9 & (1 - cp - el) >= -1e-9
@@ -724,19 +702,14 @@ hdr_by_G <- lapply(levels(sz$G), function(g) {
   d   <- sf_pts[sf_pts$G == g, ]
   out <- hdr_lines(d$x, d$y, 0.9)
   out$G <- g
-  out$g <- paste(g, out$g)                  # ids unique across the lithologies
+  out$g <- paste(g, out$g)                
   out
 })
 
-# the compositional centre of each lithology, on the closed geometric mean that
-# the Aitchison tests use, so that the figure and the tests report the same
 sf_cen <- sz |> group_by(G) |>
   summarise(a = gm(a_ax), b = gm(b_ax), c = gm(c_ax), .groups = "drop") |>
   mutate(compact = c / a, elongate = (1 - c / a) * (a - b) / (a - c))
 sf_cen <- cbind(to_xy(sf_cen$compact, sf_cen$elongate), G = sf_cen$G)
-
-# one panel, not two facets: facets nest inside the panel row and no longer
-# align with (A). Everything is therefore drawn twice, shifted by tri_dx.
 tri_dx <- 1.30
 two <- function(d, xcols, gcol = NULL) {
   right <- d
@@ -751,17 +724,11 @@ psi_df$g   <- as.character(psi_df$g)
 shift_r    <- function(g) ifelse(g == levels(sz$G)[2], tri_dx, 0)
 sf_pts$x   <- sf_pts$x + shift_r(sf_pts$G)
 sf_cen$x   <- sf_cen$x + shift_r(sf_cen$G)
-# each lithology keeps its own outlines in its own triangle, and the 90 % outline
-# of the other is repeated behind it: that is what makes the two comparable
-# without the reader having to carry one triangle across to the other
 hdr_own   <- rbind(hdr_by_G[[1]], transform(hdr_by_G[[2]], x = x + tri_dx))
 hdr_ghost <- rbind(transform(subset(hdr_by_G[[2]], prob == 0.9),
                              x = x,          g = paste0(g, "_L")),
                    transform(subset(hdr_by_G[[1]], prob == 0.9),
                              x = x + tri_dx, g = paste0(g, "_R")))
-
-# each heading is a bar of strip height hung from the top of the panel, with its
-# label centred in it; both are absolute, so neither moves when the figure does
 head_grob <- function(label) {
   grobTree(rectGrob(y = unit(1, "npc"), height = unit(strip_pt, "pt"),
                     just = c("centre", "top"),
@@ -769,9 +736,6 @@ head_grob <- function(label) {
            textGrob(label, y = unit(1, "npc") - unit(strip_pt / 2, "pt"),
                     gp = gpar(fontface = "bold", fontsize = 8.5, col = "#202124")))
 }
-# the field names sit where the data are densest, so each is set in a ring of
-# background colour and drawn last; the alternative is having them struck
-# through by whichever contour happens to pass
 halo_text <- function(d, size, colour, halo = "white", r = 0.0026) {
   ring <- do.call(rbind, lapply(seq(0, 2 * pi, length.out = 13)[-13],
                                 function(a) transform(d, x = x + r * cos(a),
@@ -783,8 +747,6 @@ halo_text <- function(d, size, colour, halo = "white", r = 0.0026) {
 }
 
 p_form <- ggplot(sf_pts, aes(x, y)) +
-  # the reference frame: class grid dotted, sphericity solid, so that the two
-  # are told apart by style rather than by a difference of grey
   geom_line(data = two(grid_ca, "x", "g"), aes(x, y, group = g),
             inherit.aes = FALSE, linewidth = 0.2, linetype = "22",
             colour = "#D3D7DC") +
@@ -801,11 +763,8 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
             inherit.aes = FALSE, linewidth = 0.5, lineend = "round") +
   geom_point(data = sf_cen, aes(x, y, fill = G), inherit.aes = FALSE,
              shape = 21, size = 2.2, stroke = 0.5, colour = "#202124") +
-  # the outline goes over the data, not under it: a density contour that runs
-  # along an edge would otherwise be drawn on top of the frame
   geom_path(data = two(tri_out, "x", "g"), aes(x, y, group = g),
             inherit.aes = FALSE, linewidth = frame_lwd, colour = "#202124") +
-  # the scales
   geom_segment(data = two(rbind(tick_ca[, c("x0", "y0", "x1", "y1")],
                                 tick_ab[, c("x0", "y0", "x1", "y1")]),
                           c("x0", "x1")),
@@ -883,7 +842,6 @@ knitr::kable(ls_perm_fmt, row.names = FALSE, align = c("l", "r", "r", "r", "r", 
 ```{r}
 #| include: false
 
-# the caption carries numbers, so it is built rather than typed
 rng_txt <- function(v, unit) sprintf("%s to %s %s", f(land_ranges[[v]][1], 0),
                                      f(land_ranges[[v]][2], 0), unit)
 fig8_cap <- sprintf(
@@ -900,8 +858,6 @@ fig8_cap <- sprintf(
 #| fig-height: 4.0
 
 basin_colors <- c(Binchuan = "#6BA8CE", Huangping = "#E07C90")
-# C-E carry a single-hue ramp built on #E69F00: it shares no hue with the two
-# basin colours, so a continuous panel cannot be read as the categorical one
 grad_ramp <- c("#FBE3B0", "#E69F00")
 
 fig_theme <- theme_minimal(base_size = 9) +
@@ -918,11 +874,8 @@ fig_theme <- theme_minimal(base_size = 9) +
         plot.background = element_rect(color = NA, fill = "white"),
         panel.background = element_rect(color = NA, fill = "white"))
 
-# panel A is a column twice as wide as a 2x2 cell, so its points are drawn at
-# twice the 2x2 point size and carry the same visual weight
 RDA_PT <- 2.1
 
-# the axis furniture that would repeat inside the 2x2 block is dropped
 strip_axes <- function(show_x, show_y) {
   th <- theme()
   if (!show_x) th <- th + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
@@ -930,7 +883,6 @@ strip_axes <- function(show_x, show_y) {
   th
 }
 
-# ---- panel B: basin, the one categorical variable ------------------------
 site_panel <- function(show_x, show_y) {
   d <- site_scores |> filter(!is.na(Basin))
   cen <- d |> group_by(Basin) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
@@ -957,7 +909,6 @@ site_panel <- function(show_x, show_y) {
     strip_axes(show_x, show_y)
 }
 
-# ---- panels C-E: one continuous landscape variable each ------------------
 site_grad_panel <- function(var, heading, show_x, show_y) {
   ggplot(site_scores, aes(PC1, PC2, color = .data[[var]])) +
     geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
@@ -972,8 +923,6 @@ site_grad_panel <- function(var, heading, show_x, show_y) {
     strip_axes(show_x, show_y)
 }
 
-# ---- panel A: the constrained ordination ---------------------------------
-# one scalar per arrow set: the arrows fill the panel without changing angles
 arrow_mul <- function(site_xy, arr_xy, fill = 0.9) {
   lim <- c(max(abs(site_xy[, 1]), na.rm = TRUE), max(abs(site_xy[, 2]), na.rm = TRUE))
   amx <- c(max(abs(arr_xy[, 1]), na.rm = TRUE), max(abs(arr_xy[, 2]), na.rm = TRUE))
@@ -993,7 +942,6 @@ bp <- as.data.frame(scores(ls_rda, display = "bp", scaling = 2, choices = 1:2))
 names(bp) <- c("RDA1", "RDA2"); bp$Term <- rownames(bp)
 cn <- as.data.frame(scores(ls_rda, display = "cn", scaling = 2, choices = 1:2))
 names(cn) <- c("RDA1", "RDA2"); cn$Term <- rownames(cn)
-# a factor appears in both bp (contrast) and cn (centroids): keep the centroids
 bp <- bp |> filter(!Term %in% cn$Term)
 bp$Label <- unname(constraint_labels[bp$Term])
 cn$Basin <- factor(sub("^Basin", "", cn$Term), levels = basin_levels_land)
@@ -1001,18 +949,11 @@ cn$Basin <- factor(sub("^Basin", "", cn$Term), levels = basin_levels_land)
 xy    <- as.matrix(sit[, c("RDA1", "RDA2")])
 spe_d <- spe |> mutate(m = arrow_mul(xy, as.matrix(spe[, 1:2]), 0.78), x = RDA1 * m, y = RDA2 * m)
 bp_d  <- bp  |> mutate(m = arrow_mul(xy, as.matrix(bp[, 1:2]),  0.92), x = RDA1 * m, y = RDA2 * m)
-
-# every label in ONE repel layer: separate layers cannot see one another and
-# pile up around the origin. Responses plain, landscape terms bold.
 lab_df <- bind_rows(spe_d |> transmute(x, y, Label, face = "plain"),
                     bp_d  |> transmute(x, y, Label, face = "bold"))
-# seed each label a step outward along its own arrow before repelling, so the
-# short arrows (the weak terms) clear the cluster of points at the origin
 rad <- sqrt(lab_df$x^2 + lab_df$y^2)
 lab_df$nx <- lab_df$x / pmax(rad, 1e-9) * 0.5
 lab_df$ny <- lab_df$y / pmax(rad, 1e-9) * 0.5
-# half-width of the square panel: furthest of points, arrow tips and seeded
-# label positions, plus room for the label text
 sq_lim <- max(abs(c(sit$RDA1, sit$RDA2, spe_d$x, spe_d$y, bp_d$x, bp_d$y,
                     lab_df$x + lab_df$nx, lab_df$y + lab_df$ny)), na.rm = TRUE) * 1.16
 hul_a <- sit |> group_by(Basin) |> filter(n() >= 3) |>
@@ -1045,9 +986,6 @@ pA <- ggplot() +
   scale_x_continuous(expand = expansion(0)) + scale_y_continuous(expand = expansion(0)) +
   labs(x = sprintf("RDA1 (%.1f%%)", ls_rda_vexp[1]),
        y = sprintf("RDA2 (%.1f%%)", ls_rda_vexp[2])) +
-  # square panel on symmetric limits. coord_fixed alone gives equal aspect, which
-  # an ordination needs so that between-locality distances read true; matching
-  # the limits as well is what makes the panel itself square.
   coord_fixed(xlim = c(-sq_lim, sq_lim), ylim = c(-sq_lim, sq_lim)) +
   fig_theme +
   theme(panel.grid.major = element_blank(),
@@ -1059,10 +997,6 @@ pA <- ggplot() +
         legend.margin = margin(2, 5, 2, 2)) +
   guides(color = guide_legend(override.aes = list(size = RDA_PT, alpha = 1)))
 
-# 2.29, not 2: panel A is forced square by coord_fixed, so unless the column it
-# sits in is itself square the square is centred in a taller slot and its top and
-# bottom edges pull away from the 2x2 block. At 7.5 x 4.0 in this is the ratio
-# that makes A's slot square. Re-derive it if the figure size or type size changes.
 (pA + labs(tag = "A")) +
   (site_panel(show_x = FALSE, show_y = TRUE) + labs(tag = "B")) +
   (site_grad_panel("Height_above_river", "Height above channel", FALSE, FALSE) +
@@ -1073,7 +1007,7 @@ pA <- ggplot() +
   plot_layout(design = "ABC\nADE", widths = c(2.29, 1, 1))
 ```
 
-A weak but consistent pattern is nevertheless apparent: all seven measures show positive correlations with distance to the nearest channel (Spearman's ρ = `r f(min(ls_dist_rho), 2)`–`r f(max(ls_dist_rho), 2)`; @tbl-distance-correlations; Fig. S8), with more distant localities tending to yield thicker and more heavily reduced Quina scrapers. The weaker relationship with overall size than with thickness (ρ = `r f(ls_dist_rho[["GM"]], 2)` vs. `r f(ls_dist_rho[["Thickness"]], 2)`) suggests that this is not simply a matter of larger blanks being transported farther; more distant specimens tend to retain greater thickness relative to their size, consistent with greater volume being retained for resharpening. This direction accords with European Quina, where high reduction is associated with poorer access to raw materials [@turq2000; @hiscock2009]. However, none of the correlations is significant after correction. The pattern is therefore suggestive rather than conclusive, and we treat it as a plausible exploratory hypothesis with the potential to be supported by future evidence.
+A weak but consistent pattern is nevertheless apparent: all seven measures show positive correlations with distance to the nearest channel (Spearman's ρ = `r f(min(ls_dist_rho), 2)`–`r f(max(ls_dist_rho), 2)`; @tbl-distance-correlations; Fig. S7), with more distant localities tending to yield thicker and more heavily reduced Quina scrapers. The weaker relationship with overall size than with thickness (ρ = `r f(ls_dist_rho[["GM"]], 2)` vs. `r f(ls_dist_rho[["Thickness"]], 2)`) suggests that this is not simply a matter of larger blanks being transported farther; more distant specimens tend to retain greater thickness relative to their size, consistent with greater volume being retained for resharpening. This direction accords with European Quina, where high reduction is associated with poorer access to raw materials [@turq2000; @hiscock2009]. However, none of the correlations is significant after correction. The pattern is therefore suggestive rather than conclusive, and we treat it as a plausible exploratory hypothesis with the potential to be supported by future evidence.
 
 ```{r}
 #| label: tbl-distance-correlations
