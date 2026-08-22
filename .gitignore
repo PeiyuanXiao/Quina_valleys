@@ -39,3 +39,7 @@ Rplots.pdf
 .Rproj.user
 .Rproj.user
 .Rproj.user
+
+# Cached Stan fits from paper/mixed_model_tutorial.qmd (~19 MB binaries;
+# rebuilt automatically when the tutorial renders without them)
+paper/mixed_model_tutorial_cache/
