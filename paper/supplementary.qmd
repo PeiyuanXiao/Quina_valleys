@@ -214,13 +214,15 @@ basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
 
 \newpage
 
+# Introduction
+
 This document accompanies the main text and provides the complete statistical output underlying the reported results, together with the diagnostic and robustness analyses that support their interpretation. It is divided into two parts.
 
 The first part describes the computational environment and parameter settings in detail, ensuring that every reported value can be reproduced exactly. The second part presents the tables and figures, which are arranged in the order in which the results are discussed in the main text and grouped into four sections: the techno-typological characterisation of the retouch products; the technological consistency of the surface collections with the excavated assemblage from Longtan; the organisation of raw material use; and the landscape structure of technological variation. Each section begins with a brief guide to its contents, and each table and figure caption is written to be self-contained, allowing the materials to be understood without reference to the main text.
 
 \newpage
 
-# Computational environment and settings
+# Part 1: Computational environment and settings
 
 Every value reported here is computed from the same data, in the same analysis run, and using the same fixed random seed (2226) as its corresponding value in the main text. Both documents are generated from a single analysis file, ensuring that no numerical result can differ between them. The data and code required to reproduce this document are deposited with the research compendium at OSF.
 
@@ -243,7 +245,7 @@ Three resampling settings govern the results reported in Part 2. All permutation
 
 \newpage
 
-# Detailed results
+# Part 2: Detailed results
 
 ## Techno-typological characterisation of the retouch products
 
