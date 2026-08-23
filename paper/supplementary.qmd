@@ -224,7 +224,7 @@ The first part describes the computational environment and parameter settings in
 
 # Part 1: Computational environment and settings
 
-Every value reported here is computed from the same data, in the same analysis run, and using the same fixed random seed (2226) as its corresponding value in the main text. Both documents are generated from a single analysis file, ensuring that no numerical result can differ between them. The data and code required to reproduce this document are deposited with the research compendium at OSF.
+Every value reported here is computed from the same data as presented in the main manuscript, in the same analysis run, and using the same fixed random seed (2226) as its corresponding value in the main text. The data and code required to reproduce this document are deposited with the research compendium at OSF.
 
 All analyses were conducted in `r R.version.string` [@R-base], with the packages given in @tbl-software.
 
