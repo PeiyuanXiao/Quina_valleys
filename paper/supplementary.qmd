@@ -118,6 +118,8 @@ si_pkg_tbl <- tribble(
   "vegan",      "[@R-vegan]",        "Distance matrices, PERMANOVA, PERMDISP and redundancy analysis",
   "rstatix",    "[@R-rstatix]",      "Rank and Welch tests, post hoc comparisons and effect sizes",
   "cvequality", "[@R-cvequality]",   "Krishnamoorthy–Lee test for equality of coefficients of variation",
+  "brms",       "[@R-brms]",         "Bayesian multivariate multilevel model at the specimen level",
+  "posterior",  "[@R-posterior]",    "Posterior summaries and convergence diagnostics for that model",
   "MASS",       "[@MASS2002]",       "Kernel density for the cobble form contours",
   "readxl",     "[@R-readxl]",       "Reading the recording sheets",
   "dplyr",      "[@R-dplyr]",        "Data manipulation",
@@ -210,6 +212,65 @@ basin_iqr_wider <- sum(vapply(land_variables, function(v) {
 }, logical(1)))
 basin_iqr_word <- c("none", "one", "two", "three", "four", "five",
                     "six")[basin_iqr_wider + 1]
+
+# ---- 6. Cobble roundness and field-assigned shape -------------------------
+# both were recorded on every surveyed cobble in the field; the quantitative
+# form analysis takes form from the axes instead, so neither enters it
+round_labels <- c("0 (angular)", "1", "2", "3 (rounded)")
+cob <- read_excel(basin_path, sheet = "Sheet1")
+names(cob) <- trimws(names(cob))
+cob <- cob |>
+  transmute(Point = factor(paste0("Loc", Loc)),
+            Material = factor(harmonise_lithology(Lithology), levels = material_levels),
+            Round_num = as.integer(Roundness),
+            Roundness = factor(Round_num, levels = 0:3, labels = round_labels,
+                               ordered = TRUE),
+            Shape = factor(trimws(as.character(Shape)))) |>
+  filter(!is.na(Material), !is.na(Roundness), !is.na(Shape)) |>
+  droplevels()
+n_cob_round <- nrow(cob)
+n_cob_quartz <- sum(cob$Material == "Quartz")
+n_cob_mud    <- sum(cob$Material == "Mudstone")
+
+# the tests are on the two lithologies the manuscript compares; quartz and
+# mudstone are carried in the tables as counts only
+cob_ts <- cob |> filter(Material %in% c("Trachyte", "Sandstone")) |> droplevels()
+rnd_nT <- sum(cob_ts$Material == "Trachyte")
+rnd_nS <- sum(cob_ts$Material == "Sandstone")
+
+# roundness is ordinal: Mann-Whitney U, with the rank-biserial correlation
+# 2U/(n1 n2) - 1, positive when the trachyte cobbles rank the more rounded
+rnd_mw <- suppressWarnings(wilcox.test(Round_num ~ Material, data = cob_ts))
+rnd_U  <- unname(rnd_mw$statistic)
+rnd_rb <- 2 * rnd_U / (rnd_nT * rnd_nS) - 1
+
+# shape is nominal: Fisher exact with a Monte Carlo p, and Cramer's V. Its RNG
+# use is insulated, as the Krishnamoorthy-Lee test's is, so that nothing drawn
+# later in the document depends on how many replicates it took
+shp_tab <- table(cob_ts$Material, cob_ts$Shape)
+shp_fisher <- local({
+  old <- if (exists(".Random.seed", envir = .GlobalEnv))
+    get(".Random.seed", envir = .GlobalEnv) else NULL
+  on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = .GlobalEnv))
+  set.seed(2226)
+  fisher.test(shp_tab, simulate.p.value = TRUE, B = FISHER_B)
+})
+shp_V <- sqrt(unname(suppressWarnings(chisq.test(shp_tab))$statistic) /
+                (sum(shp_tab) * (min(dim(shp_tab)) - 1)))
+
+# count with row percentage: the cell of both cobble-descriptor tables. With a
+# label the block is given a bold heading row and its rows are indented under it
+ct_cells <- function(tb, label = NULL) {
+  pct  <- 100 * prop.table(tb, 1)
+  body <- data.frame(Row = paste0(if (is.null(label)) "" else IND, rownames(tb)),
+                     check.names = FALSE)
+  for (j in colnames(tb))
+    body[[j]] <- sprintf("%d (%s%%)", tb[, j], f(pct[, j], 1))
+  body$n <- as.character(rowSums(tb))
+  if (is.null(label)) return(body)
+  head <- body[1, ]; head[] <- ""; head$Row <- sprintf("**%s**", label)
+  bind_rows(head, body)
+}
 ```
 
 \newpage
@@ -401,7 +462,9 @@ ggplot(long_ea, aes(y = .data[[focal_ea]])) +
 
 ## Technological consistency
 
-This section compares the surface Quina scrapers with the excavated Quina scrapers from Longtan, against the Longtan non-Quina scrapers as a control. @fig-qq shows the distribution of each of the six technological variables within each group, the check that stands behind the choice of test. @tbl-tc-permanova to @tbl-tc-pca give the full output of the comparison: the pairwise tests of group position and of group spread, the variable-by-variable tests, and the loadings of the ordination. @tbl-tc-sensitivity and @fig-sensitivity-pca then repeat the analysis with the surface specimens collected from within the area of the Longtan site removed.
+This section compares the surface Quina scrapers with the excavated Quina scrapers from Longtan, against the Longtan non-Quina scrapers as a control. @fig-qq shows the distribution of each of the six technological variables within each group, the check that stands behind the choice of test. @tbl-tc-permanova to @tbl-tc-pca give the full output of the comparison: the pairwise tests of group position and of group spread, the variable-by-variable tests, the reduction-stage profile drawn from retouch generations, and the loadings of the ordination. @tbl-tc-sensitivity and @fig-jackknife then repeat the analysis with the surface specimens collected from within the area of the Longtan site removed. @fig-pvalue-curve and @fig-pvalue-curve-epa give the full equivalence *p*-value curves.
+
+Retouch generations is fractional and bounded rather than a count, being the mean number of superimposed retouch layers over a specimen's edges, so the two Quina groups are compared not only in the dispersion of that value but also in the profile it gives across reduction stages (@tbl-tc-rg-profile). The two profiles do not differ (Fisher's exact test with a Monte Carlo *p* over `r n_fmt(FISHER_B)` replicates, *p* `r fp(rg_fisher$p.value)`, Cramér's *V* = `r f(rg_V, 2)`; *n* = `r rg_n[["SC_Quina"]]` surface and `r rg_n[["LT_Quina"]]` Longtan Quina scrapers with a recorded value).
 
 \newpage
 
@@ -587,6 +650,20 @@ knitr::kable(uni_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r")
 \newpage
 
 ```{r}
+#| label: tbl-tc-rg-profile
+#| tbl-cap: "Reduction-stage profile of the two Quina groups, from retouch generations. Retouch generations is the mean number of superimposed retouch layers over a specimen's edges, so it is fractional and bounded rather than a count, and the groups are compared as a profile across reduction stages rather than by a dispersion statistic. Cut points fall between the integers, so that an integer value sits inside a bin and never on a boundary; starting from the finest such scheme, any bin holding fewer than five specimens in either group is merged into its neighbour. Cells give the count with the percentage of the row in parentheses."
+
+rg_out <- ct_cells(rg_tab)
+rg_out[[1]] <- unname(group_labels[rg_out[[1]]])
+
+knitr::kable(rg_out, row.names = FALSE,
+             align = c("l", "r", "r", "r", "r"),
+             col.names = c("Group", rg_bin_labels, "*n*"))
+```
+
+\newpage
+
+```{r}
 #| label: tbl-tc-pca
 #| tbl-cap: "Loadings of all six principal components of the z-scored technological space, with the eigenvalue, the percentage of variance and the cumulative percentage for each."
 
@@ -640,67 +717,23 @@ knitr::kable(sens_out, row.names = FALSE, align = c("l", "l", rep("r", 6)),
 
 \newpage
 
-```{r}
-#| label: fig-sensitivity-pca
-#| fig-cap: "Ordination of the technological space with the surface specimens from within the area of the Longtan site removed, to be compared with panel A of the corresponding figure in the main text. (A) Specimen scores, with convex hulls enclosing each group and filled points marking group centroids. (B) Loadings of the six variables on the same two components, drawn on their own axes so that the specimen scores are not overplotted."
-#| fig-width: 5.9
-#| fig-height: 3.7
+![Leave-one-locality-out jackknife of the technological consistency result. Each iteration removes every surface specimen from one locality and re-runs the two pairwise PERMANOVAs that involve surface material, in the z-scored space of the full pooled data; the standardisation and the ordination are both fitted once, on that full set, and held fixed, so that nothing in the picture moves with the specimens being dropped. (A) *R*² after dropping each locality, one column per comparison and one row per locality, ordered by the number of specimens the iteration removes. The dashed rule is the *R*² of the full sample and the fill of each marker gives the unadjusted *p* of that iteration. Both panels begin at zero, so that the near-zero *R*² of the Quina-to-Quina comparison reads as near zero rather than being stretched across the panel. (B) The ordination as it stands after each of the eight iterations that remove the most specimens: the specimens that remain, a 95% normal ellipse for each group, and each group's centroid as a filled marker.](../figures/jackknife.png){#fig-jackknife width="5.9in"}
 
-sc_s <- permC$pca_scores
-ld_s <- permC$pca_loadings
-cent_s <- sc_s |> group_by(Group) |> summarise(cx = mean(PC1), cy = mean(PC2), .groups = "drop")
-hull_s <- sc_s |> group_by(Group) |> filter(n() >= 3) |>
-  group_modify(function(g, k) { h <- chull(g$PC1, g$PC2); bind_rows(g[h, ], g[h[1], ]) }) |> ungroup()
-arr_s <- ld_s |> mutate(Label = variable_labels_bare[Variable])
+\newpage
 
-p_scores <- ggplot(sc_s, aes(PC1, PC2, color = Group)) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  geom_polygon(data = hull_s, aes(fill = Group, group = Group), alpha = 0.18, color = NA) +
-  geom_point(size = 1.1, alpha = 0.7, shape = 16) +
-  geom_point(data = cent_s, aes(cx, cy, fill = Group), shape = 21, color = "#5A5F66",
-             size = 2.4, stroke = 0.6, inherit.aes = FALSE) +
-  scale_color_manual(values = group_colors, labels = group_labels) +
-  scale_fill_manual(values = group_colors, labels = group_labels) +
-  scale_x_continuous(expand = expansion(mult = 0.14)) +
-  scale_y_continuous(expand = expansion(mult = 0.10)) +
-  labs(x = sprintf("PC1 (%.1f%%)", permC$var_explained[1]),
-       y = sprintf("PC2 (%.1f%%)", permC$var_explained[2])) +
-  fig_theme +
-  theme(panel.grid.major = element_blank(), legend.text = element_text(size = 8)) +
-  guides(fill = "none",
-         color = guide_legend(nrow = 1, override.aes = list(size = 1.8, alpha = 1)))
+![Equivalence *p*-value curves for the ratio ρ = |mean(SC Quina) − mean(LT Quina)| / |mean(LT Quina) − mean(LT non-Quina)|. For each measure, *p*(Δ) is the proportion of cluster-bootstrap replicates (*R* = 20,000) with ρ ≥ Δ; equivalence holds at level α when *p* ≤ α. (A) The multivariate centroid (Euclidean distance in z-scored six-variable space). (B) The six single variables on the same ρ axis. (C) The same six curves, one per facet, with the *x* axis rescaled to the variable's own units. In all panels the dashed horizontal rule is α = 0.05, the hollow circle marks the crossing point, and the solid vertical rule is Δ = 1, the bound at which the two Quina groups would differ as much as Quina differs from non-Quina.](../figures/pvalue_curve.png){#fig-pvalue-curve width="5.9in"}
 
-circle_ref <- data.frame(theta = seq(0, 2 * pi, length.out = 200)) |>
-  mutate(x = cos(theta), y = sin(theta))
-lim_s <- 1.12
-p_loadings <- ggplot(arr_s, aes(PC1, PC2)) +
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3, color = "grey55") +
-  geom_path(data = circle_ref, aes(x, y), linewidth = 0.3, color = "grey70",
-            linetype = "dashed", inherit.aes = FALSE) +
-  geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2),
-               arrow = arrow(length = unit(0.075, "cm"), type = "open", angle = 22),
-               linewidth = 0.3, color = "#5A5F66") +
-  geom_text_repel(aes(label = Label), size = 2.2, color = "#3A3D42",
-                  bg.color = "white", bg.r = 0.12, segment.color = "grey55",
-                  segment.size = 0.2, min.segment.length = 0.2, box.padding = 0.35,
-                  point.padding = 0.1, max.overlaps = Inf, seed = 2226) +
-  scale_x_continuous(limits = c(-lim_s, lim_s)) +
-  scale_y_continuous(limits = c(-lim_s, lim_s)) +
-  labs(x = "PC1 loading", y = "PC2 loading") +
-  fig_theme + theme(panel.grid.major = element_blank())
+\newpage
 
-(p_scores + labs(tag = "A")) + (p_loadings + labs(tag = "B")) +
-  plot_layout(widths = c(1.7, 1), guides = "collect") &
-  theme(legend.position = "bottom", legend.margin = margin(0, 0, 0, 0))
-```
+![Equivalence *p*-value curve for the difference between resharpening-flake EPA and Quina scraper edge angle (degrees), with a secondary Cohen's *d* axis. Cluster-bootstrapped by locality (*R* = 20,000); the *p*-value at each bound Δ is the larger of *P*(diff ≥ Δ) and *P*(diff ≤ −Δ), the standard TOST *p*. The blue vertical line marks the observed difference and the red dotted line marks the reference contrast (surface Quina edge angle minus Longtan non-Quina edge angle).](../figures/pvalue_curve_epa.png){#fig-pvalue-curve-epa width="5.9in"}
 
 \newpage
 
 ## Raw material economy
 
-This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded, and @fig-thin-section the petrography of the trachyte, the dominant raw material. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology.
+This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded, and @fig-thin-section the petrography of the trachyte, the dominant raw material. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology. @tbl-cobble-roundness and @tbl-cobble-shape give the two descriptors recorded in the field on the same cobbles, roundness on the Powers scale and the field-assigned shape term.
+
+Roundness was recorded as the integer codes 0 to 3 of the Powers scale, 0 angular and 3 rounded, and the field-assigned shape as one of three nominal terms; both are complete for all `r n_cob_round` surveyed cobbles. Of the two lithologies the manuscript compares, the trachyte cobbles are the more rounded (Mann–Whitney *U* = `r f(rnd_U, 0)`, *p* `r fp(rnd_mw$p.value)`, rank-biserial correlation = `r f(rnd_rb, 2)`, *n* = `r rnd_nT` trachyte and `r rnd_nS` sandstone), while the shape terms are distributed alike between them (Fisher's exact test with a Monte Carlo *p* over `r n_fmt(FISHER_B)` replicates, *p* `r fp(shp_fisher$p.value)`, Cramér's *V* = `r f(shp_V, 2)`). Quartz (*n* = `r n_cob_quartz`) and mudstone (*n* = `r n_cob_mud`) are too few to test and are given in the tables as counts only.
 
 \newpage
 
@@ -824,9 +857,39 @@ knitr::kable(size_out, row.names = FALSE, align = c("l", "r", "r", "r", "r", "r"
 
 \newpage
 
+```{r}
+#| label: tbl-cobble-roundness
+#| tbl-cap: "Roundness of the surveyed river cobbles, recorded in the field on the Powers scale as the integer codes 0 to 3 with 0 angular and 3 rounded. The two panels are the same cobbles partitioned two ways, by lithology and by sampling point. Cells give the count with the percentage of the row in parentheses."
+
+rnd_out <- bind_rows(
+  ct_cells(table(cob$Material, cob$Roundness), "By lithology"),
+  ct_cells(table(cob$Point, cob$Roundness), "By sampling point"))
+
+knitr::kable(rnd_out, row.names = FALSE,
+             align = c("l", "r", "r", "r", "r", "r"),
+             col.names = c("Group", round_labels, "*n*"))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-cobble-shape
+#| tbl-cap: "Field-assigned shape of the surveyed river cobbles by lithology. The term is a nominal field record with three categories, and is distinct from the quantitative form analysis reported in the main text, which takes form from the three axes rather than from the field term. Cells give the count with the percentage of the row in parentheses."
+
+shape_out <- ct_cells(table(cob$Material, cob$Shape))
+
+knitr::kable(shape_out, row.names = FALSE,
+             align = c("l", "r", "r", "r", "r"),
+             col.names = c("Raw material", levels(cob$Shape), "*n*"))
+```
+
+\newpage
+
 ## Landscape structure
 
-This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the seven measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins.
+This section asks whether the technological variation follows position in the landscape, with the locality rather than the specimen as the unit. @tbl-locality-matrix lists the localities that enter the analysis with their median value on each of the seven measures, and @tbl-landscape-permanova tests each landscape variable against that space. The ordination of the localities, coloured by each landscape variable, is figured in the main text; the two figures here show the same data broken out variable by variable, @fig-landscape-scatter as each measure against each of the continuous variables and @fig-basin-boxplot as a comparison between the two basins. @tbl-brms-coef and @tbl-brms-icc then put the same question to the specimens themselves, without pooling each locality to a median.
+
+Pooling a locality to its median discards the spread within it and weights a locality of two specimens as heavily as one of twenty, so the same four predictors were also fitted to the `r n_brms` individual scrapers from `r n_brms_loc` localities in a single multivariate multilevel model (@tbl-brms-coef). Of its `r nrow(brms_coef)` landscape coefficients, `r brms_cri_excl_zero` have a 95% credible interval clear of zero. The locality itself carries a modest share of the variance in every measure, with intraclass correlations from `r f(min(brms_icc$ICC), 2)` to `r f(max(brms_icc$ICC), 2)` (@tbl-brms-icc). The sampler converged: `r brms_div` divergent transitions, `r brms_treedepth` iterations at maximum treedepth, a maximum R-hat of `r f(brms_max_rhat, 3)` and a minimum effective sample size of `r n_fmt(round(brms_min_ess))` across `r n_fmt(brms_ndraws)` post-warmup draws, from `r BRMS_CHAINS` chains of `r n_fmt(BRMS_ITER)` iterations.
 
 \newpage
 
@@ -950,6 +1013,48 @@ ggplot(basin_long, aes(Basin, Value)) +
   labs(x = NULL, y = NULL) +
   fig_theme +
   theme(panel.grid.major = element_blank())
+```
+
+\newpage
+
+```{r}
+#| label: tbl-brms-coef
+#| tbl-cap: "Landscape terms in the specimen-level multivariate multilevel model. The unit is the individual Quina scraper rather than the locality median, and the seven measures are fitted together in one model, each with the likelihood its scale calls for, with locality carried as a random intercept correlated across responses. Basin is contrasted against Binchuan and the three continuous predictors are z-standardised, so each coefficient is the change on the link scale of its own response per standard deviation of the predictor. The ROPE is a region of practical equivalence of half-width one tenth of the standard deviation of that response on the same scale, and the last column gives the percentage of the posterior that falls inside it."
+
+brms_out <- bind_rows(lapply(brms_resps, function(r) {
+  d <- brms_coef[brms_coef$Response == r, ]
+  bind_rows(
+    data.frame(Term = sprintf("**%s (%s)**", brms_resp_labels[[r]],
+                              brms_fam_labels[[d$Family[1]]]),
+               med = "", ci = "", rope = "", inr = ""),
+    data.frame(Term = paste0(IND, d$Predictor),
+               med  = f(d$Median, 3),
+               ci   = sprintf("%s to %s", f(d$CrI_lower, 3), f(d$CrI_upper, 3)),
+               rope = f(d$ROPE_halfwidth, 3),
+               inr  = f(d$pct_in_ROPE, 1)))
+}))
+
+knitr::kable(brms_out, row.names = FALSE, align = c("l", "r", "r", "r", "r"),
+             col.names = c("Response / landscape term", "Median", "95% CrI",
+                           "ROPE ±", "% in ROPE"))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-brms-icc
+#| tbl-cap: "Share of the variance in each measure that lies between localities rather than within them, from the same model. The intraclass correlation is computed for every posterior draw as the locality variance over the sum of the locality and residual variances, both on the link scale of the response. Residual variance is σ² for the gaussian and lognormal responses, log(1 + 1/μ + 1/shape) for the negative binomial, and the sum of the two trigamma terms for the beta responses, each evaluated at the model intercept."
+
+icc_out <- data.frame(
+  Response = unname(brms_resp_labels[brms_icc$Response]),
+  fam = unname(brms_fam_labels[brms_icc$Family]),
+  sd  = f(brms_icc$sd_Locality, 3),
+  icc = f(brms_icc$ICC, 3),
+  ci  = sprintf("%s to %s", f(brms_icc$ICC_lower, 3), f(brms_icc$ICC_upper, 3)))
+
+knitr::kable(icc_out, row.names = FALSE, align = c("l", "l", "r", "r", "r"),
+             col.names = c("Measure", "Likelihood", "SD (locality)", "ICC",
+                           "95% CrI"))
 ```
 
 \newpage

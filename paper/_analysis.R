@@ -3,6 +3,10 @@
 # the manuscript and in the supplementary material.
 # Input:  data/Quina_scraper_surface.xlsx, data/Longtan_lithic_tools.xlsx,
 #         data/Raw_mat_basin.xlsx, data/Site_information.xlsx
+# Output: output/brms_landscape.rds, the cached fit of the specimen-level
+#         Bayesian model in section 8. That section needs brms and a Stan
+#         backend (cmdstanr or rstan) the first time it runs; every later run
+#         reads the cache, and refits only if the data, formula or priors change.
 # ==========================================================================
 
 library(tidyverse)
@@ -23,6 +27,7 @@ PERM    <- 9999
 B_BOOT  <- 5000   # bootstrap replicates: every percentile interval reported
                   # (dispersion ratios, Spearman rho, Cohen's d)
 MSLR_NR <- 1e5    # Monte Carlo iterations for the KL-MSLRT
+FISHER_B <- 1e4   # Monte Carlo replicates for the Fisher exact tests
 
 # ---- inline-number formatters --------------------------------------------
 f  <- function(x, d = 2) formatC(x, format = "f", digits = d)
@@ -423,6 +428,123 @@ sens_perm_nonq_F   <- c(pwgetE("SC_Quina vs LT_Ordinary", "F"),
 sens_perm_nonq_p   <- max(pwgetE("SC_Quina vs LT_Ordinary", "p_adjusted"),
                           pwgetE("LT_Quina vs LT_Ordinary", "p_adjusted"))
 
+# ---- equivalence in ratio form (cluster bootstrap) -----------------------
+# rho = |mean(SC_Q) - mean(LT_Q)| / |mean(LT_Q) - mean(LT_nonQ)|
+# The multivariate rho uses Euclidean distances between group centroids in the
+# six-variable z-scored space (the same amat used above).
+eq_gi  <- split(seq_len(nrow(complete_data)), complete_data$Group)
+eq_M   <- as.matrix(complete_data[, variables])
+eq_Z   <- amat
+eq_Msc <- eq_M[eq_gi$SC_Quina, ]; eq_Mlq <- eq_M[eq_gi$LT_Quina, ]; eq_Mlo <- eq_M[eq_gi$LT_Ordinary, ]
+eq_Zsc <- eq_Z[eq_gi$SC_Quina, ]; eq_Zlq <- eq_Z[eq_gi$LT_Quina, ]; eq_Zlo <- eq_Z[eq_gi$LT_Ordinary, ]
+
+eq_loc      <- complete_data$Site_ID[eq_gi$SC_Quina]
+eq_loc_rows <- split(seq_along(eq_loc), eq_loc)
+eq_n_loc    <- length(eq_loc_rows)
+eq_n_lq     <- nrow(eq_Mlq); eq_n_lo <- nrow(eq_Mlo)
+
+eq_eu <- function(a, b) sqrt(sum((a - b)^2))
+eq_cm <- function(X, i) colMeans(X[i, , drop = FALSE])
+
+eq_m_sc <- colMeans(eq_Msc); eq_m_lq <- colMeans(eq_Mlq); eq_m_lo <- colMeans(eq_Mlo)
+eq_num0 <- abs(eq_m_sc - eq_m_lq); eq_den0 <- abs(eq_m_lq - eq_m_lo)
+eq_rho0 <- eq_num0 / eq_den0
+
+eq_zc_sc <- colMeans(eq_Zsc); eq_zc_lq <- colMeans(eq_Zlq); eq_zc_lo <- colMeans(eq_Zlo)
+eq_num0_m <- eq_eu(eq_zc_sc, eq_zc_lq); eq_den0_m <- eq_eu(eq_zc_lq, eq_zc_lo)
+eq_rho0_m <- eq_num0_m / eq_den0_m
+
+eq_K <- length(variables)
+set.seed(2226)
+eq_rho_b <- matrix(NA_real_, B_BOOT, eq_K + 1)
+for (b in seq_len(B_BOOT)) {
+  i_sc <- unlist(eq_loc_rows[sample.int(eq_n_loc, eq_n_loc, replace = TRUE)], use.names = FALSE)
+  i_lq <- sample.int(eq_n_lq, eq_n_lq, replace = TRUE)
+  i_lo <- sample.int(eq_n_lo, eq_n_lo, replace = TRUE)
+  msc <- eq_cm(eq_Msc, i_sc); mlq <- eq_cm(eq_Mlq, i_lq); mlo <- eq_cm(eq_Mlo, i_lo)
+  eq_rho_b[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
+  zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
+  eq_rho_b[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
+}
+
+eq_qq <- function(x, p) unname(quantile(x, p, na.rm = TRUE))
+eq_UB95 <- apply(eq_rho_b, 2, eq_qq, 0.95)
+eq_UB95_multi <- eq_UB95[eq_K + 1]
+eq_UB95_pct   <- round(eq_UB95_multi * 100)
+
+# p-value curve bootstrap (higher R for finer resolution)
+R_PC <- 20000
+set.seed(2226)
+eq_rho_pc <- matrix(NA_real_, R_PC, eq_K + 1)
+for (b in seq_len(R_PC)) {
+  i_sc <- unlist(eq_loc_rows[sample.int(eq_n_loc, eq_n_loc, replace = TRUE)], use.names = FALSE)
+  i_lq <- sample.int(eq_n_lq, eq_n_lq, replace = TRUE)
+  i_lo <- sample.int(eq_n_lo, eq_n_lo, replace = TRUE)
+  msc <- eq_cm(eq_Msc, i_sc); mlq <- eq_cm(eq_Mlq, i_lq); mlo <- eq_cm(eq_Mlo, i_lo)
+  eq_rho_pc[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
+  zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
+  eq_rho_pc[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
+}
+
+eq_pc_lev <- c(unname(variable_labels[variables]), "Multivariate (centroid)")
+eq_dgrid  <- seq(0, 1.2, by = 0.005)
+eq_pcurve <- do.call(rbind, lapply(seq_len(eq_K + 1), function(j)
+  data.frame(Measure = eq_pc_lev[j], Delta = eq_dgrid,
+             p = vapply(eq_dgrid, function(d) mean(eq_rho_pc[, j] >= d), numeric(1)))))
+eq_pcurve$Measure <- factor(eq_pcurve$Measure, levels = eq_pc_lev)
+
+eq_pc_d05 <- apply(eq_rho_pc, 2, eq_qq, 0.95)
+eq_pc_p1  <- apply(eq_rho_pc, 2, function(x) mean(x >= 1))
+
+eq_pooled_sd <- function(a, b) {
+  na <- length(a); nb <- length(b)
+  sqrt(((na - 1) * var(a) + (nb - 1) * var(b)) / (na + nb - 2))
+}
+eq_d_discrim <- vapply(variables,
+  function(v) abs((mean(eq_Mlq[, v]) - mean(eq_Mlo[, v])) /
+                    eq_pooled_sd(eq_Mlq[, v], eq_Mlo[, v])), numeric(1))
+
+# ---- leave-one-locality-out jackknife on the surface group ---------------
+# Each iteration drops every surface specimen from one locality and re-runs the
+# two pairwise PERMANOVAs that involve surface material. The standardisation is
+# the one fitted to the full pooled data and is held fixed across iterations, so
+# the geometry does not move with the specimens that are dropped. LT_Quina vs
+# LT_Ordinary carries no surface material and is constant across iterations, but
+# it stays in the Bonferroni family of three that the main analysis uses.
+jk_localities <- sort(unique(complete_data$Site_ID[complete_data$Group == "SC_Quina" &
+                                                     !is.na(complete_data$Site_ID)]))
+jk_pmv <- function(keep, g1, g2) {
+  sel <- keep & complete_data$Group %in% c(g1, g2)
+  sub <- data.frame(Group = droplevels(complete_data$Group[sel]))
+  set.seed(2226)
+  a <- adonis2(dist(amat[sel, ]) ~ Group, data = sub, permutations = PERM)
+  c(n1 = sum(sel & complete_data$Group == g1), R2 = a$R2[1], F = a$F[1],
+    p = a$`Pr(>F)`[1])
+}
+jk_keep_all <- rep(TRUE, nrow(complete_data))
+jk_p_lq_lo  <- unname(jk_pmv(jk_keep_all, "LT_Quina", "LT_Ordinary")["p"])
+jk_one <- function(keep, dropped) {
+  a <- jk_pmv(keep, "SC_Quina", "LT_Quina")
+  b <- jk_pmv(keep, "SC_Quina", "LT_Ordinary")
+  padj <- p.adjust(c(a[["p"]], b[["p"]], jk_p_lq_lo), "bonferroni")
+  data.frame(Dropped = dropped, n_dropped = sum(!keep), n_SC = a[["n1"]],
+             R2_q = a[["R2"]], F_q = a[["F"]], p_q = a[["p"]], padj_q = padj[1],
+             R2_o = b[["R2"]], F_o = b[["F"]], p_o = b[["p"]], padj_o = padj[2])
+}
+jack <- bind_rows(
+  jk_one(jk_keep_all, "(full data)"),
+  bind_rows(lapply(jk_localities, function(l)
+    jk_one(!(complete_data$Group == "SC_Quina" & complete_data$Site_ID %in% l), l))))
+jack_i <- jack[-1, ]                       # the jackknife iterations alone
+jk_n          <- nrow(jack_i)
+jk_R2_q_range <- range(jack_i$R2_q)
+jk_R2_o_range <- range(jack_i$R2_o)
+jk_F_q_range  <- range(jack_i$F_q)
+jk_p_q_min    <- min(jack_i$p_q)
+jk_worst_q    <- jack_i$Dropped[which.max(jack_i$R2_q)]
+jk_flip_raw   <- sum(jack_i$p_q    <= 0.05)   # iterations that would reverse the
+jk_flip_adj   <- sum(jack_i$padj_q <= 0.05)   # non-significant Quina-to-Quina result
+
 # univariate dispersion: KL-MSLRT for the CV family, Fligner-Killeen for the
 # bounded indices and the counts
 disp_vars <- c("Length", "Width", "Thickness", "Mass", "Edge_Angle",
@@ -466,9 +588,53 @@ disp_stat <- function(v, family) {
 }
 disp_tests <- bind_rows(
   lapply(c("Length", "Width", "Thickness", "Mass", "Edge_Angle"), disp_stat, family = "CV"),
+  # retouch generations is left out of this table. It is a bounded fraction, the
+  # mean number of superimposed retouch layers over a specimen's edges, and not a
+  # count, so neither the Fano factor nor the median absolute deviation summarises
+  # it well: it takes so few distinct values that its resampled MAD is zero often
+  # enough to leave the ratio interval unbounded above. The reduction-stage
+  # profile below compares the whole distribution instead
   lapply(c("Ave_GIUR", "Retouch_length_index"), disp_stat, family = "bounded"),
-  lapply(c("N_Scar", "Ave_RG"), disp_stat, family = "count"))
+  lapply("N_Scar", disp_stat, family = "count"))
 disp_min_p <- min(disp_tests$p)
+
+# ---- reduction-stage profile from retouch generations ---------------------
+# Retouch generations is the mean number of superimposed retouch layers over a
+# specimen's edges, so it is fractional and bounded rather than a count, and a
+# dispersion statistic says little about it. The question it answers directly
+# is whether the two Quina groups carry the same profile across reduction
+# stages, which is a question about the shape of the distribution and is put to
+# a contingency table. Cut points fall between the integers, so that an integer
+# value sits inside a bin and never on a boundary; starting from the finest
+# such scheme, any bin holding fewer than five specimens in either group is
+# merged into its neighbour until all pass.
+rg_df <- disp_all |>
+  transmute(Group = factor(Group, levels = c("SC_Quina", "LT_Quina")), RG = Ave_RG) |>
+  filter(is.finite(RG))
+rg_cuts <- c(1.5, 2.5, 3.5)
+repeat {
+  tb <- unclass(table(rg_df$Group, cut(rg_df$RG, c(-Inf, rg_cuts, Inf), right = TRUE)))
+  if (all(apply(tb, 2, min) >= 5) || length(rg_cuts) == 0) break
+  j <- which.min(apply(tb, 2, min))
+  rg_cuts <- rg_cuts[-if (j == 1) 1 else j - 1]
+}
+rg_bin_labels <- c(paste0("\u2264 ", rg_cuts[1]),
+                   if (length(rg_cuts) > 1)
+                     paste0("(", head(rg_cuts, -1), ", ", rg_cuts[-1], "]"),
+                   paste0("> ", rg_cuts[length(rg_cuts)]))
+rg_df$Bin <- cut(rg_df$RG, c(-Inf, rg_cuts, Inf), right = TRUE, labels = rg_bin_labels)
+rg_tab <- table(rg_df$Group, rg_df$Bin)
+rg_n   <- rowSums(rg_tab)
+# the p is Monte Carlo, so its RNG use is insulated as the KL-MSLRT's is
+rg_fisher <- local({
+  old <- if (exists(".Random.seed", envir = .GlobalEnv))
+    get(".Random.seed", envir = .GlobalEnv) else NULL
+  on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = .GlobalEnv))
+  set.seed(2226)
+  fisher.test(rg_tab, simulate.p.value = TRUE, B = FISHER_B)
+})
+rg_V <- sqrt(unname(suppressWarnings(chisq.test(rg_tab, correct = FALSE))$statistic) /
+               (sum(rg_tab) * (min(dim(rg_tab)) - 1)))
 
 tc <- list(pca_scores = permA$pca_scores, pca_loadings = permA$pca_loadings,
            var_explained = permA$var_explained, n_by_group = permA$n_by_group,
@@ -589,3 +755,128 @@ ls_dist_cor <- bind_rows(lapply(land_variables, function(v) {
 }))
 ls_dist_cor$p_adj <- p.adjust(ls_dist_cor$p, "bonferroni")
 ls_dist_rho <- setNames(ls_dist_cor$rho, ls_dist_cor$variable)
+
+# --------------------------------------------------------------------------
+# 8. Landscape structure at the specimen level (Bayesian multilevel model)
+#    Section 7 pools each locality to a median before testing, which throws
+#    away the within-locality spread and weights a locality of two specimens
+#    as heavily as one of twenty. Here the unit is the individual scraper:
+#    seven responses in one multivariate model, each with the likelihood its
+#    scale calls for, locality carried as a random intercept correlated across
+#    responses, and the same four predictors as the locality-level model.
+#    The fit is cached in output/brms_landscape.rds and is refitted only when
+#    the data, the formula or the priors change; delete the file to force a
+#    refit. Fitting needs brms and a working Stan backend (cmdstanr or rstan).
+# --------------------------------------------------------------------------
+BRMS_CHAINS <- 4
+BRMS_ITER   <- 4000
+BRMS_CORES  <- 4
+ROPE_SD     <- 0.1   # ROPE half-width, in SD of the response on its link scale
+
+# the specimen-level frame: scL is already complete on the seven measures
+mod_dat <- scL |>
+  filter(!is.na(Basin), is.finite(Distance_to_water), is.finite(Height_above_river)) |>
+  group_by(Site_ID) |> mutate(AsmSize = n()) |> ungroup() |>
+  transmute(Locality = Site_ID, Basin,
+            Thickness, GMsize = GM, GIUR = Ave_GIUR, RLI = Retouch_length_index,
+            NScar = as.integer(N_Scar), EdgeAngle = Edge_Angle, RG = Ave_RG,
+            zHeight   = as.numeric(scale(Height_above_river)),
+            zDistance = as.numeric(scale(Distance_to_water)),
+            zAsmSize  = as.numeric(scale(AsmSize)))
+n_brms     <- nrow(mod_dat)
+n_brms_loc <- length(unique(mod_dat$Locality))
+
+# thickness and size are positive and right-skewed, GIUR and the retouched
+# perimeter are proportions with mass at 1, the scar count is a count, and the
+# two angles-and-generations measures are taken as gaussian
+brms_resp_fam <- c(Thickness = "lognormal", GMsize = "lognormal",
+                   GIUR = "zoib", RLI = "zoib", NScar = "negbinomial",
+                   EdgeAngle = "gaussian", RG = "gaussian")
+brms_resps <- names(brms_resp_fam)
+brms_pred_labels <- c(BasinHuangping = "Basin (Huangping vs Binchuan)",
+                      zHeight   = "Height above channel (z)",
+                      zDistance = "Distance to channel (z)",
+                      zAsmSize  = "Assemblage size (z)")
+brms_resp_labels <- c(Thickness = "Thickness", GMsize = "Quina scraper size",
+                      GIUR = "GIUR", RLI = "Retouched perimeter",
+                      NScar = "Total scars", EdgeAngle = "Edge angle",
+                      RG = "Retouch generations")
+brms_fam_labels <- c(lognormal = "lognormal", zoib = "zero-one-inflated beta",
+                     negbinomial = "negative binomial", gaussian = "gaussian")
+
+stopifnot(requireNamespace("brms", quietly = TRUE),
+          requireNamespace("posterior", quietly = TRUE))
+dir.create(here("output"), showWarnings = FALSE, recursive = TRUE)
+brms_backend <- if (requireNamespace("cmdstanr", quietly = TRUE) &&
+                    !inherits(try(cmdstanr::cmdstan_version(), silent = TRUE), "try-error"))
+  "cmdstanr" else "rstan"
+brms_fit <- local({
+  fam_of <- function(f) switch(f, lognormal = brms::lognormal(),
+                               zoib = brms::zero_one_inflated_beta(),
+                               negbinomial = brms::negbinomial(), gaussian = gaussian())
+  rhs <- "Basin + zHeight + zDistance + zAsmSize + (1 |p| Locality)"
+  mvf <- Reduce(`+`, lapply(brms_resps, function(r)
+    brms::bf(as.formula(paste(r, "~", rhs)), family = fam_of(brms_resp_fam[[r]])))) +
+    brms::set_rescor(FALSE)
+  prs <- do.call(c, lapply(brms_resps, function(r)
+    c(brms::set_prior("normal(0,1)",      class = "b",  resp = r),
+      brms::set_prior("student_t(3,0,2)", class = "sd", resp = r))))
+  brms::brm(mvf, data = mod_dat, prior = prs, chains = BRMS_CHAINS, iter = BRMS_ITER,
+            cores = BRMS_CORES, seed = 2226, backend = brms_backend,
+            refresh = 0, silent = 2,
+            file = here("output", "brms_landscape"), file_refit = "on_change")
+})
+
+brms_draws  <- posterior::as_draws_df(brms_fit)
+brms_ndraws <- posterior::ndraws(brms_draws)
+
+# ROPE half-width: a tenth of the SD of the response on its own link scale, so
+# that the coefficients and the bound are in the same units
+squeeze <- function(y) { n <- length(y); (y * (n - 1) + 0.5) / n }   # Smithson-Verkuilen
+brms_link_sd <- vapply(brms_resps, function(r) {
+  y <- mod_dat[[r]]
+  switch(brms_resp_fam[[r]], lognormal = sd(log(y)), negbinomial = sd(log(y)),
+         zoib = sd(qlogis(squeeze(y))), gaussian = sd(y))
+}, numeric(1))
+
+brms_coef <- bind_rows(lapply(brms_resps, function(r)
+  bind_rows(lapply(names(brms_pred_labels), function(pp) {
+    x  <- brms_draws[[paste0("b_", r, "_", pp)]]
+    hw <- ROPE_SD * brms_link_sd[[r]]
+    data.frame(Response = r, Family = brms_resp_fam[[r]],
+               Predictor = unname(brms_pred_labels[pp]),
+               Median = median(x),
+               CrI_lower = unname(quantile(x, 0.025)),
+               CrI_upper = unname(quantile(x, 0.975)),
+               ROPE_halfwidth = hw, pct_in_ROPE = 100 * mean(abs(x) < hw))
+  }))))
+# how many of the 28 landscape coefficients have an interval clear of zero
+brms_cri_excl_zero <- sum(brms_coef$CrI_lower > 0 | brms_coef$CrI_upper < 0)
+
+# locality share of the variance, per draw, both parts on the link scale
+brms_icc <- bind_rows(lapply(brms_resps, function(r) {
+  vloc <- brms_draws[[paste0("sd_Locality__", r, "_Intercept")]]^2
+  b0   <- brms_draws[[paste0("b_", r, "_Intercept")]]
+  vres <- switch(brms_resp_fam[[r]],
+    gaussian    = brms_draws[[paste0("sigma_", r)]]^2,
+    lognormal   = brms_draws[[paste0("sigma_", r)]]^2,
+    negbinomial = log(1 + 1 / exp(b0) + 1 / brms_draws[[paste0("shape_", r)]]),
+    zoib        = { mu <- plogis(b0); ph <- brms_draws[[paste0("phi_", r)]]
+                    trigamma(mu * ph) + trigamma((1 - mu) * ph) })
+  icc <- vloc / (vloc + vres)
+  data.frame(Response = r, Family = brms_resp_fam[[r]],
+             sd_Locality = median(sqrt(vloc)), ICC = median(icc),
+             ICC_lower = unname(quantile(icc, 0.025)),
+             ICC_upper = unname(quantile(icc, 0.975)))
+}))
+
+brms_keep <- grep("^(b_|sd_|cor_|sigma_|shape_|phi_|zoi_|coi_)",
+                  posterior::variables(brms_draws), value = TRUE)
+brms_diag <- as.data.frame(posterior::summarise_draws(
+  posterior::subset_draws(brms_draws, variable = brms_keep),
+  "rhat", "ess_bulk", "ess_tail"))
+brms_np        <- brms::nuts_params(brms_fit)
+brms_div       <- sum(brms_np$Value[brms_np$Parameter == "divergent__"])
+brms_treedepth <- sum(brms_np$Value[brms_np$Parameter == "treedepth__"] >= 10)
+brms_max_rhat  <- max(brms_diag$rhat, na.rm = TRUE)
+brms_min_ess   <- min(c(brms_diag$ess_bulk, brms_diag$ess_tail), na.rm = TRUE)
