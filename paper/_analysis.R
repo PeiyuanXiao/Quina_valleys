@@ -7,6 +7,8 @@
 #         Bayesian model in section 8. That section needs brms and a Stan
 #         backend (cmdstanr or rstan) the first time it runs; every later run
 #         reads the cache, and refits only if the data, formula or priors change.
+# Note:   section 6 calls WdStar, which is not on CRAN. Install it once with
+#         remotes::install_github("alekseyenko/WdStar").
 # ==========================================================================
 
 library(tidyverse)
@@ -51,7 +53,7 @@ site_path  <- here("data", "Site_information.xlsx")
 
 material_levels <- c("Trachyte", "Sandstone", "Quartz", "Mudstone", "Andesite")
 river_levels    <- c("Sangyuan", "Liandong", "Caifeng")
-basin_levels    <- c("Binchuan", "Heqing")
+basin_levels    <- c("Binchuan", "Huangping")
 variables       <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                      "N_Scar", "Ave_RG", "Edge_Angle")
 
@@ -71,7 +73,14 @@ harmonise_lithology <- function(x) {
   x <- trimws(as.character(x))
   recode(x, "Quartz sandstone" = "Sandstone", "Coarse sandstone" = "Sandstone")
 }
-strip_basin <- function(x) sub(" basin$", "", trimws(as.character(x)))
+# The second basin is "Huangping basin" in Site_information.xlsx, which recorded
+# it as "Heqing basin" until 2026-08-27; the two names are the same basin and the
+# prose uses Huangping. Folding them here means either version of the sheet gives
+# the same result, and nothing downstream has to know which one it was read from.
+strip_basin <- function(x) {
+  x <- sub(" basin$", "", trimws(as.character(x)))
+  ifelse(x == "Heqing", "Huangping", x)
+}
 gm <- function(x) exp(mean(log(x[is.finite(x) & x > 0])))
 
 q     <- read_excel(sc_path, sheet = "Quina scraper")
@@ -285,19 +294,19 @@ ea_cor["p", ] <- p.adjust(ea_cor["p", ], "bonferroni")
 ea_giur <- ea_cor[, 1]; ea_rli <- ea_cor[, 2]; ea_rg <- ea_cor[, 3]
 
 # --------------------------------------------------------------------------
-# 5. Resharpening flakes: EPA vs Quina scraper edge angle
+# 5. Resharpening flakes: platform descriptives
 # --------------------------------------------------------------------------
-epa   <- as.numeric(rfl$EPA); pd_rf <- as.numeric(rfl$Platform_depth)
-rf_n  <- sum(is.finite(epa))
+# Flake EPA against Quina scraper edge angle -- the Welch test, Cohen's d and
+# the equivalence p-value curve that went with them -- was dropped on
+# 2026-08-26 along with the paragraph in the Results that reported it. EPA is
+# still recorded, and is summarised in the attribute table of the
+# supplementary material, but it is no longer compared with anything.
+pd_rf <- as.numeric(rfl$Platform_depth)
 rf_pd_mean <- mean(pd_rf, na.rm = TRUE); rf_pd_sd <- sd(pd_rf, na.rm = TRUE)
-epa_mean   <- mean(epa,  na.rm = TRUE);  epa_sd   <- sd(epa,  na.rm = TRUE)
-da <- bind_rows(tibble(Group = "edge", Value = ea), tibble(Group = "epa", Value = epa)) |>
-  filter(!is.na(Value)) |> mutate(Group = factor(Group, levels = c("edge", "epa")))
-welch  <- t_test(da, Value ~ Group, var.equal = FALSE, detailed = TRUE)
-welch_t <- welch$statistic; welch_df <- welch$df; welch_p <- welch$p
-set.seed(2226)
-cohd_res <- cohens_d(da, Value ~ Group, var.equal = FALSE, ci = TRUE, nboot = B_BOOT)
-cohd <- cohd_res$effsize; cohd_lo <- cohd_res$conf.low; cohd_hi <- cohd_res$conf.high
+# The count the Results quote is of the flakes on which EPA could be measured,
+# 56 of the 58 in the sheet. Table 1 counts all 58, which is the discrepancy
+# the abstract still carries a query about.
+rf_n  <- sum(is.finite(as.numeric(rfl$EPA)))
 
 # --------------------------------------------------------------------------
 # 6. Technological consistency: surface vs Longtan
@@ -394,7 +403,11 @@ run_permdisp <- function(df) {
        overall_F = pt$tab$F[1], overall_df = pt$tab$Df[1], overall_df_res = pt$tab$Df[2],
        distances = data.frame(Group = mvd$Group, distance = unname(bd$distances)),
        pairwise = pt$pairwise$permuted, pair_tab = pair_tab, n_by_group = table(mvd$Group),
-       pca_scores = data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2], Group = mvd$Group),
+       # Site_ID travels with the scores because the jackknife figure of the
+       # supplementary material has to drop one locality's specimens from this
+       # ordination without refitting it
+       pca_scores = data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2],
+                               Group = mvd$Group, Site_ID = mvd$Site_ID),
        pca_loadings = data.frame(Variable = rownames(pca$rotation), pca$rotation, row.names = NULL),
        sdev = pca$sdev, var_explained = vexp)
 }
@@ -405,6 +418,50 @@ permdisp_scltq_F <- pdget(permA, "SC_Quina-LT_Quina", "F")
 permdisp_scltq_p <- pdget(permA, "SC_Quina-LT_Quina", "p")
 permdisp_nonq_F  <- c(pdget(permA, "SC_Quina-LT_Ordinary", "F"), pdget(permA, "LT_Quina-LT_Ordinary", "F"))
 permdisp_nonq_p  <- max(pdget(permA, "SC_Quina-LT_Ordinary", "p"), pdget(permA, "LT_Quina-LT_Ordinary", "p"))
+
+# ---- Wd*: the same comparisons without the equal-dispersion assumption ---
+# PERMANOVA reads a group difference as a difference in position, on the
+# assumption that the groups are equally dispersed about their own centroids.
+# PERMDISP above shows that assumption to fail against the non-Quina scrapers,
+# and where it fails a rejection may follow from unequal spread rather than
+# from position. The Wd* statistic weights each group by its own dispersion
+# instead of pooling them and so does not carry the assumption; it is computed
+# from the authors' own package on the same distances, the same grouping and
+# the same permutations as the PERMANOVA above. The supplementary material
+# extends it to the raw material designs; the three comparisons here are the
+# ones the manuscript reports.
+tc_pairs <- combn(grp_levels, 2, simplify = FALSE)
+wds_of <- function(dm, g) {
+  g <- droplevels(factor(g))
+  set.seed(2226)
+  tt <- WdStar::WdS.test(dm, g, nrep = PERM)
+  # The statistic divides by the within-group dispersion, and a group with no
+  # internal dissimilarity sends it to NaN and the p-value with it. Where that
+  # happens, the same permutations are replayed to record how often it does.
+  undef <- NA_real_
+  if (is.na(tt$p.value)) {
+    set.seed(2226)
+    undef <- mean(!is.finite(replicate(PERM, WdStar::WdS(dm, g[sample(length(g))]))))
+  }
+  c(stat = unname(tt$statistic), p = unname(tt$p.value), undef = undef)
+}
+wds_pair <- function(M, grp, pr) {
+  rows <- grp %in% pr
+  wds_of(dist(M[rows, ]), droplevels(grp[rows]))
+}
+wds_tc <- lapply(tc_pairs, function(pr) wds_pair(amat, complete_data$Group, pr))
+names(wds_tc) <- vapply(tc_pairs, paste, character(1), collapse = " vs ")
+# the Bonferroni family is the same three pairwise comparisons as above
+wds_tc_padj <- p.adjust(vapply(wds_tc, function(x) x[["p"]], numeric(1)), "bonferroni")
+wgetd <- function(comp, what) if (what == "p") unname(wds_tc_padj[comp]) else
+  unname(wds_tc[[comp]][[what]])
+wds_scltq_stat <- wgetd("SC_Quina vs LT_Quina", "stat")
+wds_scltq_p    <- wgetd("SC_Quina vs LT_Quina", "p")
+wds_nonq_stat  <- c(wgetd("SC_Quina vs LT_Ordinary", "stat"),
+                    wgetd("LT_Quina vs LT_Ordinary", "stat"))
+wds_nonq_p     <- max(wgetd("SC_Quina vs LT_Ordinary", "p"),
+                      wgetd("LT_Quina vs LT_Ordinary", "p"))
+
 # sensitivity: drop surface pieces from within the Longtan site area and repeat
 scraper_excl  <- scraper_all |> filter(!(Group == "SC_Quina" & Site_ID %in% "LT"))
 permC <- run_permdisp(scraper_excl)
@@ -476,15 +533,24 @@ eq_UB95_pct   <- round(eq_UB95_multi * 100)
 R_PC <- 20000
 set.seed(2226)
 eq_rho_pc <- matrix(NA_real_, R_PC, eq_K + 1)
+# the raw surface-minus-Longtan difference of the same replicate, kept so that
+# the interval this bootstrap puts on it can be set beside the specimen-level
+# interval TOSTER puts on it (supplementary material, Section 2)
+eq_diff_pc <- matrix(NA_real_, R_PC, eq_K, dimnames = list(NULL, variables))
 for (b in seq_len(R_PC)) {
   i_sc <- unlist(eq_loc_rows[sample.int(eq_n_loc, eq_n_loc, replace = TRUE)], use.names = FALSE)
   i_lq <- sample.int(eq_n_lq, eq_n_lq, replace = TRUE)
   i_lo <- sample.int(eq_n_lo, eq_n_lo, replace = TRUE)
   msc <- eq_cm(eq_Msc, i_sc); mlq <- eq_cm(eq_Mlq, i_lq); mlo <- eq_cm(eq_Mlo, i_lo)
+  eq_diff_pc[b, ] <- msc - mlq
   eq_rho_pc[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
   zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
   eq_rho_pc[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
 }
+# the observed difference and the 90% interval on it: 1 - 2*alpha, the interval
+# a TOST at alpha = 0.05 inverts
+eq_diff0    <- eq_m_sc - eq_m_lq
+eq_diff_ci90 <- apply(eq_diff_pc, 2, eq_qq, c(0.05, 0.95))
 
 eq_pc_lev <- c(unname(variable_labels[variables]), "Multivariate (centroid)")
 eq_dgrid  <- seq(0, 1.2, by = 0.005)
@@ -539,6 +605,8 @@ jack_i <- jack[-1, ]                       # the jackknife iterations alone
 jk_n          <- nrow(jack_i)
 jk_R2_q_range <- range(jack_i$R2_q)
 jk_R2_o_range <- range(jack_i$R2_o)
+jk_F_o_range  <- range(jack_i$F_o)
+jk_p_o_max    <- max(jack_i$p_o)
 jk_F_q_range  <- range(jack_i$F_q)
 jk_p_q_min    <- min(jack_i$p_q)
 jk_worst_q    <- jack_i$Dropped[which.max(jack_i$R2_q)]
@@ -643,25 +711,26 @@ tc <- list(pca_scores = permA$pca_scores, pca_loadings = permA$pca_loadings,
            permdisp = list(means = permA$means, overall_p = permA$overall_p, pairwise = permA$pairwise))
 
 # --------------------------------------------------------------------------
-# 7. Landscape structure of technological variation (locality-level)
+# 7. The locality-level analysis frame
 #    The response set here is the six technological measures PLUS Quina scraper
 #    size, GM = (length * width * thickness)^(1/3): seven measures in all. GM
 #    enters in this section only; `variables`, the six-measure consistency space
 #    of section 6, is left untouched.
-#    The second basin is "Heqing" in Site_information.xlsx and "Huangping" in
-#    the prose; the prose name is the one reported.
+#    This section builds the frame and stops there. The locality-level
+#    PERMANOVA, the redundancy analysis and the Spearman correlations with
+#    distance to the channel that once stood here were removed when the
+#    landscape section was rebuilt on the Bayesian model. The landscape
+#    question is now put to the specimens themselves, in section 8 and in the
+#    BARG report under paper/barg/. What survives here is site_df, which the
+#    supplementary still prints as the locality matrix.
 # --------------------------------------------------------------------------
 land_variables <- c("GM", variables)
 variable_labels_land <- c(GM = "Quina scraper size (mm)", variable_labels)
-variable_labels_land_bare <- sub(" \\(.*\\)$", "", variable_labels_land)
-names(variable_labels_land_bare) <- names(variable_labels_land)
-basin_levels_land <- c("Binchuan", "Huangping")
 
 site_land <- sites |>
   transmute(Site_ID = trimws(as.character(Code)),
             Name = gsub("_", " ", trimws(as.character(name))),
-            Basin = factor(recode(strip_basin(basin), Heqing = "Huangping"),
-                           levels = basin_levels_land),
+            Basin = factor(strip_basin(basin), levels = basin_levels),
             Distance_to_water = as.numeric(d_river_m),
             Height_above_river = as.numeric(h_river_m))
 scL <- q |>
@@ -670,100 +739,22 @@ scL <- q |>
          GM = (Length * Width * Thickness)^(1 / 3)) |>
   left_join(site_land, by = "Site_ID") |>
   filter(if_all(all_of(land_variables), ~ !is.na(.x)))
-site_size <- scL |> count(Site_ID, name = "Site_size")
 site_df <- scL |> group_by(Site_ID) |>
   summarise(n_art = n(), across(all_of(land_variables), ~ median(.x, na.rm = TRUE)),
             Name = first(Name),
             Basin = first(Basin), Distance_to_water = first(Distance_to_water),
-            Height_above_river = first(Height_above_river), .groups = "drop") |>
-  left_join(site_size, by = "Site_ID")
+            Height_above_river = first(Height_above_river), .groups = "drop")
 n_localities <- nrow(site_df)
-ls_mat <- scale(as.matrix(site_df[, land_variables]))
-dL <- dist(ls_mat)
-
-# ---- each landscape variable in a model of its own ------------------------
-grad_permanova <- function(col) {
-  set.seed(2226); a <- adonis2(dL ~ site_df[[col]], permutations = PERM)
-  c(R2 = a$R2[1], F = a$F[1], p = a$`Pr(>F)`[1], Df = a$Df[1], Df_res = a$Df[2],
-    SumOfSqs = a$SumOfSqs[1], SumOfSqs_res = a$SumOfSqs[2])
-}
-ls_size   <- grad_permanova("Site_size")
-ls_dist   <- grad_permanova("Distance_to_water")
-ls_height <- grad_permanova("Height_above_river")
-bdf <- site_df |> filter(!is.na(Basin))
-set.seed(2226); aB <- adonis2(dist(scale(as.matrix(bdf[, land_variables]))) ~ Basin, data = bdf, permutations = PERM)
-ls_basin <- c(R2 = aB$R2[1], F = aB$F[1], p = aB$`Pr(>F)`[1], Df = aB$Df[1], Df_res = aB$Df[2],
-              SumOfSqs = aB$SumOfSqs[1], SumOfSqs_res = aB$SumOfSqs[2])
-n_basin_site <- table(droplevels(site_df$Basin))
-# the four one-variable models together, for the range quoted in the text
-ls_perm <- list(Site_size = ls_size, Basin = ls_basin,
-                Distance_to_water = ls_dist, Height_above_river = ls_height)
-ls_R2 <- vapply(ls_perm, function(v) unname(v[["R2"]]), numeric(1))
-ls_p  <- vapply(ls_perm, function(v) unname(v[["p"]]), numeric(1))
-
-# ---- all four landscape variables in ONE model ----------------------------
-# The omnibus tests the whole model against its residual; the marginal table
-# gives each term after the other three. The design is collinear, so the
-# marginal terms rank relative structure and are not independent effects.
-land_form <- dL ~ Basin + Height_above_river + Distance_to_water + Site_size
-set.seed(2226)
-ls_full_omni <- adonis2(land_form, data = site_df, permutations = PERM, by = NULL)
-set.seed(2226)
-ls_full_margin <- adonis2(land_form, data = site_df, permutations = PERM, by = "margin")
-ls_full <- c(R2 = ls_full_omni$R2[1], F = ls_full_omni$F[1], p = ls_full_omni$`Pr(>F)`[1],
-             Df = ls_full_omni$Df[1], Df_res = ls_full_omni$Df[2],
-             SumOfSqs = ls_full_omni$SumOfSqs[1], SumOfSqs_res = ls_full_omni$SumOfSqs[2])
-ls_margin_terms <- rownames(ls_full_margin)[seq_along(ls_perm)]
-ls_margin_p <- setNames(ls_full_margin$`Pr(>F)`[seq_along(ls_perm)], ls_margin_terms)
-# every landscape p-value in the section: each term after the others, and each
-# term alone. The text quotes the smallest of them.
-ls_any_p_min <- min(c(ls_margin_p, ls_p), na.rm = TRUE)
-
-# ---- the same model as a constrained ordination ---------------------------
-# The response is z-scored and the distance Euclidean, so db-RDA on dL is an
-# RDA on ls_mat: the ordination and the PERMANOVA are one geometry.
-ls_rda <- rda(ls_mat ~ Basin + Height_above_river + Distance_to_water + Site_size,
-              data = site_df)
-ls_rda_r2 <- RsquareAdj(ls_rda)
-set.seed(2226)
-ls_rda_anova <- anova.cca(ls_rda, permutations = PERM)
-ls_rda_vexp <- ls_rda$CCA$eig / ls_rda$tot.chi * 100   # per cent of TOTAL variance
-
-# ---- unconstrained locality ordination, for the single-variable panels ----
-site_pca <- prcomp(ls_mat, center = TRUE, scale. = FALSE)
-site_vexp <- site_pca$sdev^2 / sum(site_pca$sdev^2) * 100
-site_scores <- bind_cols(site_df, as.data.frame(site_pca$x[, 1:2]))
-land_vars <- c(Height_above_river = "Height above channel (m)",
-               Site_size          = "Assemblage size (n specimens)",
-               Distance_to_water  = "Distance to channel (m)")
-land_ranges <- lapply(names(land_vars), function(v) range(site_df[[v]], na.rm = TRUE))
-names(land_ranges) <- names(land_vars)
-
-# bootstrap interval on rho: at this n the interval, not the p-value, is what
-# shows how little the coefficients pin down
-ls_dist_cor <- bind_rows(lapply(land_variables, function(v) {
-  d <- site_df[is.finite(site_df[[v]]) & is.finite(site_df$Distance_to_water), ]
-  ct <- suppressWarnings(cor.test(d[[v]], d$Distance_to_water, method = "spearman", exact = FALSE))
-  set.seed(2226)
-  bs <- replicate(B_BOOT, {
-    i <- sample(nrow(d), replace = TRUE)
-    suppressWarnings(cor(d[[v]][i], d$Distance_to_water[i], method = "spearman"))
-  })
-  ci <- unname(quantile(bs, c(.025, .975), na.rm = TRUE))
-  data.frame(variable = v, n = nrow(d), rho = unname(ct$estimate),
-             lo = ci[1], hi = ci[2], p = ct$p.value)
-}))
-ls_dist_cor$p_adj <- p.adjust(ls_dist_cor$p, "bonferroni")
-ls_dist_rho <- setNames(ls_dist_cor$rho, ls_dist_cor$variable)
 
 # --------------------------------------------------------------------------
 # 8. Landscape structure at the specimen level (Bayesian multilevel model)
-#    Section 7 pools each locality to a median before testing, which throws
-#    away the within-locality spread and weights a locality of two specimens
-#    as heavily as one of twenty. Here the unit is the individual scraper:
-#    seven responses in one multivariate model, each with the likelihood its
-#    scale calls for, locality carried as a random intercept correlated across
-#    responses, and the same four predictors as the locality-level model.
+#    This is the analysis the landscape section of the manuscript reports.
+#    Section 7 pools each locality to a median, which throws away the
+#    within-locality spread and weights a locality of two specimens as heavily
+#    as one of twenty, so nothing is tested on that pooled frame. Here the unit
+#    is the individual scraper: seven responses in one multivariate model, each
+#    with the likelihood its scale calls for, locality carried as a random
+#    intercept correlated across responses, and three landscape predictors.
 #    The fit is cached in output/brms_landscape.rds and is refitted only when
 #    the data, the formula or the priors change; delete the file to force a
 #    refit. Fitting needs brms and a working Stan backend (cmdstanr or rstan).
@@ -776,13 +767,11 @@ ROPE_SD     <- 0.1   # ROPE half-width, in SD of the response on its link scale
 # the specimen-level frame: scL is already complete on the seven measures
 mod_dat <- scL |>
   filter(!is.na(Basin), is.finite(Distance_to_water), is.finite(Height_above_river)) |>
-  group_by(Site_ID) |> mutate(AsmSize = n()) |> ungroup() |>
   transmute(Locality = Site_ID, Basin,
             Thickness, GMsize = GM, GIUR = Ave_GIUR, RLI = Retouch_length_index,
             NScar = as.integer(N_Scar), EdgeAngle = Edge_Angle, RG = Ave_RG,
             zHeight   = as.numeric(scale(Height_above_river)),
-            zDistance = as.numeric(scale(Distance_to_water)),
-            zAsmSize  = as.numeric(scale(AsmSize)))
+            zDistance = as.numeric(scale(Distance_to_water)))
 n_brms     <- nrow(mod_dat)
 n_brms_loc <- length(unique(mod_dat$Locality))
 
@@ -795,8 +784,7 @@ brms_resp_fam <- c(Thickness = "lognormal", GMsize = "lognormal",
 brms_resps <- names(brms_resp_fam)
 brms_pred_labels <- c(BasinHuangping = "Basin (Huangping vs Binchuan)",
                       zHeight   = "Height above channel (z)",
-                      zDistance = "Distance to channel (z)",
-                      zAsmSize  = "Assemblage size (z)")
+                      zDistance = "Distance to channel (z)")
 brms_resp_labels <- c(Thickness = "Thickness", GMsize = "Quina scraper size",
                       GIUR = "GIUR", RLI = "Retouched perimeter",
                       NScar = "Total scars", EdgeAngle = "Edge angle",
@@ -814,7 +802,7 @@ brms_fit <- local({
   fam_of <- function(f) switch(f, lognormal = brms::lognormal(),
                                zoib = brms::zero_one_inflated_beta(),
                                negbinomial = brms::negbinomial(), gaussian = gaussian())
-  rhs <- "Basin + zHeight + zDistance + zAsmSize + (1 |p| Locality)"
+  rhs <- "Basin + zHeight + zDistance + (1 |p| Locality)"
   mvf <- Reduce(`+`, lapply(brms_resps, function(r)
     brms::bf(as.formula(paste(r, "~", rhs)), family = fam_of(brms_resp_fam[[r]])))) +
     brms::set_rescor(FALSE)
@@ -850,7 +838,7 @@ brms_coef <- bind_rows(lapply(brms_resps, function(r)
                CrI_upper = unname(quantile(x, 0.975)),
                ROPE_halfwidth = hw, pct_in_ROPE = 100 * mean(abs(x) < hw))
   }))))
-# how many of the 28 landscape coefficients have an interval clear of zero
+# how many of the 21 landscape coefficients have an interval clear of zero
 brms_cri_excl_zero <- sum(brms_coef$CrI_lower > 0 | brms_coef$CrI_upper < 0)
 
 # locality share of the variance, per draw, both parts on the link scale

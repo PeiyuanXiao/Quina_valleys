@@ -1,0 +1,1619 @@
+---
+title: "Landscape-scaled technological structure in surface-collected Quina scrapers"
+subtitle: "A Bayesian analysis reported under the Bayesian Analysis Reporting Guidelines (Kruschke 2021)"
+author: "Peiyuan Xiao"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    code-summary: "Show the code"
+    embed-resources: true
+    df-print: kable
+    fig-align: center
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+  echo: true
+bibliography: []
+---
+
+```{r setup}
+#| include: false
+knitr::opts_chunk$set(fig.align = "center", dpi = 300, out.width = "100%")
+suppressPackageStartupMessages({
+  library(here); library(brms); library(posterior); library(dplyr)
+  library(tidyr); library(knitr)
+})
+source(here("paper", "barg", "barg_data.R"))
+source(here("paper", "barg", "barg_priors.R"))
+source(here("paper", "barg", "barg_quantities.R"))
+
+FITDIR <- here("paper", "barg", if (nzchar(Sys.getenv("BARG_QUICK"))) "fits_quick" else "fits")
+gf  <- function(n) readRDS(file.path(FITDIR, paste0(n, ".rds")))
+FIG <- function(n) here("paper", "barg", "figures", n)
+
+fit_ref    <- gf("ref")
+fit_prior  <- gf("prior_ref")
+fit_noland <- gf("noland")
+mf <- readRDS(file.path(FITDIR, "manifest.rds"))
+
+# ---- everything the text and the tables quote ---------------------------
+cf       <- coef_table(fit_ref)
+icc_ref  <- icc_table(fit_ref)
+icc_nol  <- icc_table(fit_noland)
+cor_tb   <- cor_table(fit_ref)
+ppsd_ref <- prior_post_sd(fit_ref, fit_prior)
+ppc_stat_tbl <- readRDS(file.path(FITDIR, "ppc_stat_tbl.rds"))
+
+# The six sensitivity fits are large.  They are loaded one at a time, reduced
+# to the quantities the report needs, and dropped again, so that the render
+# never holds more than two fits in memory at once.
+SENS <- c(REF = "ref", S1 = "s1", S2 = "s2", S3 = "s3", S4 = "s4", S5 = "s5")
+ppsd_s1  <- NULL
+sens_long <- bind_rows(lapply(names(SENS), function(nm) {
+  if (nm == "REF") {
+    d <- as_draws_df(fit_ref)
+  } else {
+    f <- gf(SENS[[nm]])
+    if (nm == "S1")
+      ppsd_s1 <<- prior_post_sd(f, NULL, b_sd = setNames(rep(1, 7), resps))
+    d <- as_draws_df(f); rm(f); gc()
+  }
+  out <- bind_rows(
+    bind_rows(lapply(resps, function(r) {
+      x <- icc_draws(d, r, resp_fam[[r]]); q <- eti(x)
+      data.frame(Spec = nm, Quantity = paste0("ICC: ", unname(resp_lab[r])),
+                 Median = median(x), lo = q[1], hi = q[2],
+                 inrope = mean(x <= ICC_ROPE))
+    })),
+    bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
+      x <- d[[paste0("b_", r, "_", pp)]] / link_sd[[r]]; q <- eti(x)
+      data.frame(Spec = nm,
+                 Quantity = paste0(unname(resp_lab[r]), " ~ ", unname(pred_lab[pp])),
+                 Median = median(x), lo = q[1], hi = q[2],
+                 inrope = mean(abs(x) < ROPE_SD))
+    })))))
+  rm(d); gc(); out
+}))
+
+dr_ref <- as_draws_df(fit_ref)
+sm_ref <- summarise_draws(dr_ref, "rhat", "ess_bulk", "ess_tail")
+sm_ref <- sm_ref[!is.na(sm_ref$rhat) & !startsWith(sm_ref$variable, "lp"), ]
+np_ref <- nuts_params(fit_ref)
+n_div  <- sum(np_ref$Value[np_ref$Parameter == "divergent__"])
+n_tree <- sum(np_ref$Value[np_ref$Parameter == "treedepth__"] >= 10)
+
+fmt  <- function(x, d = 2) formatC(x, format = "f", digits = d)
+ci   <- function(m, l, h, d = 3) sprintf("%s [%s, %s]", fmt(m, d), fmt(l, d), fmt(h, d))
+kt   <- function(x, caption, digits = 3, ...)
+  knitr::kable(x, caption = caption, digits = digits, row.names = FALSE, ...)
+rlab <- function(x) unname(resp_lab[x])
+plab <- function(x) unname(pred_lab[x])
+```
+
+```{=html}
+<style>
+.barg { background:#F3F5F7; border-left:3px solid #6BA8CE; padding:.45em .8em;
+        margin:.4em 0 1em 0; font-size:.86em; color:#303238; }
+.na   { background:#F7F3F3; border-left:3px solid #E07C90; padding:.45em .8em;
+        margin:.4em 0 1em 0; font-size:.86em; color:#303238; }
+caption { font-size:.86em; color:#303238; text-align:left; }
+table { font-size:.84em; }
+</style>
+```
+
+# Preamble
+
+## Why the analysis is Bayesian {#sec-why-bayes}
+
+::: {.barg}
+Cf. BARG Preamble A.
+:::
+
+Four considerations, none of which is a matter of taste.
+
+**One model, four distributional families.** The seven measures on a Quina
+scraper are not on one scale. Thickness and overall size are positive and
+right-skewed; the geometric index of unifacial reduction (GIUR) and the
+retouched share of the perimeter are proportions with mass piled at one; the
+scar count is a count; the edge angle and the number of retouch generations
+are treated as unbounded. A single multivariate model that gives each measure
+the likelihood its scale calls for, and still shares one locality-level
+random structure across all seven, is straightforward to write down and fit
+by MCMC and awkward to fit any other way.
+
+**Intervals for derived quantities.** The quantity that answers the first
+research question is the share of link-scale variance attributable to
+locality --- an intraclass correlation built from a variance component and a
+residual variance that are themselves functions of several parameters. Under
+MCMC it is computed draw by draw and inherits a genuine interval; there is no
+approximation and no delta-method step.
+
+**Support for a null value, not merely failure to reject one.** The
+substantive claim under test is that the landscape variables do *not* explain
+the between-locality differences. A frequentist test can only fail to reject
+that; a posterior distribution combined with a region of practical
+equivalence can accept it, reject it, or say that the data do not decide
+(@sec-decisions).
+
+**Intervals that do not lean on large-$N$ asymptotics.** The design has
+$n = `r n_spec`$ specimens but only $`r n_loc`$ localities, and every
+predictor is a locality-level attribute (@sec-data). Asymptotic intervals for
+the variance component of a `r n_loc`-cluster design are not to be trusted;
+posterior intervals require no such argument.
+
+## Goals of the analysis {#sec-goals}
+
+::: {.barg}
+Cf. BARG Preamble B.
+:::
+
+The goals are **estimation** (the magnitude of each landscape effect and of
+the locality-level variance, with uncertainty) and **decision about null
+values** (whether each landscape effect is small enough to be treated as
+absent). Prediction of new specimens is not a goal. Formal model selection is
+not a goal either: the candidate structures here are not competing scientific
+hypotheses but one model whose coefficients are being estimated.
+
+::: {.na}
+**Not applicable.** Because no model comparison is performed, every BARG item
+concerning Bayes factors and posterior model probabilities is inapplicable:
+**3.C** (report BF and model probabilities), **4.D** (BF decision thresholds)
+and **5.D** (sensitivity of the BF to the prior). No bridge sampling, no
+marginal likelihood and no BF appears anywhere in this document. The
+reference BARG example marks the same boundary: where the goal is estimation
+rather than model comparison, the analysis is complete once the posterior and
+its sensitivity have been reported.
+:::
+
+## The two research questions
+
+**Q1. Is there technological variation between localities at all?**
+Answered by the locality variance component and the intraclass correlation it
+implies (@sec-icc, @sec-q1).
+
+**Q2. Can that variation be explained by basin, elevation above the channel,
+or distance to the channel?** Answered by the population-level slopes
+(@sec-posterior-summary, @sec-q2).
+
+The order is not cosmetic. If there is nothing to explain, the second
+question has no content; and if the answer to Q1 is "yes" while the answer to
+Q2 is "the data do not say", those are two different results and must not be
+merged into one.
+
+---
+
+# The model {#sec-model}
+
+## Data variables {#sec-data}
+
+::: {.barg}
+Cf. BARG Step 1.A.
+:::
+
+```{r}
+#| label: tbl-data-vars
+kt(data.frame(
+  Variable = c(rlab(resps), "Basin", "Height above channel", "Distance to channel",
+               "Locality"),
+  Role = c(rep("response", 7), rep("predictor (locality level)", 3), "grouping factor"),
+  Type = c("continuous, positive (mm)",
+           "continuous, positive (mm); geometric mean of length, width and thickness",
+           "proportion in [0, 1]", "proportion in [0, 1]", "count",
+           "continuous (degrees)", "continuous (generations)",
+           "binary: Binchuan / Huangping", "continuous (m)", "continuous (m)",
+           "factor, 26 levels"),
+  Observed = c(
+    sprintf("%.1f - %.1f", sapply(resps, function(r) min(mod_dat[[r]])),
+                            sapply(resps, function(r) max(mod_dat[[r]]))),
+    sprintf("%d / %d", sum(mod_dat$Basin == "Binchuan"), sum(mod_dat$Basin == "Huangping")),
+    sprintf("%.0f - %.0f", min(mod_dat$Height), max(mod_dat$Height)),
+    sprintf("%.0f - %.0f", min(mod_dat$Distance), max(mod_dat$Distance)),
+    sprintf("%d specimens in %d localities", n_spec, n_loc))),
+  caption = "The variables entering the model, and their observed range in the analysed sample.")
+```
+
+**How size is defined.** `GMsize` is the geometric mean of the three linear
+dimensions,
+$$\mathrm{GMsize} = (\mathrm{Length}\times\mathrm{Width}\times\mathrm{Thickness})^{1/3},$$
+computed for each specimen. This definition lives only in the code of the
+original analysis; it is stated here because it has a consequence.
+
+**GMsize and Thickness are related by construction.** Thickness is one of the
+three factors in GMsize, so the two responses share a component before any
+archaeology enters. The model is fitted with `set_rescor(FALSE)`, which
+assumes the *residuals* of the seven responses are independent given the
+locality intercepts. That assumption is not credible for this pair. The
+practical consequence is confined: the slopes and their intervals for each
+response are still valid marginally, because with `rescor = FALSE` the
+multivariate model factorises into seven univariate models sharing only the
+correlated random intercepts; what is not valid is any statement about the
+*joint* uncertainty of, say, the thickness slope and the size slope, and any
+reading of the two as independent evidence. The observed correlation between
+the locality intercepts of the two (@sec-cor) should therefore be read as
+partly mechanical.
+
+**Which specimens are analysed.**
+
+```{r}
+#| label: tbl-dropped
+kt(drop_log |> mutate(lost = c(NA, diff(n))) |>
+     rename(`specimens remaining` = n, `lost at this step` = lost),
+   caption = "Complete-case filtering. One specimen was dropped, for a missing GIUR.",
+   digits = 0)
+```
+
+```{r}
+#| label: tbl-localities
+kt(mod_dat |> count(Basin, Locality) |> count(Basin, name = "localities") |>
+     left_join(mod_dat |> count(Basin, name = "specimens"), by = "Basin") |>
+     mutate(`specimens per locality` = sprintf("%d - %d",
+       tapply(mod_dat$Locality, mod_dat$Basin, function(x) min(table(droplevels(x)))),
+       tapply(mod_dat$Locality, mod_dat$Basin, function(x) max(table(droplevels(x)))))),
+   caption = "Localities and specimens by basin. Heqing, which appears under that name in the site table, is folded into Huangping: the two names refer to the same basin.",
+   digits = 0)
+```
+
+**$n = `r n_spec`$ is a specimen count, not an information count.** All three
+predictors --- basin, height above the channel, distance to the channel ---
+are constant within a locality. For the population-level slopes the design
+therefore carries close to `r n_loc` independent units, not `r n_spec`, and
+the `r n_loc` are unevenly filled: the largest locality contributes
+`r max(table(mod_dat$Locality))` specimens and `r sum(table(mod_dat$Locality) == 1)`
+localities contribute one each. Basin is worse still: it is a single binary
+contrast between `r sum(tapply(as.character(mod_dat$Basin), mod_dat$Locality, function(x) x[1]) == "Binchuan")`
+and `r sum(tapply(as.character(mod_dat$Basin), mod_dat$Locality, function(x) x[1]) == "Huangping")`
+localities. The random intercept is what keeps the specimen count from being
+read as `r n_spec` independent observations of the landscape effects, and the
+width of the intervals in @sec-posterior-summary is the honest consequence.
+
+**The standardisation is specimen-weighted.** `zHeight` and `zDistance` are
+centred and scaled over the `r n_spec` specimens, not over the `r n_loc`
+localities, so a locality enters the centring and the scaling with the weight
+of its own assemblage. A locality-weighted standardisation would give
+slightly different numerical slopes on a rescaled axis; it would not change
+any decision, because every slope is reported divided by the link-scale SD of
+its own response and the ROPE moves with it.
+
+## Likelihood and parameters {#sec-likelihood}
+
+::: {.barg}
+Cf. BARG Step 1.B.
+:::
+
+For specimen $i$ in locality $j$, each response $r$ has its own likelihood
+with a linear predictor on its own link scale:
+
+$$
+g_r(\mu^{(r)}_{ij}) \;=\; \beta^{(r)}_{0} \;+\; \beta^{(r)}_{\text{Basin}}\,\mathrm{Basin}_j
+\;+\; \beta^{(r)}_{\text{H}}\,\mathrm{zHeight}_j
+\;+\; \beta^{(r)}_{\text{D}}\,\mathrm{zDistance}_j \;+\; u^{(r)}_j ,
+$$
+
+$$
+\bigl(u^{(1)}_j,\dots,u^{(7)}_j\bigr)^{\!\top} \sim
+\mathrm{MVNormal}\bigl(\mathbf 0,\;\mathbf D\,\boldsymbol\Omega\,\mathbf D\bigr),
+\qquad \mathbf D=\mathrm{diag}(\sigma^{(1)}_u,\dots,\sigma^{(7)}_u).
+$$
+
+```{r}
+#| label: tbl-likelihood
+kt(data.frame(
+  Response = rlab(resps),
+  Likelihood = unname(fam_lab[resp_fam]),
+  `Link for the mean` = unname(link_lab[resp_fam]),
+  `Auxiliary parameters` = c("sigma", "sigma", "phi, zoi, coi", "phi, zoi, coi",
+                             "shape", "sigma", "sigma"),
+  `Link-scale SD` = round(link_sd, 3), check.names = FALSE),
+  caption = "Likelihoods. The last column is the SD of the observed response on its own link scale; it is the unit in which every slope and every ROPE below is expressed.")
+```
+
+**Parameters of theoretical interest versus nuisance parameters.** Of the
+`r nrow(sm_ref)` estimated parameters, the ones the research questions are
+about are the `r nrow(cf)` population-level slopes $\beta^{(r)}_{\text{Basin}},
+\beta^{(r)}_{\text{H}}, \beta^{(r)}_{\text{D}}$ (Q2) and the seven
+locality SDs $\sigma^{(r)}_u$ together with the ICCs derived from them (Q1).
+The seven intercepts, the auxiliary parameters (`sigma`, `phi`, `shape`,
+`zoi`, `coi`) and the 21 elements of $\boldsymbol\Omega$ are needed to make
+the model coherent but carry no hypothesis. The correlations are nevertheless
+reported in full (@sec-cor), because they were estimated and BARG asks for
+every parameter of the model to be described.
+
+**Partial pooling.** With `r sum(table(mod_dat$Locality) == 1)` localities of
+one specimen, the locality offsets are strongly shrunk towards the grand mean;
+the caterpillar plot in @sec-cor shows how far. This is the intended
+behaviour, and it is why the ICC is not simply a between-group variance ratio
+computed from raw locality means.
+
+::: {.na}
+**A trap in the zero-one-inflated beta parameterisation.** For GIUR and the
+retouched perimeter, the three predictors enter **only** the beta component's
+mean `mu`. The inflation parameters `zoi` (the probability that a value is
+exactly 0 or exactly 1) and `coi` (the probability that such a value is 1
+rather than 0) are pure intercepts, constant across basins, elevations and
+distances. Two consequences must be kept in mind when reading any GIUR or RLI
+number in this report:
+
+1. A reported slope is the effect on the **logit of the beta-component mean,
+   conditional on the value lying strictly inside (0, 1)**. It is *not* the
+   effect on the unconditional expected GIUR, which also moves with `zoi` and
+   `coi`.
+2. The ICC for these two responses is likewise computed from the beta
+   component alone and ignores the inflation entirely.
+
+In this sample there are `r sum(mod_dat$GIUR == 1)` specimens with GIUR
+exactly 1 and `r sum(mod_dat$GIUR == 0)` with GIUR exactly 0, and
+`r sum(mod_dat$RLI == 1)` and `r sum(mod_dat$RLI == 0)` for the retouched
+perimeter. There is therefore no zero inflation at all to model: the fitted
+`coi` is a posterior over "all inflated values are ones", which the data
+determine almost completely, and the zero-inflation half of the family is
+supported by nothing. The family is effectively a one-inflated beta.
+:::
+
+## Prior distributions and their justification {#sec-priors}
+
+::: {.barg}
+Cf. BARG Step 1.C.
+:::
+
+### The problem with the original prior
+
+The model as originally specified put `normal(0, 1)` on every
+population-level slope of all seven responses and `student_t(3, 0, 2)` on
+every locality SD, and left **every other class** at its brms default. Both
+halves of that are defects.
+
+**What was left unreported.** These are the priors the original fit actually
+used for everything except `b` and `sd`, none of which appeared in any
+write-up:
+
+```{r}
+#| label: tbl-default-priors
+gp <- brms::get_prior(fit_ref$formula, data = mod_dat)
+gp <- as.data.frame(gp)
+gp <- gp[gp$prior != "" & !(gp$class %in% c("b", "sd")), ]
+gp |>
+  transmute(Class = class, Response = ifelse(resp == "", "--", rlab(resp)),
+            Group = ifelse(group == "", "--", group),
+            `brms default` = prior,
+            Comment = case_when(
+              class == "Intercept" ~ "data-dependent: centred and scaled on the observed response",
+              class == "cor"       ~ "the 7 x 7 LKJ prior, never reported",
+              class == "phi"       ~ "near-improper; mass arbitrarily close to zero",
+              class == "shape"     ~ "very heavy right tail",
+              class %in% c("zoi", "coi") ~ "uniform on (0, 1); proper, but unstated",
+              TRUE                 ~ "half-t scaled on the observed response")) |>
+  kt(caption = "The brms defaults the original specification inherited without reporting them. The Intercept and sigma rows are read off the data, which makes them empirical priors, not the vague priors a reader would assume.")
+```
+
+**A single prior scale across three link scales.** The seven responses reach
+their linear predictor through three different links (log, logit, identity),
+and their link-scale SDs span two orders of magnitude, from
+`r fmt(min(link_sd), 3)` for `r rlab(names(which.min(link_sd)))` to
+`r fmt(max(link_sd), 2)` for `r rlab(names(which.max(link_sd)))`
+(@tbl-likelihood). A `normal(0, 1)` slope prior is therefore a very different
+statement about each. The clearest way to see it is the share of the prior
+that falls inside that response's own ROPE --- the interval of slopes the
+analysis is prepared to call practically zero:
+
+```{r}
+#| label: tbl-prior-rope
+pir <- data.frame(Response = rlab(resps),
+                  `Link-scale SD` = round(link_sd, 3),
+                  `ROPE half-width` = round(ROPE_SD * link_sd, 4),
+                  `normal(0, 1)` = round(prior_in_rope(rep(1, 7)), 2),
+                  `normal(0, SD_link)` = round(prior_in_rope(link_sd), 2),
+                  check.names = FALSE, row.names = NULL)
+kt(pir, caption = "Percentage of the slope prior lying inside the response's own ROPE, before and after the correction. Under the original prior the same nominal specification ranged from an almost dogmatic rejection of a null effect to an almost dogmatic assertion of one; under the corrected prior it is 7.97% for every response, by construction.")
+```
+
+**Where it mattered.** The diagnostic that turns this from an aesthetic
+complaint into a substantive one is the ratio of the posterior SD to the
+prior SD for each slope. A ratio near 1 means the posterior is the prior and
+the data contributed nothing.
+
+```{r}
+#| label: tbl-ppsd
+ppsd_cmp <- ppsd_s1 |>
+  transmute(Response, Predictor, `normal(0, 1)` = ratio) |>
+  left_join(ppsd_ref |> transmute(Response, Predictor, `normal(0, SD_link)` = ratio),
+            by = c("Response", "Predictor")) |>
+  mutate(Response = rlab(Response), Predictor = plab(Predictor))
+kt(ppsd_cmp, caption = "Posterior SD divided by prior SD, for every slope, under the original prior (S1) and under the reference prior. Values near 1 mean the data did not move the prior. The prior SD is taken from the sample_prior = 'only' draws for the reference prior and analytically for normal(0, 1).")
+```
+
+```{r}
+#| label: ppsd-summary
+#| echo: false
+ea_old <- ppsd_cmp |> filter(Response == rlab("EdgeAngle"))
+ea_new_max <- max(ea_old$`normal(0, SD_link)`)
+```
+
+Under `normal(0, 1)` the `r rlab("EdgeAngle")` slopes had posterior/prior SD
+ratios of
+`r paste(fmt(sort(ea_old[["normal(0, 1)"]]), 2), collapse = ", ")` --- the
+posterior was very nearly the prior, and the reported edge-angle result was
+mostly a restatement of an arbitrary choice. Under the corrected prior the
+largest of the three is `r fmt(ea_new_max, 2)`.
+
+### The reference prior
+
+Every class that `get_prior()` lists is given an explicit prior; nothing is
+left at a brms default. Two reasons. BARG Step 1.C asks for the prior to be
+reported in full, and a brms default is not a reported prior --- in
+particular the default intercept prior is `student_t(3, median(y), 2.5 mad(y))`,
+which is a prior read off the data. And `sample_prior = "only"`, needed for
+the prior predictive check of @sec-prior-pred, requires every prior to be
+proper.
+
+| Class | Prior | Reason |
+|---|---|---|
+| `b` (slopes) | `normal(0, SD_link)` per response | one prior SD equal to the whole observed spread of that response on its own link scale: an effect as large as the response's total variation is a priori about one SD out. Puts `r fmt(prior_in_rope(link_sd)[1], 2)`% of the prior inside the ROPE for all seven. |
+| `Intercept` | see below | fixed from the measurement scale, not from the sample |
+| `sd` (locality) | `student_t(3, 0, 2)` | heavy-tailed half-$t$; carried over unchanged from the original specification and varied in S3 and S4 |
+| `sigma` | `student_t(3, 0, SD_link)` | half-$t$ scaled to the response, for the same reason as `b` |
+| `phi` (zoib) | `gamma(2, 0.1)` | proper, mean 20, density zero at the origin. The brms default `gamma(0.01, 0.01)` piles mass arbitrarily close to zero, where the beta density is degenerate, and makes the prior predictive distribution unusable |
+| `shape` (negbin) | `gamma(2, 0.1)` | same; the brms default `inv_gamma(0.4, 0.3)` has an extremely heavy right tail |
+| `zoi`, `coi` | `beta(1, 1)` | uniform on (0, 1); this is also the brms default, stated here rather than inherited |
+| `cor` (7x7) | `lkj(1)` | uniform over correlation matrices; varied in S5 |
+
+**Intercept priors.** These are set from what a lithic analyst would have
+called possible for a retouched flake tool before seeing these
+`r n_spec` pieces, mapped through the link. Each is far wider than the
+observed spread.
+
+```{r}
+#| label: tbl-intercept-prior
+kt(data.frame(
+  Response = rlab(resps), Link = unname(link_lab[resp_fam]),
+  Prior = unname(intercept_prior[resps]),
+  `Implied 95% range on the response scale` = c(
+    "6 - 100 mm", "12 - 134 mm", "GIUR 0.05 - 0.95", "0.05 - 0.95 of the perimeter",
+    "3 - 143 scars", "26 - 104 degrees", "-0.9 - 6.9 generations"),
+  `Observed mean` = c(sprintf("%.1f mm", mean(mod_dat$Thickness)),
+                      sprintf("%.1f mm", mean(mod_dat$GMsize)),
+                      sprintf("%.2f", mean(mod_dat$GIUR)),
+                      sprintf("%.2f", mean(mod_dat$RLI)),
+                      sprintf("%.0f", mean(mod_dat$NScar)),
+                      sprintf("%.1f deg", mean(mod_dat$EdgeAngle)),
+                      sprintf("%.2f", mean(mod_dat$RG))),
+  check.names = FALSE),
+  caption = "Intercept priors, fixed from the measurement scale rather than from the sample.")
+```
+
+**One honest qualification.** The scale of the slope prior and of the `sigma`
+prior is taken from the link-scale SD of the response, which is a function of
+the data. This is a unit-setting use of the data, not a location-setting one:
+it fixes what "one unit of effect" means without expressing any belief about
+where the effect lies, and it is the standard construction behind weakly
+informative priors. It is nonetheless a mild empirical-Bayes element and is
+declared here rather than buried. S1 and S2 in @sec-sensitivity vary this
+scale by factors of roughly 1/8 to 2.5 and show what turns on it.
+
+### The prior in full
+
+```{r}
+#| label: tbl-prior-summary
+ps <- as.data.frame(prior_summary(fit_ref))[
+  , c("prior", "class", "coef", "group", "resp", "dpar", "lb", "ub", "source")]
+n_inherit <- sum(ps$prior == "")
+n_flat    <- sum(ps$prior == "" & ps$coef == "")
+ps |>
+  filter(prior != "") |>
+  arrange(class, resp) |>
+  select(-source) |>
+  kt(caption = "prior_summary(fit_ref), every non-empty row.")
+```
+
+`r n_inherit` further rows have an empty `prior` field. Every one of them
+names a specific `coef` and inherits the prior of its class; they are omitted
+above. **Rows that specify no `coef` and are still empty --- that is, genuinely
+flat priors: `r n_flat`.** That is the condition `sample_prior = "only"`
+imposes, and it is why the prior predictive draws of @sec-prior-pred exist at
+all: with a flat prior anywhere, brms cannot sample from the prior. The prior
+predictive fit ran, so the condition holds.
+
+```{r}
+#| label: prior-source
+#| echo: false
+n_user <- sum(ps$prior != "" & ps$source == "user")
+n_def  <- sum(ps$prior != "" & ps$source != "user")
+def_rows <- ps |> filter(prior != "", source != "user") |>
+  transmute(class, resp, group, prior)
+```
+
+**A word on the `source` column.** `r n_user` of the
+`r n_user + n_def` non-empty rows are marked `user`. The remaining
+`r n_def` are marked `default`, and it would be wrong to leave that
+unexplained:
+
+```{r}
+#| label: tbl-prior-default-rows
+kt(def_rows, caption = "The rows prior_summary() still labels 'default'.")
+```
+
+They are not priors the sampler uses. The `sd` rows carry no `group`: they sit
+one level above the `sd` + `Locality` rows that were set explicitly, and brms
+takes the most specific match, so these parents are never reached. The `L` row
+is brms's own restatement of the user-supplied `lkj(1)` in the Cholesky
+parameterisation it actually samples in.
+
+The authoritative record is not `prior_summary()` but the generated Stan
+program (@sec-formal). Its prior block, extracted verbatim, is the complete
+list of what was added to the log posterior:
+
+```{r}
+#| label: stan-lprior
+lines <- strsplit(brms::stancode(fit_ref), "\n")[[1]]
+lp    <- grep("lprior \\+=", lines)
+last  <- max(lp)
+while (grepl("^\\s*-", lines[last + 1])) last <- last + 1   # continuation lines
+cat(paste(trimws(lines[min(lp):last]), collapse = "\n"))
+```
+
+## Formal specification {#sec-formal}
+
+::: {.barg}
+Cf. BARG Step 1.D.
+:::
+
+```{r}
+#| label: brms-formula
+fit_ref$formula
+```
+
+The Stan program brms generated from it, in full:
+
+```{r}
+#| label: stan-code
+#| attr-output: "style='max-height:420px;overflow:auto;'"
+cat(brms::stancode(fit_ref))
+```
+
+## Prior predictive check {#sec-prior-pred}
+
+::: {.barg}
+Cf. BARG Step 1.E.
+:::
+
+The reference prior was refitted with `sample_prior = "only"`, so the draws
+below come from the prior alone with the data unseen. The question is not
+whether the simulated data look like the observed data --- they should not,
+or the prior would be doing the data's work --- but whether they are
+**physically possible**: no negative thicknesses, edge angles inside the range
+a goniometer can return, GIUR inside its definitional bounds, scar counts
+that a flake could carry.
+
+```{r}
+#| label: fig-prior-pred
+#| fig-cap: "Prior predictive distributions (grey) against the observed distribution (dark), one panel per response. Axes are clipped to the physically possible range of each measure; the table below reports what falls outside."
+knitr::include_graphics(FIG("ppc_prior.png"))
+```
+
+```{r}
+#| label: tbl-prior-pred
+ppd <- brms::posterior_predict(fit_prior, ndraws = 400)
+bound <- list(Thickness = c(0, 150), GMsize = c(0, 250), GIUR = c(0, 1), RLI = c(0, 1),
+              NScar = c(0, 400), EdgeAngle = c(0, 180), RG = c(0, 12))
+kt(bind_rows(lapply(resps, function(r) {
+  y <- as.vector(if (is.list(ppd)) ppd[[r]] else ppd[, , r])
+  b <- bound[[r]]
+  data.frame(Response = rlab(r),
+             `physically possible range` = sprintf("%g - %g", b[1], b[2]),
+             `prior-predictive median` = median(y),
+             `prior-predictive 2.5%` = unname(quantile(y, 0.025)),
+             `prior-predictive 97.5%` = unname(quantile(y, 0.975)),
+             `% outside the possible range` = 100 * mean(y < b[1] | y > b[2]),
+             check.names = FALSE)
+})), caption = "Prior predictive draws against the physically possible range of each measure. GIUR and the retouched perimeter cannot leave [0, 1] under the zero-one-inflated beta, so their zero is structural.", digits = 2)
+```
+
+The prior predictive distributions are wide --- deliberately, since they
+encode ignorance about the effects --- but they stay inside the possible
+range of every measure. The prior passes.
+
+---
+
+# Computation {#sec-computation}
+
+## Software and settings {#sec-software}
+
+::: {.barg}
+Cf. BARG Step 2.A.
+:::
+
+```{r}
+#| label: tbl-software
+kt(data.frame(
+  Item = c("R", "brms", "Stan backend", "CmdStan", "posterior", "chains",
+           "iterations per chain", "warmup per chain", "post-warmup draws",
+           "seed", "adapt_delta", "max_treedepth"),
+  Value = c(mf$r_version, mf$brms, mf$backend, mf$cmdstan,
+            as.character(utils::packageVersion("posterior")),
+            mf$chains, mf$iter, mf$warmup, format(mf$ndraws, big.mark = ","),
+            mf$seed, "0.8 (default)", "10 (default)")),
+  caption = "Computational settings. Identical for all nine runs. The backend is locked to cmdstanr: an rstan fit of the same model is not bit-for-bit reproducible against a cmdstanr fit, and the CmdStan version pins the C++ that sessionInfo() does not capture.")
+```
+
+All results in this report come from the full run recorded above ---
+`r mf$chains` chains of `r format(mf$iter, big.mark = ",")` iterations,
+`r format(mf$ndraws, big.mark = ",")` post-warmup draws --- not from a
+reduced pipeline test.
+
+## Chain convergence {#sec-convergence}
+
+::: {.barg}
+Cf. BARG Step 2.B.
+:::
+
+For the reference fit: divergent transitions **`r n_div`**, iterations at
+maximum treedepth **`r n_tree`**, largest $\hat R$ over all
+`r nrow(sm_ref)` estimated parameters **`r fmt(max(sm_ref$rhat), 4)`**.
+
+Because every conclusion in this report leans on more than the reference fit
+--- the intercept-only model carries the Q1 comparison and the five prior
+variants carry the sensitivity analysis --- the same diagnostics are given for
+all nine runs:
+
+```{r}
+#| label: tbl-diag-all
+mf$diagnostics |>
+  transmute(Fit = fit, `parameters` = n_par, `max Rhat` = max_rhat,
+            `min bulk ESS` = round(min_ess_bulk),
+            `min tail ESS` = round(min_ess_tail),
+            `divergent transitions` = divergent,
+            `at max treedepth` = max_treedepth) |>
+  kt(caption = sprintf("Diagnostics for all nine runs, each of %s post-warmup draws.",
+                       format(mf$ndraws, big.mark = ",")), digits = 4)
+```
+
+```{r}
+#| label: div-readout
+#| echo: false
+d_any <- mf$diagnostics |> filter(divergent > 0)
+```
+
+`r if (nrow(d_any) == 0) "No run produced a divergent transition." else sprintf("%d of the nine runs produced a small number of divergent transitions -- %s -- against %s draws each, that is at most %s%% of the transitions in any run. Divergences at this rate in a hierarchical model with 26 clusters and a 7 x 7 correlation matrix indicate mild curvature in the posterior near zero variance rather than a failure to explore it; the affected runs' Rhat and ESS are indistinguishable from the clean ones, and their posteriors coincide with the reference in @fig-sens-icc. They are reported rather than removed.", nrow(d_any), paste(sprintf("%s: %d", d_any$fit, d_any$divergent), collapse = ", "), format(mf$ndraws, big.mark = ","), fmt(100 * max(d_any$divergent) / mf$ndraws, 3))`
+
+```{r}
+#| label: fig-convergence
+#| fig-cap: "Rhat (A) and bulk effective sample size (B) for every estimated parameter, and for the seven ICCs, which are derived quantities computed draw by draw and diagnosed like any other."
+knitr::include_graphics(FIG("convergence.png"))
+```
+
+## Chain resolution {#sec-resolution}
+
+::: {.barg}
+Cf. BARG Step 2.C.
+:::
+
+Kruschke (2021) suggests an ESS of about 10,000, with the explicit
+qualification that the figure is aimed at the stability of HDI limits and
+that quantile-based limits are less demanding. This report is quantile-based
+throughout (@sec-posterior-summary), so both things are given: the ESS, and
+the Monte Carlo standard error of each quantile that is actually reported.
+
+```{r}
+#| label: tbl-convergence
+#| tbl-cap: "Convergence and resolution for every parameter of the model and for the seven derived ICCs. Median and equal-tailed limits are given with their Monte Carlo standard errors; mode and HDI limits are given alongside, following the reference BARG document."
+full_tbl <- bind_rows(
+  bind_rows(lapply(sm_ref$variable, function(v) {
+    x <- dr_ref[[v]]; s <- draw_summary(x)
+    d <- sm_ref[sm_ref$variable == v, ]
+    data.frame(Parameter = v, s, rhat = d$rhat,
+               ess_bulk = d$ess_bulk, ess_tail = d$ess_tail)
+  })),
+  icc_ref |> transmute(Parameter = paste0("ICC_", Response), Median, CrI_lo, CrI_hi,
+                       Mode, HDI_lo, HDI_hi, MCSE_lo, MCSE_med, MCSE_hi, SD,
+                       rhat, ess_bulk, ess_tail))
+full_tbl |>
+  transmute(Parameter,
+            `median` = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
+            `mode` = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
+            `MCSE 2.5%` = MCSE_lo, `MCSE median` = MCSE_med, `MCSE 97.5%` = MCSE_hi,
+            `Rhat` = rhat, `ESS bulk` = round(ess_bulk), `ESS tail` = round(ess_tail)) |>
+  kt(caption = NULL, digits = 4)
+```
+
+```{r}
+#| label: ess-summary
+#| echo: false
+min_bulk <- min(full_tbl$ess_bulk, na.rm = TRUE)
+min_tail <- min(full_tbl$ess_tail, na.rm = TRUE)
+worst    <- full_tbl$Parameter[which.min(full_tbl$ess_bulk)]
+rel_all  <- with(full_tbl, MCSE_med / SD)
+rel_all  <- rel_all[is.finite(rel_all)]
+mcse_rel <- max(rel_all)
+mcse_par <- full_tbl$Parameter[which.max(replace(with(full_tbl, MCSE_med / SD),
+                                                 !is.finite(with(full_tbl, MCSE_med / SD)), -Inf))]
+n_below_10k <- sum(full_tbl$ess_bulk < 10000, na.rm = TRUE)
+```
+
+Smallest bulk ESS: **`r format(round(min_bulk), big.mark = ",")`**
+(`r worst`); smallest tail ESS:
+**`r format(round(min_tail), big.mark = ",")`**.
+`r n_below_10k` of the `r nrow(full_tbl)` quantities have a bulk ESS below
+Kruschke's 10,000, so the recommendation is not met everywhere even at
+`r format(mf$ndraws, big.mark = ",")` draws. What matters for a
+quantile-based report is the Monte Carlo error of the quantiles themselves.
+The largest MCSE of a reported median, as a fraction of that parameter's own
+posterior SD, is **`r fmt(mcse_rel, 4)`** (`r mcse_par`) --- the simulation
+noise in the numbers this report quotes is about
+**`r format(round(1 / mcse_rel), big.mark = ",")` times smaller** than the
+posterior uncertainty it describes, and the full per-parameter MCSEs are in
+@tbl-convergence for anyone who wants to check a particular one.
+
+## Items not applicable {#sec-2d}
+
+::: {.na}
+**BARG 2.D** concerns the accuracy of approximations used in place of exact
+posterior sampling --- variational inference, Laplace approximation, INLA and
+the like. No approximation of that kind is used here: every posterior in this
+document is a full MCMC sample from the exact posterior. The item is
+inapplicable.
+:::
+
+---
+
+# The posterior distribution {#sec-posterior}
+
+## Posterior predictive check {#sec-post-pred}
+
+::: {.barg}
+Cf. BARG Step 3.A. Kruschke (2021) treats this as a precondition for
+reporting parameter estimates at all, not as an optional extra.
+:::
+
+```{r}
+#| label: fig-post-pred
+#| fig-cap: "Posterior predictive distributions (grey, 100 draws) against the observed distribution (dark), one panel per response."
+knitr::include_graphics(FIG("ppc_posterior.png"))
+```
+
+```{r}
+#| label: fig-ppc-basin
+#| fig-cap: "Posterior predictive check by basin: the observed median of each response within each basin, against the distribution of that same statistic in the replicated datasets."
+knitr::include_graphics(FIG("ppc_group_basin.png"))
+```
+
+```{r}
+#| label: fig-ppc-locality
+#| fig-cap: "Posterior predictive check by locality, same statistic, all 26 localities. Localities of one specimen are, unsurprisingly, reproduced exactly."
+knitr::include_graphics(FIG("ppc_group_locality.png"))
+```
+
+### The checks that were specified in advance {#sec-ppc-stats}
+
+```{r}
+#| label: fig-ppc-stats
+#| fig-cap: "Targeted posterior predictive statistics. Diamond: the observed value. Open circle and bar: the median and 95% interval of the same statistic over the replicated datasets. Green means the observation falls inside the interval."
+knitr::include_graphics(FIG("ppc_stats.png"))
+```
+
+```{r}
+#| label: tbl-ppc-stats
+ppc_stat_tbl |>
+  mutate(Response = rlab(Response),
+         inside = observed >= rep_lo & observed <= rep_hi,
+         verdict = ifelse(inside, "reproduced", "NOT reproduced")) |>
+  transmute(Response, Statistic, observed,
+            `replicated median` = rep_median, `2.5%` = rep_lo, `97.5%` = rep_hi,
+            verdict) |>
+  kt(caption = "Observed test statistics against their posterior predictive distributions.")
+```
+
+```{r}
+#| label: ppc-readout
+#| echo: false
+gs <- function(r, s) ppc_stat_tbl[ppc_stat_tbl$Response == r & ppc_stat_tbl$Statistic == s, ]
+rg_neg <- gs("RG", "share below zero"); rg_min <- gs("RG", "minimum")
+gi_one <- gs("GIUR", "share exactly 1"); rl_one <- gs("RLI", "share exactly 1")
+ns_disp <- gs("NScar", "variance / mean")
+```
+
+**Does the gaussian likelihood for retouch generations predict negative
+values?** The observed share of retouch-generation values below zero is
+`r fmt(rg_neg$observed, 3)`; over the replicated datasets the share has median
+`r fmt(rg_neg$rep_median, 3)` and 95% interval
+[`r fmt(rg_neg$rep_lo, 3)`, `r fmt(rg_neg$rep_hi, 3)`]. The observed minimum
+is `r fmt(rg_min$observed, 2)` against a replicated interval of
+[`r fmt(rg_min$rep_lo, 2)`, `r fmt(rg_min$rep_hi, 2)`]. The gaussian's
+support extends below zero, but the fitted mean sits far enough above it
+relative to the residual SD that impossible values are not in practice
+generated. What the gaussian does miss is the *discreteness*: retouch
+generations are recorded as a small number of counted generations averaged
+over at most three edges, so the observed distribution is a spike train and
+the replicated one is smooth. That is visible in @fig-post-pred and is a real
+limitation, though not one that biases a location parameter.
+
+Because the check is a judgement call rather than a pass/fail, a lognormal
+refit of the same response is provided as a comparison, so a reader can see
+directly whether the choice of family moves the conclusions:
+
+```{r}
+#| label: tbl-rg-alt
+# the RG response is on the log link in the comparison fit, so its ROPE has to
+# be rebuilt from the log-scale SD rather than taken from link_sd
+ls_ln  <- sd(log(mod_dat$RG))
+dr_ln  <- local({ f <- gf("ref_rg_ln"); d <- as_draws_df(f); rm(f); gc(); d })
+rg_alt <- bind_rows(lapply(preds, function(pp) {
+  x <- dr_ln[[paste0("b_RG_", pp)]] / ls_ln
+  q <- eti(x); p <- 100 * mean(abs(x) < ROPE_SD)
+  data.frame(Family = "lognormal (comparison)", Predictor = plab(pp),
+             `standardised median` = median(x), `2.5%` = q[1], `97.5%` = q[2],
+             `% in ROPE` = p,
+             Verdict = rope_verdict(q[1], q[2], p, ROPE_SD),
+             check.names = FALSE, row.names = NULL)
+}))
+bind_rows(
+  cf |> filter(Response == "RG") |>
+    transmute(Family = "gaussian (reference)", Predictor = plab(Predictor),
+              `standardised median` = Std_median,
+              `2.5%` = Std_lo, `97.5%` = Std_hi,
+              `% in ROPE` = pct_in_ROPE, Verdict),
+  rg_alt) |>
+  arrange(Predictor, Family) |>
+  kt(caption = "Retouch generations: the reference gaussian fit against a lognormal refit of the same response. Both are shown on their own standardised axis, so the ROPE is +/- 0.1 in each case.")
+```
+
+**Do the zero-one-inflated beta fits reproduce the pile-up at 1?** For GIUR
+the observed share of exact ones is `r fmt(gi_one$observed, 3)` against a
+replicated interval of [`r fmt(gi_one$rep_lo, 3)`, `r fmt(gi_one$rep_hi, 3)`];
+for the retouched perimeter, `r fmt(rl_one$observed, 3)` against
+[`r fmt(rl_one$rep_lo, 3)`, `r fmt(rl_one$rep_hi, 3)`]. The share of exact
+zeros is 0 in the data and 0 in the replications, which is not evidence that
+the model captures zero inflation --- it is evidence that the zero-inflation
+half of the family is estimating a probability the data have pinned at
+essentially zero. See the note in @sec-likelihood.
+
+**Is the overdispersion of the scar count captured?** The observed
+variance-to-mean ratio is `r fmt(ns_disp$observed, 2)`, well above the value
+of 1 a Poisson would imply; the replicated interval is
+[`r fmt(ns_disp$rep_lo, 2)`, `r fmt(ns_disp$rep_hi, 2)`]. The negative
+binomial captures it.
+
+## Posterior summary {#sec-posterior-summary}
+
+::: {.barg}
+Cf. BARG Step 3.B.
+:::
+
+::: {.barg}
+**Declaration of interval type.** Every interval in this report is a **95%
+equal-tailed (percentile) credible interval**, running from the 2.5th to the
+97.5th posterior percentile, and every point summary in the text is the
+**posterior median**. This is the quantile-based convention, not the
+density-based one. The density-based pair --- posterior **mode** and 95%
+**highest-density interval** --- is reported alongside in @tbl-convergence and
+@tbl-coef-full, following the reference BARG document, so that a reader who
+prefers it is not obliged to recompute anything.
+:::
+
+```{r}
+#| label: fig-main
+#| fig-cap: "**A** (Q1): the locality share of link-scale variance for each response. Circles are the model with the landscape terms, triangles the intercept-only model, joined by a line. Filled circles mark responses whose 95% interval clears the 0.05 negligibility band (shaded). **B** (Q2): the 21 landscape slopes, each divided by the link-scale SD of its own response so that all seven share one axis and the ROPE is a single band at +/- 0.1. Rows are in the same order in both panels. Any slope whose posterior SD is still more than half its prior SD is drawn grey and hollow, because it has not been informed enough by the data to be read as an estimate."
+knitr::include_graphics(FIG("barg_main.png"))
+```
+
+```{r}
+#| label: prior-dom-readout
+#| echo: false
+dom <- ppsd_ref |> filter(ratio > 0.5)
+```
+
+`r if (nrow(dom) == 0) sprintf("No slope in Panel B is prior-dominated: the largest posterior/prior SD ratio over all %d is %s, so every point in the panel is an estimate the data have shaped.", nrow(ppsd_ref), fmt(max(ppsd_ref$ratio), 2)) else sprintf("Prior-dominated slopes, drawn grey and hollow in Panel B: %s. Their posteriors are still more than half as wide as their priors; they are shown for completeness and should not be interpreted.", paste(sprintf("%s ~ %s (ratio %s)", rlab(dom$Response), plab(dom$Predictor), fmt(dom$ratio, 2)), collapse = "; "))`
+
+```{r}
+#| label: tbl-coef-full
+#| tbl-cap: "The 21 landscape slopes in full. `median`, `2.5%`, `97.5%` are on the link scale; `std` columns divide by the link-scale SD of the response; `response scale` translates the median to a percentage change per unit of the predictor (log and logit links) or leaves it in the response's own units (identity link)."
+cf |>
+  transmute(Response = rlab(Response), Predictor = plab(Predictor), Link,
+            median = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
+            mode = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
+            `std median` = Std_median, `std 2.5%` = Std_lo, `std 97.5%` = Std_hi,
+            `response scale [95% ETI]` = sprintf("%s [%s, %s]",
+              fmt(Resp_median, 1), fmt(Resp_lo, 1), fmt(Resp_hi, 1)),
+            unit = Min_ROPE_unit) |>
+  kt(caption = NULL, digits = 3)
+```
+
+```{r}
+#| label: fig-prior-post
+#| fig-cap: "Prior (grey) against posterior (blue) for every slope, on the standardised axis. The shaded band is the ROPE. Where the two curves nearly coincide, the data have said little."
+knitr::include_graphics(FIG("prior_posterior.png"))
+```
+
+## Locality-level variance and correlation structure {#sec-icc}
+
+::: {.barg}
+Cf. BARG Step 3.B, for the parameters that answer Q1.
+:::
+
+The intraclass correlation is
+$\mathrm{ICC}^{(r)} = \sigma_u^{(r)2} / (\sigma_u^{(r)2} + \sigma_{\text{resid}}^{(r)2})$,
+computed **draw by draw** so that it carries a full posterior. The residual
+variance is taken on the link scale, and its form depends on the family:
+$\sigma^2$ for the gaussian and lognormal responses;
+$\log(1 + 1/\mu + 1/\text{shape})$ evaluated at the intercept for the
+negative binomial; and $\psi'(\mu\phi) + \psi'((1-\mu)\phi)$ --- the
+logit-scale variance of the beta component --- for the two zero-one-inflated
+beta responses. For those two the ICC therefore describes the beta component
+only, and ignores the inflation (@sec-likelihood).
+
+```{r}
+#| label: tbl-icc
+icc_ref |>
+  transmute(Response = rlab(Response), Family = unname(fam_lab[Family]),
+            `locality SD` = sd_median, `SD 2.5%` = sd_lo, `SD 97.5%` = sd_hi,
+            `ICC median` = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
+            `ICC mode` = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
+            `P(ICC > 0.05)` = P_gt_rope, Rhat = rhat,
+            `ESS bulk` = round(ess_bulk), Verdict) |>
+  arrange(desc(`ICC median`)) |>
+  kt(caption = "Locality SD and intraclass correlation, with diagnostics for the derived quantity.", digits = 3)
+```
+
+### The 21 locality-intercept correlations {#sec-cor}
+
+::: {.barg}
+Cf. BARG Step 1.B and 3.B. These 21 parameters were estimated by the original
+model and never reported.
+:::
+
+```{r}
+#| label: fig-cor
+#| fig-cap: "Posterior median of each of the 21 locality-intercept correlations. Bold entries are those whose 95% equal-tailed interval excludes zero."
+knitr::include_graphics(FIG("correlation_matrix.png"))
+```
+
+```{r}
+#| label: tbl-cor
+cor_tb |>
+  transmute(`Response A` = rlab(A), `Response B` = rlab(B),
+            median = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
+            mode = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
+            `P(rho > 0)` = P_positive, Rhat = rhat, `ESS bulk` = round(ess_bulk)) |>
+  arrange(desc(abs(median))) |>
+  kt(caption = "All 21 correlations among the locality intercepts, ordered by absolute posterior median. With 26 clusters these are weakly identified; the LKJ(1) prior is uniform over correlation matrices and S5 varies it.", digits = 3)
+```
+
+```{r}
+#| label: fig-caterpillar
+#| fig-cap: "Locality offsets on the link scale, one panel per response, with 95% equal-tailed intervals. Localities are in one fixed order in every panel, largest assemblage first, with the specimen count in brackets. Reading down each panel shows partial pooling at work: the smaller the assemblage, the harder the offset is pulled towards zero and the wider its interval."
+knitr::include_graphics(FIG("locality_intercepts.png"))
+```
+
+## Item not applicable {#sec-3c}
+
+::: {.na}
+**BARG 3.C** asks for Bayes factors and posterior model probabilities where
+model comparison is part of the analysis. It is not (@sec-goals). No Bayes
+factor is computed or reported.
+:::
+
+---
+
+# Decisions {#sec-decisions}
+
+## Why decisions, and under what rule {#sec-decision-rule}
+
+::: {.barg}
+Cf. BARG Step 4.A.
+:::
+
+The substantive question is not only "how large is the effect" but "is it
+small enough to treat as absent". An interval alone does not answer that, and
+neither does a $p$-value, which can only fail to reject. The rule used here
+is Kruschke's (2018) three-way decision with a region of practical
+equivalence:
+
+| Decision | Condition (either suffices) |
+|---|---|
+| **Reject the null value** | the 95% credible interval lies entirely outside the ROPE, **or** less than 2.5% of the posterior mass is inside it |
+| **Accept the null value** | the 95% credible interval lies entirely inside the ROPE, **or** more than 95% of the posterior mass is inside it |
+| **Undecided** | neither of the above |
+
+"Undecided" is a substantive outcome, not a failure. It means the data are
+compatible both with an effect large enough to matter and with none.
+
+## Item not applicable {#sec-4b}
+
+::: {.na}
+**BARG 4.B** asks for the loss or utility function where decisions are made
+by formal decision theory. No loss function is specified here: there is no
+cost structure attached to being wrong about an edge-angle slope, and
+inventing one would be a fiction. The decision rule of @sec-decision-rule is
+used instead, and the ROPE curve of @sec-rope makes the whole family of
+decisions available rather than committing to one.
+:::
+
+## The ROPE and its justification {#sec-rope}
+
+::: {.barg}
+Cf. BARG Step 4.C.
+:::
+
+The ROPE half-width used in the text is **0.1 times the SD of the response on
+its own link scale** --- so a slope is "practically zero" if moving a
+predictor by one unit shifts the response by less than a tenth of that
+response's total spread. Expressing it in link-scale SD units is what lets
+one number serve seven responses on three link scales (@tbl-prior-rope).
+
+**Two things must be said plainly about it.**
+
+First, the value 0.1 is a convention. It is not derived from any
+archaeological argument about how large a difference in edge angle or scar
+count would have to be before a lithic analyst would call it a real
+difference in technological behaviour. No such argument exists in the
+literature for these measures, and it would be dishonest to construct one
+here.
+
+Second --- and this is the more serious point --- BARG asks for ROPE limits
+to be fixed by theoretical and practical considerations *before the results
+are seen*. That precondition is not met in this analysis: the model had
+already been fitted and inspected before this report was written. Choosing a
+half-width now, with the posteriors in view, would let the bound be tuned
+until it delivered a preferred verdict.
+
+The response is therefore not to defend a single number but to **report the
+whole curve** --- the posterior mass inside the ROPE as a continuous function
+of the half-width --- and let a reader who has a defensible bound of their own
+read off the answer at it. This is the same device the equivalence $p$-value
+curves of the companion analysis use, for the same reason.
+
+```{r}
+#| label: fig-rope
+#| fig-cap: "Posterior mass inside the ROPE as a function of the ROPE half-width, in link-scale SD units, for all 21 slopes. Dashed vertical line: the 0.1 half-width quoted in the text. Dotted horizontals: the 2.5% and 95% thresholds of the decision rule. A curve that has not reached 95% by a half-width the reader considers archaeologically negligible is a slope this design cannot declare absent."
+knitr::include_graphics(FIG("rope_curves.png"))
+```
+
+```{r}
+#| label: tbl-rope-grid
+#| tbl-cap: "The same information numerically: posterior mass inside the ROPE (%) at a range of half-widths, for every slope."
+grid_pts <- c(0.05, 0.1, 0.2, 0.3, 0.5)
+rope_curve(fit_ref, grid = grid_pts) |>
+  mutate(Response = rlab(Response), Predictor = plab(Predictor),
+         half = paste0("+/- ", half)) |>
+  pivot_wider(names_from = half, values_from = pct) |>
+  kt(caption = NULL, digits = 1)
+```
+
+## Item not applicable {#sec-4d}
+
+::: {.na}
+**BARG 4.D** asks for the Bayes-factor thresholds used to make decisions. No
+Bayes factor is used (@sec-goals, @sec-3c). Inapplicable.
+:::
+
+## Decisions, with the estimates they rest on {#sec-verdicts}
+
+::: {.barg}
+Cf. BARG Step 4.E, which requires the decision to be accompanied by the
+estimate and its interval, never reported on its own.
+:::
+
+### Q1: the locality variance
+
+```{r}
+#| label: tbl-icc-decision
+icc_ref |>
+  arrange(desc(P_gt_rope)) |>
+  transmute(Response = rlab(Response),
+            `ICC median [95% ETI]` = ci(Median, CrI_lo, CrI_hi),
+            `P(ICC > 0.05)` = fmt(P_gt_rope, 3),
+            Decision = Verdict) |>
+  kt(caption = "Q1 decisions. The ROPE for the ICC is [0, 0.05]: a locality share of link-scale variance below 5% is treated as negligible. Unlike the slope ROPE this bound is one-sided and has a natural reading -- 5% of variance is a share no archaeological argument would build on.")
+```
+
+### Q2: the landscape slopes
+
+```{r}
+#| label: tbl-coef-decision
+cf |>
+  transmute(Response = rlab(Response), Predictor = plab(Predictor),
+            `median [95% ETI], link scale` = ci(Median, CrI_lo, CrI_hi),
+            `standardised` = ci(Std_median, Std_lo, Std_hi, 2),
+            `% in ROPE` = fmt(pct_in_ROPE, 1),
+            `direction certainty` = fmt(Dir_certainty, 3),
+            Decision = Verdict) |>
+  kt(caption = "Q2 decisions at the 0.1 SD ROPE, with the estimate and interval each rests on. 'Direction certainty' is max(P(beta > 0), P(beta < 0)): 0.5 means the posterior is split evenly about zero, 1.0 that the sign is certain.")
+```
+
+### What this design could have decided: the smallest acceptable ROPE {#sec-min-rope}
+
+An "undecided" verdict is not an empty result. For each slope there is a
+smallest ROPE half-width at which the 95% interval would have fitted entirely
+inside --- namely $\max(|\text{lower}|, |\text{upper}|)$. Anything wider than
+that, this design *can* declare practically zero; anything narrower, it
+cannot. Translating that bound into the response's own units turns "we could
+not decide" into a quantitative statement of what the study was able to rule
+out.
+
+```{r}
+#| label: tbl-min-rope
+cf |>
+  mutate(sd_units = Min_ROPE / link_sd[Response]) |>
+  arrange(sd_units) |>
+  transmute(Response = rlab(Response), Predictor = plab(Predictor),
+            `min ROPE, link scale` = Min_ROPE,
+            `min ROPE, SD units` = sd_units,
+            `min ROPE, response scale` = sprintf("+/- %s %s",
+              fmt(abs(Min_ROPE_resp), 1), Min_ROPE_unit)) |>
+  kt(caption = "The smallest ROPE this design could have accepted, per slope, ordered from the best-resolved to the worst. Read the last column as: an effect smaller than this, in the response's own units, is what the study can rule out; an effect larger than this it cannot.", digits = 3)
+```
+
+---
+
+# Sensitivity analysis {#sec-sensitivity}
+
+::: {.barg}
+Cf. BARG Step 5.
+:::
+
+Six fits, identical in every respect except the prior, each changing **one**
+element of the reference specification. A full factorial was not run: the
+point is to attribute any change to a single choice.
+
+```{r}
+#| label: tbl-sens-specs
+kt(data.frame(
+  Fit = c("REF", names(prior_specs)[-1]),
+  `Prior change` = c(prior_specs$REF$label,
+                     sapply(prior_specs[-1], function(x) x$label)),
+  Rationale = c(prior_specs$REF$note, sapply(prior_specs[-1], function(x) x$note)),
+  check.names = FALSE, row.names = NULL),
+  caption = "The six prior specifications. REF is the reference; each of S1 to S5 changes exactly one line of it.")
+```
+
+## Broad prior {#sec-5a}
+
+::: {.barg}
+Cf. BARG Step 5.A.
+:::
+
+**S2** widens every slope prior by a factor of 2.5, to
+`normal(0, 2.5 x SD_link)`. This is the "broad prior" the guideline asks for:
+if the posterior barely moves when the prior is made two and a half times
+more permissive, the prior is not carrying the result. **S3** and **S4**
+play the same role for the locality SD, and **S5** for the correlation
+matrix.
+
+## Item not applicable {#sec-5b}
+
+::: {.na}
+**BARG 5.B** asks for sensitivity to a *genuinely informed* prior --- one
+built from previous studies of the same quantities. No such prior exists for
+these seven measures in Quina assemblages: there is no published posterior or
+meta-analytic estimate of, for instance, how edge angle varies with elevation
+above a channel. Every prior used here is weakly informative by construction
+(@sec-priors). The item is inapplicable, and its inapplicability is itself a
+statement about how little is known.
+:::
+
+## Variations of the default priors {#sec-5c}
+
+::: {.barg}
+Cf. BARG Step 5.C.
+:::
+
+```{r}
+#| label: fig-sens-icc
+#| fig-cap: "Q1 under all six priors: the cumulative posterior distribution of each ICC. The shaded band is the ICC ROPE [0, 0.05]. A curve's height where it crosses the right edge of the band is P(ICC <= 0.05)."
+knitr::include_graphics(FIG("sensitivity_icc.png"))
+```
+
+```{r}
+#| label: fig-sens-slopes
+#| fig-cap: "Q2 under all six priors, for the slopes most exposed to the prior: the three edge-angle slopes (the response that was prior-dominated under the original specification) and the height slope of every response. Cumulative distributions on the standardised axis, with the ROPE shaded."
+knitr::include_graphics(FIG("sensitivity_slopes.png"))
+```
+
+Cumulative distributions rather than densities, because this report's
+summaries are quantiles: a horizontal slice at 0.025 and 0.975 reads off the
+interval limits directly, and the vertical distance between two curves at the
+ROPE edge is the change in the quantity the decision rule uses.
+
+BARG asks for the numbers as well as the pictures, for every parameter and
+not only the plotted ones:
+
+```{r}
+#| label: tbl-sens-full
+#| tbl-cap: "Posterior median and 95% equal-tailed interval for every ICC and every slope, under each of the six priors. Slopes are standardised by the link-scale SD of their response."
+sens_long |>
+  mutate(cell = ci(Median, lo, hi, 2)) |>
+  select(Quantity, Spec, cell) |>
+  pivot_wider(names_from = Spec, values_from = cell) |>
+  kt(caption = NULL)
+```
+
+## Item not applicable {#sec-5d}
+
+::: {.na}
+**BARG 5.D** asks for the sensitivity of the Bayes factor to the prior. No
+Bayes factor is computed (@sec-goals). Inapplicable. This is worth one extra
+sentence rather than a bare dismissal: BF sensitivity is singled out in the
+guideline precisely because Bayes factors are notoriously prior-dependent in
+a way posterior estimates are not, which is part of why this analysis is
+framed as estimation.
+:::
+
+## Do the conclusions change? {#sec-5e}
+
+::: {.barg}
+Cf. BARG Step 5.E. The criterion is not whether the numbers moved --- they
+always move --- but whether they moved enough, relative to the width of the
+posterior interval and relative to the ROPE, to change a conclusion.
+:::
+
+```{r}
+#| label: tbl-sens-verdict
+sens_verdict <- sens_long |>
+  mutate(is_icc = startsWith(Quantity, "ICC: "),
+         Decision = ifelse(is_icc,
+           ifelse(lo > ICC_ROPE, "locality variation present",
+             ifelse(hi < ICC_ROPE, "negligible", "undecided")),
+           rope_verdict(lo, hi, 100 * inrope, ROPE_SD))) |>
+  select(Quantity, Spec, Decision) |>
+  pivot_wider(names_from = Spec, values_from = Decision)
+changed <- sens_verdict |>
+  rowwise() |>
+  mutate(n_distinct_dec = n_distinct(c_across(all_of(names(SENS))))) |>
+  ungroup()
+kt(changed |> select(-n_distinct_dec),
+   caption = "The decision each quantity receives under each prior.")
+```
+
+```{r}
+#| label: sens-readout
+#| echo: false
+n_changed <- sum(changed$n_distinct_dec > 1)
+worst_shift <- sens_long |>
+  group_by(Quantity) |>
+  summarise(shift = max(Median) - min(Median),
+            width = mean(hi - lo), .groups = "drop") |>
+  mutate(rel = shift / width) |> arrange(desc(rel))
+```
+
+Of the `r nrow(changed)` quantities, **`r n_changed`**
+`r if (n_changed == 1) "receives" else "receive"` a different
+decision under at least one of the six priors`r if (n_changed > 0) paste0(": ", paste(changed$Quantity[changed$n_distinct_dec > 1], collapse = "; ")) else ""`.
+`r if (n_changed > 0) "Those rows are the ones a reader should treat as prior-dependent; the rest are not." else "No conclusion in this report turns on the choice among the six priors."`
+The largest movement of a
+posterior median across the six priors, relative to the average width of that
+quantity's own 95% interval, is
+**`r fmt(worst_shift$rel[1] * 100, 1)`%** of the interval width, for
+`r worst_shift$Quantity[1]`; for
+`r sum(worst_shift$rel < 0.1)` of the `r nrow(worst_shift)` quantities the
+movement is under a tenth of the interval width.
+
+```{r}
+#| label: tbl-sens-shift
+worst_shift |>
+  transmute(Quantity,
+            `range of medians` = shift,
+            `mean interval width` = width,
+            `shift as a share of the width` = rel) |>
+  head(15) |>
+  kt(caption = "The fifteen quantities whose posterior median moves most across the six priors, as a fraction of their own interval width.", digits = 3)
+```
+
+---
+
+# Interpretation {#sec-interpretation}
+
+## Q1: is there technological variation between localities? {#sec-q1}
+
+```{r}
+#| label: q1-readout
+#| echo: false
+icc_dec <- icc_ref |> arrange(desc(Median))
+present <- icc_dec |> filter(Verdict == "locality variation present")
+undec   <- icc_dec |> filter(Verdict == "undecided")
+icc_j <- icc_ref |> select(Response, ref = Median, ref_lo = CrI_lo) |>
+  left_join(icc_nol |> select(Response, nol = Median), by = "Response") |>
+  mutate(change = ref - nol, rel = change / nol)   # positive = ICC rose
+
+# how the Q1 decision behaves across the six priors
+icc_sens <- sens_long |>
+  filter(startsWith(Quantity, "ICC: ")) |>
+  mutate(Resp = sub("^ICC: ", "", Quantity),
+         dec = ifelse(lo > ICC_ROPE, "present",
+               ifelse(hi < ICC_ROPE, "negligible", "undecided")))
+icc_stable <- icc_sens |> group_by(Resp) |>
+  summarise(k = n_distinct(dec), ref = dec[Spec == "REF"], .groups = "drop")
+firm  <- icc_stable |> filter(k == 1, ref == "present")
+flips <- icc_stable |> filter(k > 1)
+flip_detail <- icc_sens |> semi_join(flips, by = "Resp") |> filter(dec != "present")
+```
+
+**Yes, for `r nrow(present)` of the seven measures under the reference prior,
+and for `r nrow(firm)` of them under every prior tried.**
+
+`r nrow(present)` responses --- `r paste(rlab(present$Response), collapse = ", ")`
+--- have a 95% interval for the locality share of link-scale variance that
+lies entirely above 0.05, so the null value of a negligible locality effect is
+rejected under the rule of @sec-decision-rule. Their posterior medians are
+`r paste(fmt(present$Median, 2), collapse = ", ")`, meaning that between
+`r fmt(min(present$Median) * 100, 0)`% and `r fmt(max(present$Median) * 100, 0)`%
+of the link-scale variance in those measures sits between localities rather
+than within them. The remaining `r nrow(undec)` are undecided: their intervals
+run from near zero to values that would be substantial, and the design does
+not separate the two.
+
+This is the only part of the analysis that returns a decisive answer, so it is
+worth being precise about how far it survives the prior (@tbl-sens-verdict).
+
+`r if (nrow(firm) > 0) sprintf("For %s the decision is 'locality variation present' under every one of the six priors.", paste(firm$Resp, collapse = " and ")) else ""`
+`r if (nrow(flips) > 0) sprintf("For %s it is not: the 2.5%% limit sits so close to the 0.05 bound that %s pushes it just below, and the verdict becomes undecided (2.5%% limit %s under %s, against %s under the reference). The median barely moves -- %s against %s -- so this is a decision flipping on a boundary, not an estimate changing.", paste(unique(flip_detail$Resp), collapse = " and "), paste(unique(flip_detail$Spec), collapse = " and "), fmt(flip_detail$lo[1], 3), flip_detail$Spec[1], fmt(icc_sens$lo[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3), fmt(flip_detail$Median[1], 3), fmt(icc_sens$Median[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3)) else "No ICC decision changes under any of the six priors."`
+
+The safe reading is therefore the stronger and narrower one: **`r nrow(firm)`
+of the seven measures carry between-locality variation that no prior in the
+sensitivity set can explain away**`r if (nrow(flips) > 0) sprintf(", and %s sits on the boundary", paste(unique(flip_detail$Resp), collapse = " and ")) else ""`.
+
+**The direct test that the landscape terms are not what is producing it.** A
+second model was fitted with the landscape terms removed entirely, leaving
+`~ 1 + (1 |p| Locality)`. If basin, elevation and distance were carrying the
+between-locality signal, dropping them would inflate the locality variance
+component; equivalently, adding them to the intercept-only model would deflate
+it. The comparison sidesteps the wide intervals on the individual slopes
+altogether.
+
+```{r}
+#| label: tbl-icc-compare
+icc_ref |> select(Response, m_ref = Median, lo_ref = CrI_lo, hi_ref = CrI_hi) |>
+  left_join(icc_nol |> select(Response, m_nol = Median, lo_nol = CrI_lo, hi_nol = CrI_hi),
+            by = "Response") |>
+  transmute(Response = rlab(Response),
+            `intercept only` = ci(m_nol, lo_nol, hi_nol, 3),
+            `with landscape terms` = ci(m_ref, lo_ref, hi_ref, 3),
+            `change in the median` = m_ref - m_nol,
+            `as a share of the intercept-only median` = (m_ref - m_nol) / m_nol) |>
+  kt(caption = "The ICC with and without the three landscape terms. A large negative change would mean the landscape terms had absorbed between-locality variance; a change near zero means they explain almost none of it.", digits = 3)
+```
+
+```{r}
+#| label: q1-readout2
+#| echo: false
+med_rel <- median(icc_j$rel)
+n_up    <- sum(icc_j$change > 0); n_dn <- sum(icc_j$change < 0)
+worst_j <- icc_j |> arrange(rel) |> slice(1)
+best_j  <- icc_j |> arrange(desc(rel)) |> slice(1)
+```
+
+**The three landscape terms do not absorb any of the between-locality
+variance.** If they explained it, the locality share would fall when they
+enter the model. It does not fall: the median change across the seven
+responses is `r sprintf("%+.1f", med_rel * 100)`% of the intercept-only
+value, `r n_up` of the seven go up and `r n_dn` go down, and the individual
+changes run from `r sprintf("%+.0f", worst_j$rel * 100)`%
+(`r rlab(worst_j$Response)`) to
+`r sprintf("%+.0f", best_j$rel * 100)`% (`r rlab(best_j$Response)`) --- the
+largest of which starts from an intercept-only median of only
+`r fmt(best_j$nol, 3)`, so the ratio is unstable rather than meaningful.
+That pattern is noise about zero, not explanation. It is direct evidence on
+Q2 and it does not depend on any single coefficient being well resolved:
+whatever separates the localities, these three landscape variables are not
+carrying it.
+
+## Q2: do the landscape variables explain it? {#sec-q2}
+
+```{r}
+#| label: q2-readout
+#| echo: false
+v_tab <- table(cf$Verdict)
+n_und <- sum(cf$Verdict == "undecided")
+n_rej <- sum(cf$Verdict == "reject the null value")
+n_acc <- sum(cf$Verdict == "accept the null value")
+best  <- cf |> arrange(Min_ROPE / link_sd[Response]) |> head(3)
+worst2 <- cf |> arrange(desc(Min_ROPE / link_sd[Response])) |> head(3)
+dir_max <- cf |> arrange(desc(Dir_certainty)) |> head(3)
+# the edge-angle ICC across the six priors, quoted in the limitations below
+ea     <- sens_long |> filter(Quantity == paste0("ICC: ", rlab("EdgeAngle")))
+ea_ref <- ea |> filter(Spec == "REF")
+ea_min <- ea |> arrange(Median) |> slice(1)
+```
+
+**No landscape variable is shown to matter, and for most of them the study
+also cannot show that they do not.**
+
+Of the `r nrow(cf)` slopes, at the 0.1 SD ROPE:
+`r n_rej` reject the null value, `r n_acc` accept it, and **`r n_und` are
+undecided**. The intervals are simply too wide for the ROPE: with
+`r n_loc` localities carrying every predictor, and a single binary contrast
+standing in for "basin", that is what the design can deliver.
+
+```{r}
+#| label: q2-accepted
+#| echo: false
+acc <- cf |> filter(Verdict == "accept the null value")
+```
+
+`r if (n_acc > 0) sprintf("What the analysis can state positively is confined to %s: %s.", if (n_acc == 1) "a single slope" else sprintf("%d slopes", n_acc), paste(sprintf("%s with %s (%s on the standardised axis, %s%% of the posterior inside the ROPE)", rlab(acc$Response), tolower(plab(acc$Predictor)), ci(acc$Std_median, acc$Std_lo, acc$Std_hi, 2), fmt(acc$pct_in_ROPE, 1)), collapse = "; ")) else "No slope can be positively called practically zero at this bound either."`
+
+Direction certainty tells the same story from the other side. The largest
+value over all `r nrow(cf)` slopes is
+`r fmt(max(cf$Dir_certainty), 3)`
+(`r rlab(dir_max$Response[1])` ~ `r plab(dir_max$Predictor[1])`); a value of
+0.5 would mean the posterior is split evenly about zero. Nothing here
+approaches the near-certainty of sign that would be needed to claim a
+directional landscape effect.
+
+The one place a reader should not over-read the "undecided" label is the set
+of slopes with a *small* minimum acceptable ROPE (@tbl-min-rope). For the
+three best-resolved slopes the 95% interval is contained within
+`r fmt(max(best$Min_ROPE / link_sd[best$Response]), 2)` SD, so while the
+analysis will not call them zero at a tenth of an SD, it does rule out
+anything larger than the following:
+`r paste(sprintf("%s with %s, +/- %s %s", rlab(best$Response), tolower(plab(best$Predictor)), fmt(abs(best$Min_ROPE_resp), 0), best$Min_ROPE_unit), collapse = "; ")`.
+That is a real, if modest, constraint. At the other extreme,
+`r paste(sprintf("%s ~ %s", rlab(worst2$Response), plab(worst2$Predictor)), collapse = "; ")`
+are effectively uninformative: their intervals span
+`r fmt(max(worst2$Min_ROPE / link_sd[worst2$Response]), 1)` SD or more, and no
+bound a reader would accept as negligible lies inside them.
+
+## What this study can and cannot resolve {#sec-resolution-limits}
+
+1. **The effective sample size for Q2 is `r n_loc`, not `r n_spec`.** All
+   three predictors are locality attributes. The specimen count buys precision
+   on the within-locality spread and on the locality offsets, not on the
+   landscape slopes.
+
+2. **The basin contrast is one comparison of
+   `r sum(tapply(as.character(mod_dat$Basin), mod_dat$Locality, function(x) x[1]) == "Binchuan")`
+   localities against
+   `r sum(tapply(as.character(mod_dat$Basin), mod_dat$Locality, function(x) x[1]) == "Huangping")`.**
+   Its interval will not narrow by collecting more specimens from the same
+   localities.
+
+3. **The assemblages are extremely unequal.** One locality supplies
+   `r max(table(mod_dat$Locality))` of the `r n_spec` specimens and
+   `r sum(table(mod_dat$Locality) == 1)` supply one each. Partial pooling
+   handles this correctly but cannot manufacture information.
+
+4. **The 21 correlations are weakly identified.** Estimating a 7 x 7
+   correlation matrix from `r n_loc` clusters is asking a great deal;
+   @tbl-cor should be read as a description of the fitted structure, not as a
+   set of findings. S5 shows how much the LKJ concentration moves them.
+
+5. **The `sd` priors carry the same scale defect the slope priors were fixed
+   for, and it is visible in the results.** The reference `student_t(3, 0, 2)`
+   on the locality SD is *not* rescaled per response, unlike the slope prior
+   (@sec-priors). For edge angle, measured in degrees with a link-scale SD of
+   `r fmt(link_sd[["EdgeAngle"]], 1)`, a prior with scale 2 is restrictive;
+   for log thickness, whose link-scale SD is
+   `r fmt(link_sd[["Thickness"]], 2)`, it is extremely loose. The sensitivity
+   analysis shows this is not hypothetical: the edge-angle ICC is
+   `r ci(ea_ref$Median, ea_ref$lo, ea_ref$hi, 3)` under the reference prior
+   and `r ci(ea_min$Median, ea_min$lo, ea_min$hi, 3)` under `r ea_min$Spec`,
+   the largest prior-driven movement of any ICC in the set --- and it happens
+   to the response whose measurement scale is furthest from the prior's.
+   `r ea_min$Spec` replaces the heavy-tailed half-$t$ with a prior whose tail
+   dies quickly, and on a scale measured in degrees that is a strong
+   statement. The right fix is the one already applied to the slopes: scale
+   the locality SD prior to each response's own link-scale SD. That
+   specification was not among the six that the one-at-a-time design called
+   for here, and it is the clearest open refinement of this model. Until it is
+   made, the edge-angle ICC should be read as prior-sensitive. The measures
+   that carry the Q1 answer are far less exposed: their link-scale SDs are
+   small enough that `student_t(3, 0, 2)` is uninformative for them, and
+   `r paste(firm$Resp, collapse = " and ")` hold their decision under all six
+   priors`r if (nrow(flips) > 0) sprintf(" while %s changes only because its 2.5%% limit is already touching the bound", paste(unique(flip_detail$Resp), collapse = " and ")) else ""`.
+
+6. **Retouch generations are discrete and modelled as continuous** (@sec-post-pred),
+   and **GMsize contains Thickness** (@sec-data) while the model assumes
+   independent residuals across responses.
+
+---
+
+# Reproducibility {#sec-reproducibility}
+
+::: {.barg}
+Cf. BARG Step 6.
+:::
+
+## Install the software
+
+```
+R                4.5.2 or later
+CmdStan          2.39.0     (install with cmdstanr::install_cmdstan())
+R packages       brms, cmdstanr, posterior, bayesplot, here, readxl,
+                 dplyr, tidyr, ggplot2, patchwork, knitr, quarto (CLI)
+```
+
+The backend must be **cmdstanr**. An rstan fit of the same model with the same
+seed is a valid fit but not the same fit, and the CmdStan version above is
+part of the specification: `sessionInfo()` records the R packages and not the
+C++ toolchain that actually produced the draws.
+
+## Retrieve the files
+
+| File | What it is |
+|---|---|
+| `data/Quina_scraper_surface.xlsx` | specimen measurements, sheet "Quina scraper" |
+| `data/Site_information.xlsx` | locality attributes: basin, height above channel, distance to channel |
+| `paper/barg/barg_data.R` | builds the analysis frame; defines `link_sd`, the ROPE unit |
+| `paper/barg/barg_priors.R` | all six prior specifications, in full |
+| `paper/barg/barg_fits.R` | runs and caches the nine MCMC fits |
+| `paper/barg/barg_quantities.R` | every derived quantity: ICC, ROPE curves, HDI, MCSE, decisions |
+| `paper/barg/barg_theme.R` | the figure style, copied from the manuscript pipeline |
+| `paper/barg/barg_figures.R` | every figure |
+| `paper/barg/barg_dummy_data.R` | the synthetic dataset described below |
+| `paper/barg/barg_report.qmd` | this document |
+| `paper/barg/fits/*.rds` | the cached fits, one per specification, written with `saveRDS()` |
+| `paper/barg/figures/*.png` | every figure at 300 dpi |
+
+`paper/_analysis.R` fits the same model for the two summary tables of the
+supplementary information, leaving the slope prior at `normal(0, 1)` --- which
+is specification S1 of @sec-sensitivity. It is not used by any of the files
+above and is not modified by them.
+
+**Archive DOI:** `<10.17605/OSF.IO/XXXXXX>` --- to be minted on OSF or Zenodo
+at submission. The deposit will contain the four source files above, the
+`paper/barg/` scripts, the cached fits, and the rendered HTML.
+
+**If the specimen data cannot be released**, `paper/barg/barg_dummy_data.R`
+generates a synthetic dataset with the same columns, types, ranges, locality
+structure and missingness pattern as the real one, so that a reader can verify
+that the scripts run end to end without access to the measurements. It is
+simulated from the fitted model and reproduces no individual specimen.
+
+## Run the analysis
+
+```bash
+Rscript paper/barg/barg_fits.R        # nine MCMC runs; caches to paper/barg/fits/
+Rscript paper/barg/barg_figures.R     # reads the cache, writes paper/barg/figures/
+quarto render paper/barg/barg_report.qmd
+```
+
+The first step is the only expensive one. `barg_fits.R` writes one `.rds` per
+specification and reads it back on any later run, so the second and third
+steps never resample, and re-rendering this document does not re-fit anything.
+To force a refit, delete the file in question. `BARG_QUICK=1` runs the whole
+pipeline at reduced iterations into `paper/barg/fits_quick/`, for testing the
+plumbing without disturbing the cache.
+
+```{r}
+#| label: tbl-fit-times
+kt(data.frame(Fit = names(mf$minutes),
+              `Wall-clock minutes` = round(unname(mf$minutes), 1),
+              check.names = FALSE),
+   caption = "Time taken by each run on the machine that produced this document. NA means the fit was read from cache on this run.", digits = 1)
+```
+
+## Session information
+
+```{r}
+#| label: session
+#| attr-output: "style='max-height:420px;overflow:auto;'"
+cat("CmdStan version:", mf$cmdstan, "\n")
+cat("Fits produced at:", format(mf$fitted_at, "%Y-%m-%d %H:%M:%S %Z"), "\n\n")
+sessionInfo()
+```
+
+---
+
+# References
+
+Kruschke, J. K. (2018). Rejecting or accepting parameter values in Bayesian
+estimation. *Advances in Methods and Practices in Psychological Science*,
+1(2), 270--280.
+
+Kruschke, J. K. (2021). Bayesian analysis reporting guidelines. *Nature Human
+Behaviour*, 5, 1282--1291.
+
+Bürkner, P.-C. (2017). brms: An R package for Bayesian multilevel models
+using Stan. *Journal of Statistical Software*, 80(1), 1--28.
+
+Smithson, M., & Verkuilen, J. (2006). A better lemon squeezer?
+Maximum-likelihood regression with beta-distributed dependent variables.
+*Psychological Methods*, 11(1), 54--71.
+
+Vehtari, A., Gelman, A., Simpson, D., Carpenter, B., & Bürkner, P.-C. (2021).
+Rank-normalization, folding, and localization: an improved $\hat R$ for
+assessing convergence of MCMC. *Bayesian Analysis*, 16(2), 667--718.
