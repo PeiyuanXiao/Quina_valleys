@@ -9,9 +9,7 @@ format:
     toc-depth: 3
     toc-location: left
     number-sections: true
-    code-fold: true
     code-tools: true
-    code-summary: "Show the code"
     embed-resources: true
     df-print: kable
     fig-align: center
@@ -19,7 +17,7 @@ format:
 execute:
   warning: false
   message: false
-  echo: true
+  echo: false
 bibliography: []
 ---
 
@@ -95,6 +93,97 @@ kt   <- function(x, caption, digits = 3, ...)
   knitr::kable(x, caption = caption, digits = digits, row.names = FALSE, ...)
 rlab <- function(x) unname(resp_lab[x])
 plab <- function(x) unname(pred_lab[x])
+```
+
+<!-- --------------------------------------------------------------------
+     Cross-chapter computations.
+
+     Every object defined in the chunks below is consumed by inline R in
+     more than one chapter, or in a chapter that now sits above the chunk's
+     original position in the document.  They are gathered here, unchanged,
+     so that definition always precedes use.  Nothing is printed.
+     -------------------------------------------------------------------- -->
+
+```{r}
+#| label: q1-readout
+#| echo: false
+icc_dec <- icc_ref |> arrange(desc(Median))
+present <- icc_dec |> filter(Verdict == "locality variation present")
+undec   <- icc_dec |> filter(Verdict == "undecided")
+icc_j <- icc_ref |> select(Response, ref = Median, ref_lo = CrI_lo) |>
+  left_join(icc_nol |> select(Response, nol = Median), by = "Response") |>
+  mutate(change = ref - nol, rel = change / nol)   # positive = ICC rose
+
+# how the Q1 decision behaves across the six priors
+icc_sens <- sens_long |>
+  filter(startsWith(Quantity, "ICC: ")) |>
+  mutate(Resp = sub("^ICC: ", "", Quantity),
+         dec = ifelse(lo > ICC_ROPE, "present",
+               ifelse(hi < ICC_ROPE, "negligible", "undecided")))
+icc_stable <- icc_sens |> group_by(Resp) |>
+  summarise(k = n_distinct(dec), ref = dec[Spec == "REF"], .groups = "drop")
+firm  <- icc_stable |> filter(k == 1, ref == "present")
+flips <- icc_stable |> filter(k > 1)
+flip_detail <- icc_sens |> semi_join(flips, by = "Resp") |> filter(dec != "present")
+```
+
+```{r}
+#| label: q1-readout2
+#| echo: false
+med_rel <- median(icc_j$rel)
+n_up    <- sum(icc_j$change > 0); n_dn <- sum(icc_j$change < 0)
+worst_j <- icc_j |> arrange(rel) |> slice(1)
+best_j  <- icc_j |> arrange(desc(rel)) |> slice(1)
+```
+
+```{r}
+#| label: q2-readout
+#| echo: false
+v_tab <- table(cf$Verdict)
+n_und <- sum(cf$Verdict == "undecided")
+n_rej <- sum(cf$Verdict == "reject the null value")
+n_acc <- sum(cf$Verdict == "accept the null value")
+best  <- cf |> arrange(Min_ROPE / link_sd[Response]) |> head(3)
+worst2 <- cf |> arrange(desc(Min_ROPE / link_sd[Response])) |> head(3)
+dir_max <- cf |> arrange(desc(Dir_certainty)) |> head(3)
+# the edge-angle ICC across the six priors, quoted in the limitations below
+ea     <- sens_long |> filter(Quantity == paste0("ICC: ", rlab("EdgeAngle")))
+ea_ref <- ea |> filter(Spec == "REF")
+ea_min <- ea |> arrange(Median) |> slice(1)
+```
+
+```{r}
+#| label: q2-accepted
+#| echo: false
+acc <- cf |> filter(Verdict == "accept the null value")
+```
+
+```{r}
+#| label: sens-verdict-calc
+#| echo: false
+sens_verdict <- sens_long |>
+  mutate(is_icc = startsWith(Quantity, "ICC: "),
+         Decision = ifelse(is_icc,
+           ifelse(lo > ICC_ROPE, "locality variation present",
+             ifelse(hi < ICC_ROPE, "negligible", "undecided")),
+           rope_verdict(lo, hi, 100 * inrope, ROPE_SD))) |>
+  select(Quantity, Spec, Decision) |>
+  pivot_wider(names_from = Spec, values_from = Decision)
+changed <- sens_verdict |>
+  rowwise() |>
+  mutate(n_distinct_dec = n_distinct(c_across(all_of(names(SENS))))) |>
+  ungroup()
+```
+
+```{r}
+#| label: sens-readout
+#| echo: false
+n_changed <- sum(changed$n_distinct_dec > 1)
+worst_shift <- sens_long |>
+  group_by(Quantity) |>
+  summarise(shift = max(Median) - min(Median),
+            width = mean(hi - lo), .groups = "drop") |>
+  mutate(rel = shift / width) |> arrange(desc(rel))
 ```
 
 ```{=html}
@@ -1253,31 +1342,8 @@ posterior interval and relative to the ROPE, to change a conclusion.
 
 ```{r}
 #| label: tbl-sens-verdict
-sens_verdict <- sens_long |>
-  mutate(is_icc = startsWith(Quantity, "ICC: "),
-         Decision = ifelse(is_icc,
-           ifelse(lo > ICC_ROPE, "locality variation present",
-             ifelse(hi < ICC_ROPE, "negligible", "undecided")),
-           rope_verdict(lo, hi, 100 * inrope, ROPE_SD))) |>
-  select(Quantity, Spec, Decision) |>
-  pivot_wider(names_from = Spec, values_from = Decision)
-changed <- sens_verdict |>
-  rowwise() |>
-  mutate(n_distinct_dec = n_distinct(c_across(all_of(names(SENS))))) |>
-  ungroup()
 kt(changed |> select(-n_distinct_dec),
    caption = "The decision each quantity receives under each prior.")
-```
-
-```{r}
-#| label: sens-readout
-#| echo: false
-n_changed <- sum(changed$n_distinct_dec > 1)
-worst_shift <- sens_long |>
-  group_by(Quantity) |>
-  summarise(shift = max(Median) - min(Median),
-            width = mean(hi - lo), .groups = "drop") |>
-  mutate(rel = shift / width) |> arrange(desc(rel))
 ```
 
 Of the `r nrow(changed)` quantities, **`r n_changed`**
@@ -1308,29 +1374,6 @@ worst_shift |>
 # Interpretation {#sec-interpretation}
 
 ## Q1: is there technological variation between localities? {#sec-q1}
-
-```{r}
-#| label: q1-readout
-#| echo: false
-icc_dec <- icc_ref |> arrange(desc(Median))
-present <- icc_dec |> filter(Verdict == "locality variation present")
-undec   <- icc_dec |> filter(Verdict == "undecided")
-icc_j <- icc_ref |> select(Response, ref = Median, ref_lo = CrI_lo) |>
-  left_join(icc_nol |> select(Response, nol = Median), by = "Response") |>
-  mutate(change = ref - nol, rel = change / nol)   # positive = ICC rose
-
-# how the Q1 decision behaves across the six priors
-icc_sens <- sens_long |>
-  filter(startsWith(Quantity, "ICC: ")) |>
-  mutate(Resp = sub("^ICC: ", "", Quantity),
-         dec = ifelse(lo > ICC_ROPE, "present",
-               ifelse(hi < ICC_ROPE, "negligible", "undecided")))
-icc_stable <- icc_sens |> group_by(Resp) |>
-  summarise(k = n_distinct(dec), ref = dec[Spec == "REF"], .groups = "drop")
-firm  <- icc_stable |> filter(k == 1, ref == "present")
-flips <- icc_stable |> filter(k > 1)
-flip_detail <- icc_sens |> semi_join(flips, by = "Resp") |> filter(dec != "present")
-```
 
 **Yes, for `r nrow(present)` of the seven measures under the reference prior,
 and for `r nrow(firm)` of them under every prior tried.**
@@ -1377,15 +1420,6 @@ icc_ref |> select(Response, m_ref = Median, lo_ref = CrI_lo, hi_ref = CrI_hi) |>
   kt(caption = "The ICC with and without the three landscape terms. A large negative change would mean the landscape terms had absorbed between-locality variance; a change near zero means they explain almost none of it.", digits = 3)
 ```
 
-```{r}
-#| label: q1-readout2
-#| echo: false
-med_rel <- median(icc_j$rel)
-n_up    <- sum(icc_j$change > 0); n_dn <- sum(icc_j$change < 0)
-worst_j <- icc_j |> arrange(rel) |> slice(1)
-best_j  <- icc_j |> arrange(desc(rel)) |> slice(1)
-```
-
 **The three landscape terms do not absorb any of the between-locality
 variance.** If they explained it, the locality share would fall when they
 enter the model. It does not fall: the median change across the seven
@@ -1403,22 +1437,6 @@ carrying it.
 
 ## Q2: do the landscape variables explain it? {#sec-q2}
 
-```{r}
-#| label: q2-readout
-#| echo: false
-v_tab <- table(cf$Verdict)
-n_und <- sum(cf$Verdict == "undecided")
-n_rej <- sum(cf$Verdict == "reject the null value")
-n_acc <- sum(cf$Verdict == "accept the null value")
-best  <- cf |> arrange(Min_ROPE / link_sd[Response]) |> head(3)
-worst2 <- cf |> arrange(desc(Min_ROPE / link_sd[Response])) |> head(3)
-dir_max <- cf |> arrange(desc(Dir_certainty)) |> head(3)
-# the edge-angle ICC across the six priors, quoted in the limitations below
-ea     <- sens_long |> filter(Quantity == paste0("ICC: ", rlab("EdgeAngle")))
-ea_ref <- ea |> filter(Spec == "REF")
-ea_min <- ea |> arrange(Median) |> slice(1)
-```
-
 **No landscape variable is shown to matter, and for most of them the study
 also cannot show that they do not.**
 
@@ -1427,12 +1445,6 @@ Of the `r nrow(cf)` slopes, at the 0.1 SD ROPE:
 undecided**. The intervals are simply too wide for the ROPE: with
 `r n_loc` localities carrying every predictor, and a single binary contrast
 standing in for "basin", that is what the design can deliver.
-
-```{r}
-#| label: q2-accepted
-#| echo: false
-acc <- cf |> filter(Verdict == "accept the null value")
-```
 
 `r if (n_acc > 0) sprintf("What the analysis can state positively is confined to %s: %s.", if (n_acc == 1) "a single slope" else sprintf("%d slopes", n_acc), paste(sprintf("%s with %s (%s on the standardised axis, %s%% of the posterior inside the ROPE)", rlab(acc$Response), tolower(plab(acc$Predictor)), ci(acc$Std_median, acc$Std_lo, acc$Std_hi, 2), fmt(acc$pct_in_ROPE, 1)), collapse = "; ")) else "No slope can be positively called practically zero at this bound either."`
 
