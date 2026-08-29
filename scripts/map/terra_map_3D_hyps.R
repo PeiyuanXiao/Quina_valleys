@@ -331,7 +331,7 @@ lake_col   <- "#6E93AF"
 river_lw_minor <- if (preview) 2.4 else 4.8
 river_lw_trunk <- if (preview) 5.0 else 10.0
 river_split_q  <- 0.60
-basin_cols <- c(Binchuan = "#A0364B", Heqing = "#2F6489")
+basin_cols <- c(Binchuan = "#A0364B", Huangping = "#2F6489")
 river_min_acc <- 60000
 lake_min_ha   <- 5
 
@@ -391,7 +391,7 @@ names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
   mutate(basin = factor(sub(" basin$", "", trimws(basin)),
-                        levels = c("Binchuan", "Heqing"))) |>
+                        levels = c("Binchuan", "Huangping"))) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE) |>
   st_transform(32647)
 

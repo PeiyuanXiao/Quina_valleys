@@ -748,7 +748,7 @@ settle.
 
 ```{r}
 #| label: fig-main
-#| fig-cap: "**A** (Q1): the locality share of link-scale variance for each response. Circles are the model with the landscape terms, triangles the intercept-only model, joined by a line. Filled circles mark responses whose 95% interval clears the 0.05 negligibility band (shaded). **B** (Q2): the 21 landscape slopes, each divided by the link-scale SD of its own response so that all seven share one axis and the ROPE is a single band at +/- 0.1. Rows are in the same order in both panels. Any slope whose posterior SD is still more than half its prior SD is drawn grey and hollow, because it has not been informed enough by the data to be read as an estimate."
+#| fig-cap: "**A** (Q1): the locality share of link-scale variance for each response. Circles are the model with the landscape terms, triangles the intercept-only model, joined by a line. Filled circles mark responses whose 95% interval clears the 0.05 negligibility band (shaded). **B** (Q2): the 21 landscape slopes, each divided by the link-scale SD of its own response so that all seven share one axis and the ROPE is a single band at +/- 0.1. The basin slope is Huangping relative to Binchuan; height and distance are standardised, so their slopes are the change over one SD of the predictor. Rows are in the same order in both panels. Any slope whose posterior SD is still more than half its prior SD is drawn grey and hollow, because it has not been informed enough by the data to be read as an estimate."
 knitr::include_graphics(FIG("barg_main.png"))
 ```
 

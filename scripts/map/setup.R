@@ -67,7 +67,7 @@ names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
   mutate(
-    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Huangping")),
     geomorph = factor(geomorph, levels = c("T2", "T3", "T4", "hilltop"))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)

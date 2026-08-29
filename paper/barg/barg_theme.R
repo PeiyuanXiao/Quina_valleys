@@ -24,6 +24,10 @@ fig_theme <- theme_minimal(base_size = 9) +
 PAL  <- c("#E07C90", "#6BA8CE", "#E6C25C", "#9B87C4", "#6FB98E", "#E69F00")
 INK  <- "#202124"; GREY <- "#5A5F66"; TXT <- "#303238"
 POS  <- "#E07C90"; NEG <- "#6BA8CE"; MID <- "#F4F4F5"
+# a desaturated slate for estimates that carry no sign: lighter than INK, so
+# that a column of filled points does not read as heavier than the coloured
+# ones beside it
+SLATE <- "#3F5871"
 
 # the six prior specifications, in a fixed order and with fixed colours, so
 # that every sensitivity display reads the same way

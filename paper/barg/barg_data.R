@@ -10,8 +10,9 @@
 #   link_sd    SD of each response on its own link scale (the ROPE unit)
 #   drop_log   an audit of what the complete-case filter removed
 #
-# The construction is deliberately identical to the specimen-level frame of
-# paper/_analysis.R (section 8), which this project does not modify.
+# This is the only specimen-level frame in the project: paper/_analysis.R
+# builds the locality frame (site_df) and stops there, and both documents read
+# the landscape model from the cache this pipeline writes.
 # ==========================================================================
 suppressPackageStartupMessages({
   library(here); library(readxl); library(dplyr)
@@ -25,14 +26,12 @@ variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                "N_Scar", "Ave_RG", "Edge_Angle")
 
 # ---- locality-level landscape attributes ---------------------------------
-# Heqing is folded into Huangping: the two names refer to the same basin in
-# different sources.  A locality with no basin recorded cannot enter the model.
+# A locality with no basin recorded cannot enter the model.
 .sites <- read_excel(here("data", "Site_information.xlsx"))
 names(.sites) <- trimws(names(.sites))
 site_land <- .sites |>
   transmute(Locality = trimws(as.character(Code)),
-            Basin = factor(recode(sub(" basin$", "", trimws(as.character(basin))),
-                                  Heqing = "Huangping"),
+            Basin = factor(sub(" basin$", "", trimws(as.character(basin))),
                            levels = c("Binchuan", "Huangping")),
             Distance = as.numeric(d_river_m),
             Height   = as.numeric(h_river_m))
@@ -74,7 +73,7 @@ resp_fam <- c(Thickness = "lognormal", GMsize = "lognormal",
               EdgeAngle = "gaussian", RG = "gaussian")
 resps <- names(resp_fam)
 
-resp_lab <- c(Thickness = "Thickness", GMsize = "Quina scraper size",
+resp_lab <- c(Thickness = "Thickness", GMsize = "Geometric mean size",
               GIUR = "GIUR", RLI = "Retouched perimeter",
               NScar = "Total scars", EdgeAngle = "Edge angle",
               RG = "Retouch generations")
@@ -94,9 +93,9 @@ preds     <- c("BasinHuangping", "zHeight", "zDistance")
 pred_lab  <- c(BasinHuangping = "Basin (Huangping vs Binchuan)",
                zHeight        = "Height above channel (z)",
                zDistance      = "Distance to channel (z)")
-pred_short <- c(BasinHuangping = "Basin\n(Huangping)",
-                zHeight        = "Height above\nchannel (z)",
-                zDistance      = "Distance to\nchannel (z)")
+pred_short <- c(BasinHuangping = "Basin",
+                zHeight        = "Height above channel",
+                zDistance      = "Distance to channel")
 
 # ---- the ROPE unit --------------------------------------------------------
 # Smithson-Verkuilen squeeze, so that GIUR = 1 has a finite logit.

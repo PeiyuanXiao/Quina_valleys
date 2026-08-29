@@ -43,3 +43,43 @@ Rplots.pdf
 # Cached Stan fits from paper/mixed_model_tutorial.qmd (~19 MB binaries;
 # rebuilt automatically when the tutorial renders without them)
 paper/mixed_model_tutorial_cache/
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+
+# Cached Stan fits for the BARG report (paper/barg/barg_fits.R rebuilds them;
+# ~20 MB each, nine of them). They belong in the OSF/Zenodo deposit, not in git.
+paper/barg/fits/
+paper/barg/fits_quick/
+paper/barg/dummy_data.csv
+
+# Scratch directory of exploratory analyses; nothing in the manuscript or the
+# supplementary material reads it.
+analysis/
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user
+.Rproj.user

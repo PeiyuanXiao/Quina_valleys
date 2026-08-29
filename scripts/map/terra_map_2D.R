@@ -1,5 +1,5 @@
-## terra_map_2D.R — Figure 1A: plan terrain site map of the Binchuan and Heqing
-## basins. Self-rendered from the cached SRTM DEM and a DEM-derived stream
+## terra_map_2D.R — Figure 1A: plan terrain site map of the Binchuan and
+## Huangping basins. Self-rendered from the cached SRTM DEM and a DEM-derived stream
 ## network, so it contains NO roads and NO basemap place-names.
 ## Run setup.R first; everything read here comes from data/cache/.
 ##
@@ -162,7 +162,7 @@ blend_to <- function(cols, to, k) {
 }
 ## basin colours = colorspace::darken() of the manuscript hues #E07C90 / #6BA8CE,
 ## so Fig. 1 sits in the same colour family as the analysis figures
-basin_cols <- c(Binchuan = "#A0364B", Heqing = "#2F6489")
+basin_cols <- c(Binchuan = "#A0364B", Huangping = "#2F6489")
 water_col  <- "#86A6BB"
 contour_col<- "#6B6357"
 label_col  <- "#332F29"
@@ -176,7 +176,7 @@ names(sites) <- trimws(names(sites))
 sites <- sites |>
   rename(code = Code) |>
   mutate(
-    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Heqing")),
+    basin    = factor(sub(" basin$", "", trimws(basin)), levels = c("Binchuan", "Huangping")),
     geomorph = factor(geomorph, levels = names(geomorph_shapes))
   ) |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326, remove = FALSE)
@@ -427,9 +427,6 @@ p <- p +
           size = site_size, color = "white", stroke = site_stroke, alpha = 0.98) +
   scale_fill_manual(
     values = basin_cols, name = "Basin",
-    ## display label only -- Site_information.xlsx still records "Heqing basin",
-    ## so the data key stays Heqing and only what the reader sees changes
-    labels = c(Binchuan = "Binchuan", Heqing = "Huangping"),
     guide = guide_legend(order = 1,
       override.aes = list(shape = 21, size = 2.6, colour = "white", stroke = 0.45))) +
   scale_shape_manual(
@@ -514,7 +511,7 @@ p <- p +
   scale_y_continuous(breaks = if (show_graticule) lat_breaks else NULL)
 
 ## ---- titles + theme (house style of scripts/figures/*.R) ------------------
-ttl <- list(title = "Quina sites of the Binchuan and Heqing basins",
+ttl <- list(title = "Quina sites of the Binchuan and Huangping basins",
             subtitle = "Shaded relief and drainage rendered from the SRTM DEM",
             caption = paste0(
               "Relief shading, ", cont_minor, "/", cont_index,

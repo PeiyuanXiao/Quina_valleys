@@ -62,33 +62,46 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
 
   pred_f <- function(x) factor(unname(pred_short[x]), levels = unname(pred_short))
 
+  # One size for every strip in the figure.  Below the theme's 8.5, because the
+  # three facets of B are only about 1.3 in wide and the longest predictor name
+  # is clipped at the theme size.
+  STRIP_PT <- 7.6
+
   # ---- A: the locality share of the variance, with and without the terms --
-  icc_ref <- icc_table(fit_ref)   |> mutate(Model = "with landscape terms")
-  icc_nol <- icc_table(fit_noland)|> mutate(Model = "intercept only")
+  # The two models differ by the three landscape terms and by nothing else, so
+  # the legend names them as that one contrast rather than by model type.
+  M_WITH <- "With landscape terms"; M_WITHOUT <- "Without landscape terms"
+
+  icc_ref <- icc_table(fit_ref)   |> mutate(Model = M_WITH)
+  icc_nol <- icc_table(fit_noland)|> mutate(Model = M_WITHOUT)
 
   ord <- icc_ref$Response[order(icc_ref$Median)]               # ascending, so the
   lev <- unname(resp_lab[ord])                                 # largest sits on top
 
   icc_both <- bind_rows(icc_ref, icc_nol) |>
     mutate(Resp = factor(unname(resp_lab[Response]), levels = lev),
-           Model = factor(Model, levels = c("with landscape terms", "intercept only")),
-           Decided = CrI_lo > ICC_ROPE)
+           Model = factor(Model, levels = c(M_WITH, M_WITHOUT)),
+           Decided = CrI_lo > ICC_ROPE,
+           Panel = "Between-locality variation")
 
+  # The panel is faceted on a constant, purely so that it carries the same grey
+  # strip as the three facets of B and the two panels align along their tops.
   p_a <- ggplot(icc_both, aes(Median, Resp)) +
     annotate("rect", xmin = 0, xmax = ICC_ROPE, ymin = -Inf, ymax = Inf,
              fill = "#DCDDE0", alpha = 0.55) +
     geom_line(aes(group = Resp), colour = "#9AA0A6", linewidth = 0.3) +
-    geom_linerange(data = filter(icc_both, Model == "with landscape terms"),
-                   aes(xmin = CrI_lo, xmax = CrI_hi), linewidth = 0.35, colour = INK) +
-    geom_point(aes(shape = Model, fill = Decided), size = 1.9, stroke = 0.4, colour = INK) +
-    scale_shape_manual(values = c("with landscape terms" = 21, "intercept only" = 24)) +
-    scale_fill_manual(values = c(`TRUE` = INK, `FALSE` = "white"), guide = "none") +
+    geom_linerange(data = filter(icc_both, Model == M_WITH),
+                   aes(xmin = CrI_lo, xmax = CrI_hi), linewidth = 0.35, colour = SLATE) +
+    geom_point(aes(shape = Model, fill = Decided), size = 1.9, stroke = 0.4,
+               colour = SLATE) +
+    scale_shape_manual(values = setNames(c(21, 24), c(M_WITH, M_WITHOUT))) +
+    scale_fill_manual(values = c(`TRUE` = SLATE, `FALSE` = "white"), guide = "none") +
     scale_x_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1), expand = c(0.01, 0)) +
-    labs(x = "Locality share of link-scale variance (ICC)", y = NULL, tag = "A",
-         subtitle = "shaded: ICC below 0.05, treated as negligible") +
+    facet_wrap(~ Panel) +
+    labs(x = "Intraclass correlation coefficient", y = NULL, tag = "A") +
     fig_theme +
     theme(legend.position = "bottom", legend.margin = margin(t = -4),
-          plot.subtitle = element_text(size = 6.8, colour = GREY),
+          strip.text = element_text(size = STRIP_PT),
           panel.grid.major.y = element_line(color = "#EDEEF0", linewidth = 0.3),
           panel.grid.major.x = element_blank())
 
@@ -116,23 +129,21 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
   p_b <- ggplot(cf_ref, aes(Std_median, Resp)) +
     annotate("rect", xmin = -ROPE_SD, xmax = ROPE_SD, ymin = -Inf, ymax = Inf,
              fill = "#DCDDE0", alpha = 0.55) +
-    geom_vline(xintercept = c(-ROPE_SD, ROPE_SD), linewidth = 0.25,
-               linetype = "dotted", colour = "#9AA0A6") +
-    geom_vline(xintercept = 0, linewidth = 0.35, colour = GREY) +
+    geom_vline(xintercept = 0, linewidth = 0.3, colour = "#8A9099") +
     geom_linerange(aes(xmin = Std_lo, xmax = Std_hi, colour = Sign), linewidth = 0.35) +
-    geom_point(aes(fill = Sign), shape = 21, size = 1.8, stroke = 0.35, colour = INK) +
+    geom_point(aes(fill = Sign, colour = Sign), shape = 21, size = 1.9, stroke = 0.4) +
     scale_colour_manual(values = c(positive = POS, negative = NEG,
                                    `prior-dominated` = "#9AA0A6"), guide = "none") +
     scale_fill_manual(values = c(positive = POS, negative = NEG,
                                  `prior-dominated` = "white"), guide = "none") +
     scale_x_continuous(limits = c(-xlim_b, xlim_b), breaks = scales::pretty_breaks(4)) +
     facet_wrap(~ Pred, nrow = 1) +
-    labs(x = expression("Slope " * beta * " / SD of the response on its link scale"),
+    labs(x = expression("Standardised slope (" * beta * " / SD)"),
          y = NULL, tag = "B") +
     fig_theme +
-    theme(axis.text.y = element_blank(), axis.text.x = element_text(size = 7),
-          strip.text = element_text(size = 7.2, lineheight = 1.05),
-          panel.spacing.x = unit(4, "pt"),
+    theme(axis.text.y = element_blank(),
+          strip.text = element_text(size = STRIP_PT),
+          panel.spacing.x = unit(7, "pt"),
           panel.grid.major.y = element_line(color = "#EDEEF0", linewidth = 0.3),
           panel.grid.major.x = element_blank())
 
