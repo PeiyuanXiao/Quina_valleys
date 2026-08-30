@@ -199,7 +199,7 @@ table { font-size:.84em; }
 
 ## What this document is
 
-This is the statistical supplement to the main paper. It reports one Bayesian
+This is Supplementary material 2, the statistical supplement to the main paper. It reports one Bayesian
 analysis in full: the data, the model, the priors, the computation, the
 posterior, the decisions drawn from it, and how far those decisions depend on
 choices that could have been made differently. The reporting follows the
