@@ -57,7 +57,7 @@ dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 FIG_W_MM <- 150; FIG_H_MM <- 78; FIG_DPI <- 600
 sample_m <- 30        # DEM sampling interval along the route
 
-basin_cols      <- c(Binchuan = "#A0364B", Heqing = "#2F6489")
+basin_cols      <- c(Binchuan = "#A0364B", Huangping = "#2F6489")
 geomorph_shapes <- c(T2 = 21, T3 = 22, T4 = 24, hilltop = 23)
 label_col       <- "#332F29"
 ground_fill     <- "#DCD6C8"
