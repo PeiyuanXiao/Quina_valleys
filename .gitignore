@@ -39,6 +39,7 @@ paper/barg/dummy_data.csv
 analysis/
 
 
-# Open ScholarPeer working files (may contain confidential paper content)
+# Agent files
 .open*/
+.brain/
 AGENTS.md
