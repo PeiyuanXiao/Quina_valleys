@@ -136,7 +136,7 @@ grat_step     <- 0.05             # graticule / axis-break spacing (degrees)
 ## — because that is what is actually on the ground here: these are dry-hot
 ## valleys whose floors at 1300-1500 m are sparsely vegetated tan, and it is the
 ## flanking ranges that carry the forest. It is the same ramp the 3-D block uses
-## (scripts/map/terra_map_3D_hyps.R), on the same elevation anchors, so the two
+## (paper/map/terra_map_3D_hyps.R), on the same elevation anchors, so the two
 ## panels agree about what a colour means.
 
 hyps_cols_sheet <- c("#7E8E74", "#93A184", "#A9B195", "#BFBCA4",
@@ -194,7 +194,7 @@ dem <- if (use_regional) {
   f <- file.path(cache_dir, "dem_regional.tif")
   if (!file.exists(f))
     stop("MAP_EXT set but data/cache/dem_regional.tif is missing - run ",
-         "scripts/map/terra_map_2D_regional.R once to build the regional cache.")
+         "paper/map/terra_map_2D_regional.R once to build the regional cache.")
   terra::crop(terra::rast(f), terra::ext(map_ext[c("xmin", "xmax", "ymin", "ymax")]))
 } else read_if(file.path(cache_dir, "dem.tif"), terra::rast)
 if (is.null(dem)) stop("data/cache/dem.tif not found — run setup.R first.")

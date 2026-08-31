@@ -825,12 +825,17 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
 #| label: landscape-model-quantities
 #| include: false
 
-# The Bayesian model is read from the cache barg_fits.R writes; nothing is
-# sampled here. The barg scripts go into a private environment so their mod_dat,
-# ROPE_SD and variables do not overwrite the objects _analysis.R defines.
+# The Bayesian model is usually read from the cache barg_fits.R writes, with no
+# sampling here. If that cache is missing, ensure_barg_fits() builds it first by
+# running Rscript paper/barg/barg_fits.R in a fresh R process. Set BARG_NOREFIT=1
+# to forbid sampling during a render, or BARG_QUICK=1 for a minutes-long
+# reduced-iteration smoke test. The barg scripts go into a private environment so
+# their mod_dat, ROPE_SD and variables do not overwrite the objects _analysis.R
+# defines.
 barg <- new.env(parent = globalenv())
 for (s in c("barg_data.R", "barg_quantities.R", "barg_theme.R",
             "barg_main_figure.R")) source(here("paper", "barg", s), local = barg)
+barg$ensure_barg_fits()
 
 land_ref <- barg$barg_fit("ref")        # the three landscape terms
 land_nol <- barg$barg_fit("noland")     # intercept only, for the comparison

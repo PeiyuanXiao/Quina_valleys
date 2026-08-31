@@ -23,8 +23,9 @@
 #   e$barg_main_figure(e$barg_fit("ref"), e$barg_fit("prior_ref"),
 #                      e$barg_fit("noland"))
 #
-# barg_data.R, barg_quantities.R and barg_theme.R must be in scope; nothing
-# here fits or refits anything.
+# barg_data.R, barg_quantities.R and barg_theme.R must be in scope. Nothing
+# here fits or refits anything on its own; ensure_barg_fits() delegates to
+# barg_fits.R only when a document needs a fit the cache does not hold.
 # ==========================================================================
 suppressPackageStartupMessages({
   library(dplyr); library(ggplot2); library(patchwork); library(posterior)
@@ -37,8 +38,9 @@ if (!requireNamespace("brms", quietly = TRUE))
 
 # ---- the cache ------------------------------------------------------------
 # Reads a fit by name from paper/barg/fits/ (or fits_quick/ under BARG_QUICK).
-# Never samples: a missing fit is an error, because refitting is barg_fits.R's
-# job and must not happen in the middle of a document render.
+# Never samples: a missing fit is an error. Refitting is barg_fits.R's job,
+# triggered once per document render by ensure_barg_fits() when the cache does
+# not hold the fits the document needs.
 barg_fit <- function(name, dir = barg_fitdir()) {
   f <- file.path(dir, paste0(name, ".rds"))
   if (!file.exists(f))
@@ -51,6 +53,72 @@ barg_fit <- function(name, dir = barg_fitdir()) {
 barg_fitdir <- function() {
   here::here("paper", "barg",
              if (nzchar(Sys.getenv("BARG_QUICK"))) "fits_quick" else "fits")
+}
+
+# ---- the cache builder ---------------------------------------------------
+# ensure_barg_fits() is called from the setup chunk of both documents, before
+# any barg_fit(). If a fit the document needs is not in the cache, it runs
+# barg_fits.R in a fresh R process, so that a first-time render builds the
+# cache instead of failing. Running it as a subprocess keeps the render's own
+# environment clean and lets barg_fits.R print its [fit ...] progress to the
+# console. BARG_NOREFIT=1 forbids sampling during a render, and BARG_QUICK=1
+# makes barg_fits.R write a reduced-iteration smoke-test cache to fits_quick/
+# instead. Both environment variables are inherited by the subprocess, so
+# nothing needs to be propagated by hand.
+barg_cache_file <- function(name, dir) {
+  file.path(dir, if (name == "manifest") "manifest.rds" else paste0(name, ".rds"))
+}
+
+ensure_barg_fits <- function(required = c("ref", "prior_ref", "noland", "manifest"),
+                             dir = barg_fitdir()) {
+  missing <- required[
+    !file.exists(vapply(required, barg_cache_file, character(1), dir = dir))]
+  if (!length(missing)) {
+    message("[barg-cache] all required fits are present in ", dir)
+    return(invisible(dir))
+  }
+  if (nzchar(Sys.getenv("BARG_NOREFIT")))
+    stop("[barg-cache] fits missing from ", dir, ": ",
+         paste(missing, collapse = ", "),
+         ". BARG_NOREFIT is set, so the render will not build them.\n",
+         "Build the cache once, offline, with  Rscript paper/barg/barg_fits.R\n",
+         "and render again, or repeat the render with BARG_QUICK=1 for a\n",
+         "reduced-iteration smoke test.",
+         call. = FALSE)
+  if (!requireNamespace("cmdstanr", quietly = TRUE))
+    stop("[barg-cache] barg_fits.R needs the cmdstanr package, which is not\n",
+         "installed here. Install cmdstanr and the CmdStan toolchain to rebuild\n",
+         "the cache, or render on a machine where they are installed.\n",
+         "  remotes::install_github(\"stan-dev/cmdstanr\")",
+         call. = FALSE)
+  if (nzchar(Sys.getenv("BARG_QUICK")))
+    message("[barg-cache] building missing fits (", paste(missing, collapse = ", "),
+            ") under BARG_QUICK: a reduced-iteration smoke test, minutes.")
+  else
+    message("[barg-cache] building missing fits (", paste(missing, collapse = ", "),
+            ") by running  Rscript paper/barg/barg_fits.R.\n",
+            "This is the full run: nine MCMC fits with 20,000 post-warmup draws\n",
+            "each, and it will take hours. Set BARG_QUICK=1 for a minutes-long\n",
+            "smoke test, or BARG_NOREFIT=1 to fail fast instead.")
+  script <- file.path(here::here("paper", "barg", "barg_fits.R"))
+  rscript <- file.path(R.home("bin"),
+                       if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
+  status <- suppressWarnings(system2(rscript, script, wait = TRUE))
+  if (is.na(status) || status != 0)
+    stop("[barg-cache] barg_fits.R failed (exit status ", status,
+         "). See its output above; the render stops rather than continue with\n",
+         "an incomplete cache.",
+         call. = FALSE)
+  still <- required[
+    !file.exists(vapply(required, barg_cache_file, character(1), dir = dir))]
+  if (length(still))
+    stop("[barg-cache] barg_fits.R finished but the cache still lacks: ",
+         paste(still, collapse = ", "), ".\n",
+         "Check that the run wrote to the folder this document reads (",
+         dir, ").",
+         call. = FALSE)
+  message("[barg-cache] fits ready in ", dir)
+  invisible(dir)
 }
 
 # ---- the figure -----------------------------------------------------------

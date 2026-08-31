@@ -1,6 +1,6 @@
 <samp>RESEARCH COMPENDIUM</samp>
 
-<h1><b><i>The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau</i></b></h1>
+<h1><b><i>The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau</i></b></h1>
 
 <hr />
 
@@ -10,9 +10,9 @@
 
 This repository contains the data and code for our manuscript, **in preparation**:
 
-> **Xiao, P., Ruan, Q., Delpiano, D., Peresani, M., Jia, Z., Yang, L., Marwick, B., & Li, H. (in prep.). The Quina Valley: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau.**
+> **Xiao, P., Ruan, Q., Delpiano, D., Peresani, M., Jia, Z., Yang, L., Marwick, B., & Li, H. (in prep.). The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau.**
 
-The manuscript and its supplementary material are written in Quarto and live in [`paper/`](paper); every number they report is computed by [`paper/_analysis.R`](paper/_analysis.R), except the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
+The manuscript and its supplementary material are written in Quarto and can be found in [`paper/`](paper). Every number they report is computed by [`paper/_analysis.R`](paper/_analysis.R), except the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
 
 ------------------------------------------------------------------------
 
@@ -35,36 +35,24 @@ The manuscript and its supplementary material are written in Quarto and live in 
 
 ### 📁 Contents
 
-`paper/_analysis.R` is the single source of every number, table and statistical figure in the two documents bar the Bayesian landscape analysis, which `paper/barg/` carries end to end; `scripts/` now holds only the cartographic pipeline behind Figure 1. That map is the one figure no document draws for itself: every statistical figure in either document, Figure 9 included, is drawn by the `.qmd` that carries it at render time, from the objects `_analysis.R` and (for Figure 9) `paper/barg/` leave in the environment. What is left in `figures/` is therefore only the map and the specimen photographs.
-
 - [:file_folder: data](data) — the source spreadsheets and CSVs, read by every script:
 
   - `Quina_scraper_surface.xlsx` — the surface-collected Quina scrapers and resharpening flakes (the core assemblage).
   - `Longtan_lithic_tools.xlsx` — the excavated Longtan retouched tools, used as the comparative reference.
   - `Raw_mat_basin.xlsx` — river-gravel clast survey: lithology, size and shape of the *available* raw material.
-  - `Site_information.xlsx` — the single source of truth for the localities: the 27 Quina-bearing localities as re-verified in the field record, with coordinates, elevation, geomorphic position and distance/height above the local channel. An earlier flat CSV of an older, larger site list (`Quina_sites_27_clean.csv`) was deleted on 2026-07-30; it named a different 27 and is superseded by this file. Nothing reads it and it remains in the git history.
-  - `geology_scan.jpg` — scan of the 1:200,000 regional geological sheet (Yunnan Geological Bureau, 1973). The geology map is being drawn by hand from this sheet, so no script renders it; the scripts that once did (schematic, scan-based and classified variants) were removed on 2026-07-29 and remain in the git history.
-  - `cache/` — downloaded and DEM-derived spatial data (SRTM DEM, hillshade, channel network, admin boundaries). **Untracked since 2026-08-19** and no longer committed: it is \~51 MB of rebuildable binaries that only the Figure 1 pipeline reads, and nothing in the manuscript or the supplementary material touches it. `scripts/map/setup.R` regenerates it from scratch, which now means a clone needs a network connection and WhiteboxTools before Figure 1 can be redrawn. The wider `*_regional.*` cache is **not** committed — `scripts/map/terra_map_2D_regional.R` builds it, and `terra_map_2D.R` needs it whenever `MAP_EXT` widens the frame past the site extent, which is how the published panel A reaches the Jinsha. A third, `*_setibet.*` cache for an abandoned SE-Tibet overview was deleted on 2026-08-18 along with the scripts that read it.
+  - `Site_information.xlsx` — the data for the localities: the 27 Quina localities as re-verified in the field record, with coordinates, elevation, geomorphic position and distance/height above the local channel. 
 
-- [:file_folder: figures](figures) — the images the two documents include as finished files, and nothing else: `study_area.png` and `geology_map.png`, the two maps, and the specimen and field photographs (`quina_scraper_1.png`, `quina_scraper_2.png`, `resharpening_flake.png`, `sample_point_photo.png`, `thin_section.png`). Every statistical figure is drawn by the `.qmd` that carries it and none is stored here; the ones that were, the jackknife, the equivalence *p*-value curves and the electivity sensitivity, moved into `supplementary.qmd` on 2026-08-26.
-
-- [:file_folder: scripts](scripts) — all analysis code (R), grouped to match the Results:
-
-  - [`map/`](scripts/map) — the whole cartographic / DEM pipeline behind Figure 1, in run order. `setup.R` prepares everything the panels read (the site table and the cached DEM, hillshade, DEM-derived channel network and administrative boundaries) and `terra_map_2D_regional.R` extends that cache north to the Jinsha; `terra_map_2D.R` draws the plan site map, `terra_map_3D_hyps.R` the path-traced oblique block model, `traverse_profile_figure.R` the traverse long profile and `locator_globe_figure.R` the orthographic locator inset; `fig01_export_panels.R` then re-renders the map and the profile at their final placed sizes into `output/figures/fig01_panels/`. `figures/study_area.png` is assembled by hand in Illustrator from four files: `panel_A_map_with_route_landscape_north_bare.png` and `panel_C_profile_landscape.png` from that folder, `locator_globe.png` beside them, and `output/maps/terrain_3d_hyps.png`. Earlier variants — a tiled basemap, a latitude-ordered elevation profile, three geology maps, an automatic patchwork composite — were deleted once superseded; a further round on 2026-08-18 removed the SE-Tibet overview maps, the regional locator and its composite, the pre-hypsometric 3-D block (`terra_map_3D.R`, still the baseline the comments in `terra_map_3D_hyps.R` refer to) and its v2 successor. The git history has them all.
-  - `raw_material_analysis/`, `scraper_analysis/`, `technological_consistency/` — **removed on 2026-08-19.** These eleven scripts were a second, independently written implementation of analyses that `_analysis.R` already carries in full, and which the documents source directly; nothing outside them read their output. Keeping two implementations of a published statistic invites the two to drift apart, so the duplicate was retired. The git history has them. Note what went with them, since none of it is in `_analysis.R`: `landscape_structure.R` held the robustness work behind the "suggestive rather than conclusive" reading of the distance trend — the scraper-size correlation reweighted by specimens per locality (which reverses sign), its leave-one-locality-out range, an artefact-level test with localities permuted whole, PERMDISP across height bands, assemblage-size binning and a rank-transformed refit — together with the `_GUARDRAILS.txt` notes each analysis wrote beside its output.
-  - `figures/` — **removed on 2026-08-18.** Every statistical figure is now drawn inside the `.qmd` that carries it, from the objects `_analysis.R` leaves in the environment, so a figure can no longer drift from the numbers beside it. The folder had held five scripts that wrote PNGs into `output/figures/`: `statistic_figures.R`, `raw_material_composition_figure.R` and `edge_angle_reduction_figure.R`, whose figures the documents now draw inline (`fig-technological-consistency`, `fig-raw-material-composition`, `fig-edge-angle-reduction`), and `terrace_position_figure.R` and `liandong_section_figure.R`, two superseded Figure 1 panel candidates that nothing sourced. The git history has them, and with them the methodological notes their headers carried — that the edge-angle correlations are quoted unadjusted with the Bonferroni values sent to the console, and that `d_river_m` and `h_river_m` disagree with the DEM.
+- [:file_folder: figures](figures) —  the maps and the specimen and field photographs.  
 
 - [:file_folder: paper](paper) — the manuscript (`manuscript.qmd`), the supplementary material (`supplementary.qmd`), `references.bib`, and the shared analysis:
 
-  - [`_analysis.R`](paper/_analysis.R) **computes every statistical result reported in either document.** It loads the packages, sets the seed (2226) and the permutation counts (`PERM = 9999`, `B_BOOT = 5000`, `MSLR_NR = 1e5`), defines the inline-number formatters, reads the data and leaves its results in the environment. Both `.qmd` files source it, so a number cannot differ between the paper and its supplement. Sourcing it writes nothing to disk.
+  - [`_analysis.R`](paper/_analysis.R) computes every statistical result reported in either document. It loads the packages, sets the seed (2226) and the permutation counts (`PERM = 9999`, `B_BOOT = 5000`, `MSLR_NR = 1e5`), defines the inline-number formatters, reads the data and leaves its results in the environment. Both `.qmd` files source it, so a number cannot differ between the paper and its supplement. Sourcing it writes nothing to disk.
 
-  - [`barg/`](paper/barg) — the Bayesian side of the landscape analysis, self-contained and run separately from `_analysis.R`. `barg_data.R` builds the specimen-level frame (165 Quina scrapers in 26 localities) and defines the link-scale SD that sets the ROPE; `barg_priors.R` holds all six prior specifications; `barg_fits.R` runs and caches the nine MCMC fits into `paper/barg/fits/` (git-ignored, ~20 MB each; `BARG_QUICK=1` diverts a reduced run to `fits_quick/`); `barg_quantities.R` derives every reported quantity; `barg_main_figure.R` defines the two-panel display the manuscript carries as Figure 9; `barg_figures.R` draws every figure into `paper/barg/figures/`, that one included; `barg_report.qmd` renders `barg_report.html`, the Supplementary Bayesian Report, written under the Bayesian Analysis Reporting Guidelines (Kruschke 2021). `barg_dummy_data.R` writes a synthetic stand-in dataset for the case where the specimen data cannot be released. This is the one part of the paper `_analysis.R` does not compute: both `manuscript.qmd` and `supplementary.qmd` source these files and read the cached fits themselves — the manuscript for Figure 9, the supplementary for Tables S17 and S18 — so the figure, the tables and the report are one fit and cannot drift, and the percentages quoted beside Figure 9 in the Results are read from the report.
+  - [`barg/`](paper/barg) — the Bayesian side of the landscape analysis. Because this can be a lengthy process, it is self-contained and run separately from `_analysis.R`. `barg_data.R` builds the specimen-level frame (165 Quina scrapers in 26 localities) and defines the link-scale SD that sets the ROPE; `barg_priors.R` holds all six prior specifications; `barg_fits.R` runs and caches the nine MCMC fits into `paper/barg/fits/` (git-ignored, ~20 MB each; `BARG_QUICK=1` diverts a reduced run to `fits_quick/`); `barg_quantities.R` derives every reported quantity; `barg_main_figure.R` defines the two-panel display the manuscript carries as Figure 9; `barg_figures.R` draws every figure into `paper/barg/figures/`, that one included; `barg_report.qmd` renders `barg_report.html`, the Supplementary Bayesian Report, written under the Bayesian Analysis Reporting Guidelines (Kruschke 2021). This is the one part of the paper `_analysis.R` does not compute: both `manuscript.qmd` and `supplementary.qmd` source these files and read the cached fits themselves — the manuscript for Figure 9, the supplementary for Tables S17 and S18 — so the figure, the tables and the report are one fit and cannot drift, and the percentages quoted beside Figure 9 in the Results are read from the report.
 
 - [:file_folder: templates](templates) — Quarto/Pandoc templates used when rendering: `template.docx`, the `.lua` filters and the `.csl` style. `supplement-numbering.lua` closes up the supplementary cross-reference labels ("Table S1" rather than "Table S 1").
 
-- [:file_folder: output](output) — figures and cached results generated by the scripts (git-ignored; regenerate by re-running them). The scripts write no CSV tables; results print to the console.
-
-> **Note:** paths are resolved with `here::here()` from the project root (the folder holding `Quina_valleys.Rproj` / `.git`), so the scripts run as-is wherever the compendium is checked out — but they must be run **from the project root**. Opening `Quina_valleys.Rproj` in RStudio guarantees this.
+> **Note:** paths are resolved with `here::here()` from the project root (the folder holding `Quina_valleys.Rproj` / `.git`), so the scripts run as-is wherever the compendium is checked out — but they must be run from the project root. Opening `Quina_valleys.Rproj` in RStudio guarantees this.
 
 ------------------------------------------------------------------------
 
@@ -81,7 +69,7 @@ The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the devel
 
     Open `Quina_valleys.Rproj` in RStudio — this sets the working directory that `here::here()` anchors to.
 
-2.  Install the R packages the two documents load. They are listed with the versions actually used in the supplementary material (`tbl-software`), and all of them are on CRAN except one: `WdStar`, the Welch-type distance-based MANOVA that `_analysis.R` sets beside the pairwise PERMANOVA and that Part 3 of the supplement extends to every other one, is installed from its authors' repository.
+2.  Install the R packages required by the project. They are listed with the versions actually used in the supplementary material (`tbl-software`), and all of them are on CRAN except one: `WdStar`, the Welch-type distance-based MANOVA that `_analysis.R` sets beside the pairwise PERMANOVA and that Part 3 of the supplement extends to every other one, is installed from its authors' repository.
 
     ``` r
     remotes::install_github("alekseyenko/WdStar")
@@ -90,7 +78,7 @@ The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the devel
 3.  **Build the spatial cache** (needed once, and only for Figure 1). This downloads the SRTM DEM and the administrative boundaries and extracts the channel network from the DEM, so it needs a network connection and the WhiteboxTools binary (installed on first run, \~70 MB):
 
     ``` r
-    source("scripts/map/setup.R")
+    source("paper/map/setup.R")
     ```
 
     Everything it builds lands in `data/cache/` and is skipped on a re-run if already present; every later script reads that cache and needs no network.
@@ -102,12 +90,12 @@ The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the devel
     quarto render paper/supplementary.qmd
     ```
 
-    Both documents read the MCMC fits cached in `paper/barg/fits/`, which are git-ignored and so absent from a fresh clone; run the first command of Step 6 once before this step. The manuscript draws Figure 9 from that cache and the supplementary tabulates the same fit in Tables S17 and S18. Both only read it and never sample, so a render cannot silently refit.
+    Both documents read the MCMC fits cached in `paper/barg/fits/`, which are git-ignored and so absent from a fresh clone. A first render builds that cache automatically: the setup chunk calls `ensure_barg_fits()`, which runs `Rscript paper/barg/barg_fits.R` in a separate R process before any result is read. That is the full nine-fit run and can take hours, so first-time renderers may prefer to pre-build the cache offline (Step 6), set `BARG_QUICK=1` for a reduced-iteration smoke test, or set `BARG_NOREFIT=1` to make a render stop with instructions instead of sampling. The manuscript draws Figure 9 from that cache and the supplementary tabulates the same fit in Tables S17 and S18; a render never refits a cache that already exists.
 
-5.  **Rebuild the Figure 1 panels** (optional; only if the map itself changes). `figures/study_area.png` is assembled by hand from these, so the script run is one step of a two-step process — the run order is given under [`map/`](scripts/map) above, since `fig01_export_panels.R` re-sources the two panel scripts:
+5.  **Rebuild the Figure 1 panels** (optional; only if the map itself changes). `figures/study_area.png` is assembled by hand from these, so the script run is one step of a two-step process — the run order is given under [`map/`](paper/map) above, since `fig01_export_panels.R` re-sources the two panel scripts:
 
     ``` r
-    source("scripts/map/fig01_export_panels.R")
+    source("paper/map/fig01_export_panels.R")
     ```
 
     Step 4 does not depend on this: the documents read the map and the photographs from `figures/` as finished images. Apart from the Bayesian pipeline in Step 6, no other script is needed to reproduce anything in the manuscript or the supplementary material — every other reported number, table and statistical figure is computed by `_analysis.R` and drawn inside the `.qmd` that reports it.

@@ -94,10 +94,14 @@ source(here::here("paper", "_analysis.R"))
 fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 
 # The Bayesian model is read from the cache barg_fits.R writes -- the same BARG
-# reference fit the manuscript figure draws. Nothing is sampled here.
+# reference fit the manuscript figure draws. Nothing is sampled here; if the
+# cache is missing it is built first by ensure_barg_fits() running
+# Rscript paper/barg/barg_fits.R in a fresh R process (BARG_NOREFIT=1 forbids
+# that, BARG_QUICK=1 makes it a reduced-iteration smoke test).
 barg <- new.env(parent = globalenv())
 for (s in c("barg_data.R", "barg_quantities.R", "barg_theme.R",
             "barg_main_figure.R")) source(here::here("paper", "barg", s), local = barg)
+barg$ensure_barg_fits()
 brms_ref   <- barg$barg_fit("ref")
 brms_coef  <- barg$coef_table(brms_ref)
 brms_icc   <- barg$icc_table(brms_ref)

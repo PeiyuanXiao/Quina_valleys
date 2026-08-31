@@ -1,7 +1,7 @@
 ## terra_map_2D_regional.R — the Figure 1 plan map (panel B of figures/study_area.png)
 ## re-drawn over a WIDER frame that reaches north to the Jinsha River (金沙江).
 ##
-## Cartographically this is scripts/map/terra_map_2D.R: the same relief model, the
+## Cartographically this is paper/map/terra_map_2D.R: the same relief model, the
 ## same hypsometric wash, the same accumulation-thinned drainage, the same symbol
 ## grammar, theme, type sizes and export geometry. Only three things differ, and
 ## each is forced by the larger frame:

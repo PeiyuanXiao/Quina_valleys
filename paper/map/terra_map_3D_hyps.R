@@ -1,7 +1,7 @@
 ## terra_map_3D_hyps.R — the Figure 1 block model, re-coloured to sit in the same
 ## colour family as the 2-D relief sheets.
 ##
-## This is scripts/map/terra_map_3D.R with the SURFACE COLOUR changed and nothing
+## This is paper/map/terra_map_3D.R with the SURFACE COLOUR changed and nothing
 ## else. Camera, DEM, frame, vertical exaggeration, slab, lighting, sample counts
 ## and site spheres are all exactly as that script leaves them, so the block is
 ## the same block from the same angle; only what it is painted with differs.
@@ -88,7 +88,7 @@ cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## ---- what to render (terra_map_3D.R, unchanged) ---------------------------
-## Rscript scripts/map/terra_map_3D_hyps.R [variant] [warm_mix] [albedo_gain]
+## Rscript paper/map/terra_map_3D_hyps.R [variant] [warm_mix] [albedo_gain]
 ## A variant tag names the output and forces the fast preview; no arguments
 ## renders the settled publication pass.
 args    <- commandArgs(trailingOnly = TRUE)
@@ -426,7 +426,7 @@ if (isTRUE(drape_2d)) {
   env2 <- new.env()
   assign("PALETTE_MODE", palette_mode, envir = env2)
   assign("SKIP_EXPORT", TRUE, envir = env2)
-  sys.source(file.path(proj_dir, "scripts", "map", "terra_map_2D.R"), envir = env2)
+  sys.source(file.path(proj_dir, "paper", "map", "terra_map_2D.R"), envir = env2)
   sh <- terra::project(env2$shaded, dem, method = "bilinear")
   m3 <- terra::values(sh) / 255
   m3[is.na(m3)] <- 1

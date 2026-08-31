@@ -64,9 +64,9 @@ save_both <- function(p, name, w, h) {
 
 # ---- rebuild the two ggplot panels -----------------------------------------
 message("building panels ...")
-## these two live in scripts/map/ — the folder was called scripts/figure1/ before
+## these two live in paper/map/ — the folder was called scripts/figure1/ before
 ## the restructure, and this script was left pointing at the old path
-script_dir <- file.path(proj_dir, "scripts", "map")
+script_dir <- file.path(proj_dir, "paper", "map")
 ## An argument switches the plan map to the landscape ramp and suffixes every
 ## file this script writes, so the originals are never overwritten.
 args <- commandArgs(trailingOnly = TRUE)
