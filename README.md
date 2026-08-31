@@ -44,11 +44,13 @@ The manuscript and its supplementary material are written in Quarto and can be f
 
 - [:file_folder: figures](figures) —  the maps and the specimen and field photographs.  
 
-- [:file_folder: paper](paper) — the manuscript (`manuscript.qmd`), the supplementary material (`supplementary.qmd`), `references.bib`, and the shared analysis:
+- [:file_folder: paper](paper) — the manuscript (`manuscript.qmd`), the supplementary material (`supplementary.qmd`), the bibliographies (`references.bib`, `packages.bib`), and the analyses:
 
   - [`_analysis.R`](paper/_analysis.R) computes every statistical result reported in either document. It loads the packages, sets the seed (2226) and the permutation counts (`PERM = 9999`, `B_BOOT = 5000`, `MSLR_NR = 1e5`), defines the inline-number formatters, reads the data and leaves its results in the environment. Both `.qmd` files source it, so a number cannot differ between the paper and its supplement. Sourcing it writes nothing to disk.
 
   - [`barg/`](paper/barg) — the Bayesian side of the landscape analysis. Because this can be a lengthy process, it is self-contained and run separately from `_analysis.R`. `barg_data.R` builds the specimen-level frame (165 Quina scrapers in 26 localities) and defines the link-scale SD that sets the ROPE; `barg_priors.R` holds all six prior specifications; `barg_fits.R` runs and caches the nine MCMC fits into `paper/barg/fits/` (git-ignored, ~20 MB each; `BARG_QUICK=1` diverts a reduced run to `fits_quick/`); `barg_quantities.R` derives every reported quantity; `barg_main_figure.R` defines the two-panel display the manuscript carries as Figure 9; `barg_figures.R` draws every figure into `paper/barg/figures/`, that one included; `barg_report.qmd` renders `barg_report.html`, the Supplementary Bayesian Report, written under the Bayesian Analysis Reporting Guidelines (Kruschke 2021). This is the one part of the paper `_analysis.R` does not compute: both `manuscript.qmd` and `supplementary.qmd` source these files and read the cached fits themselves — the manuscript for Figure 9, the supplementary for Tables S17 and S18 — so the figure, the tables and the report are one fit and cannot drift, and the percentages quoted beside Figure 9 in the Results are read from the report.
+
+  - [`map/`](paper/map) — the Figure 1 map pipeline. `setup.R` builds the spatial cache in `data/cache/` (DEM-derived rasters and vector layers; needs a network connection and WhiteboxTools on the first run); `terra_map_2D.R`, `terra_map_2D_regional.R` and `terra_map_3D_hyps.R` render the plan, regional and three-dimensional terrain maps; `traverse_profile_figure.R` draws the topographic profile; `locator_globe_figure.R` draws the global locator inset; and `fig01_export_panels.R` re-sources the panel scripts and assembles the Figure 1 panels, which are then composed by hand into `figures/study_area.png`. These scripts write their outputs under `output/` and read the spatial cache from `data/cache/`, both not included here due to large file sizes, but can be rebuilt on demand.
 
 - [:file_folder: templates](templates) — Quarto/Pandoc templates used when rendering: `template.docx`, the `.lua` filters and the `.csl` style. `supplement-numbering.lua` closes up the supplementary cross-reference labels ("Table S1" rather than "Table S 1").
 
@@ -58,57 +60,24 @@ The manuscript and its supplementary material are written in Quarto and can be f
 
 ### 🚀 How to reproduce
 
-The files hosted at <https://github.com/PeiyuanXiao/Quina_valleys> are the development version.
+**Clone the repository** and open it in RStudio (this sets the working directory that `here::here()` anchors to). Run these lines in the terminal: 
 
-1.  Clone the repository and open the project:
+``` sh
+git clone https://github.com/PeiyuanXiao/Quina_valleys.git
+cd Quina_valleys
+```
 
-    ``` sh
-    git clone https://github.com/PeiyuanXiao/Quina_valleys.git
-    cd Quina_valleys
-    ```
+Open `Quina_valleys.Rproj` in RStudio.
 
-    Open `Quina_valleys.Rproj` in RStudio — this sets the working directory that `here::here()` anchors to.
+1.  **Install dependencies.** The package names and versions required to run the code for this project are listed in the supplementary material (`tbl-software`). Note that some required dependencies are not R packages, e.g. [Stan](https://mc-stan.org/). Optional: if you want to fully reproduce the analyses depicted in the maps in Figure 1, follow the instructions in `paper/map/README.md`. We also include the output of this in `figures/study_area.png`, so it can be skipped to save time.
 
-2.  Install the R packages required by the project. They are listed with the versions actually used in the supplementary material (`tbl-software`), and all of them are on CRAN except one: `WdStar`, the Welch-type distance-based MANOVA that `_analysis.R` sets beside the pairwise PERMANOVA and that Part 3 of the supplement extends to every other one, is installed from its authors' repository.
+3.  **Render the manuscript and supplement.** This will generate the docx files for our manuscript and supplementary materials. Rendering the Quarto documents will run our R code and generate all the data visualisations and statistical test results presented in the manuscript and supplement. The first render of builds `manuscript.qmd` the Bayesian fits automatically and may take 30-60 min. Subsequent renders will draw on cached fits and be much faster. Run these lines in the terminal:
 
-    ``` r
-    remotes::install_github("alekseyenko/WdStar")
-    ```
+``` sh
+quarto render paper/manuscript.qmd
+quarto render paper/supplementary.qmd
+```
 
-3.  **Build the spatial cache** (needed once, and only for Figure 1). This downloads the SRTM DEM and the administrative boundaries and extracts the channel network from the DEM, so it needs a network connection and the WhiteboxTools binary (installed on first run, \~70 MB):
-
-    ``` r
-    source("paper/map/setup.R")
-    ```
-
-    Everything it builds lands in `data/cache/` and is skipped on a re-run if already present; every later script reads that cache and needs no network.
-
-4.  **Render the documents.** This is the authoritative route: both `.qmd` files source `paper/_analysis.R`, so rendering recomputes every reported number from the raw data.
-
-    ``` sh
-    quarto render paper/manuscript.qmd
-    quarto render paper/supplementary.qmd
-    ```
-
-    Both documents read the MCMC fits cached in `paper/barg/fits/`, which are git-ignored and so absent from a fresh clone. A first render builds that cache automatically: the setup chunk calls `ensure_barg_fits()`, which runs `Rscript paper/barg/barg_fits.R` in a separate R process before any result is read. That is the full nine-fit run and can take hours, so first-time renderers may prefer to pre-build the cache offline (Step 6), set `BARG_QUICK=1` for a reduced-iteration smoke test, or set `BARG_NOREFIT=1` to make a render stop with instructions instead of sampling. The manuscript draws Figure 9 from that cache and the supplementary tabulates the same fit in Tables S17 and S18; a render never refits a cache that already exists.
-
-5.  **Rebuild the Figure 1 panels** (optional; only if the map itself changes). `figures/study_area.png` is assembled by hand from these, so the script run is one step of a two-step process — the run order is given under [`map/`](paper/map) above, since `fig01_export_panels.R` re-sources the two panel scripts:
-
-    ``` r
-    source("paper/map/fig01_export_panels.R")
-    ```
-
-    Step 4 does not depend on this: the documents read the map and the photographs from `figures/` as finished images. Apart from the Bayesian pipeline in Step 6, no other script is needed to reproduce anything in the manuscript or the supplementary material — every other reported number, table and statistical figure is computed by `_analysis.R` and drawn inside the `.qmd` that reports it.
-
-6.  **Rebuild the Bayesian landscape analysis** (optional; only if the model, the data behind it or its figures change). This is the one analysis `_analysis.R` does not carry: it fits the model behind Figure 9 of the manuscript and writes the Supplementary Bayesian Report.
-
-    ``` sh
-    Rscript paper/barg/barg_fits.R        # nine MCMC runs; caches to paper/barg/fits/
-    Rscript paper/barg/barg_figures.R     # reads the cache, writes paper/barg/figures/
-    quarto render paper/barg/barg_report.qmd
-    ```
-
-    `barg_fits.R` samples only for a fit it cannot find in the cache, so a re-run after the first is cheap; delete a `.rds` to force that one fit again, and set `BARG_QUICK=1` to run the whole chain at reduced iterations into `paper/barg/fits_quick/` for a pipeline smoke test. Only the fits matter to the manuscript: it draws Figure 9 from them itself through `barg_main_figure.R`, so a refit reaches the paper on the next render of Step 4 whether or not `barg_figures.R` is run.
 
 ------------------------------------------------------------------------
 

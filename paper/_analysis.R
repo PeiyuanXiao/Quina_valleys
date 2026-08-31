@@ -16,6 +16,7 @@ library(grid)
 library(cvequality)
 library(WdStar) # remotes::install_github("alekseyenko/WdStar")
 library(cmdstanr) # remotes::install_github("stan-dev/cmdstanr")
+library(rnaturalearthhires)
 
 
 set.seed(2226)

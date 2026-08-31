@@ -38,3 +38,6 @@ paper/barg/dummy_data.csv
 # supplementary material reads it.
 analysis/
 
+
+# Open ScholarPeer working files (may contain confidential paper content)
+.brain/
