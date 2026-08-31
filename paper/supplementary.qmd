@@ -2,14 +2,14 @@
 title: "Supplementary material 1"
 subtitle: "The Quina Landscape: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
 author:
-  - Peiyuan Xiao:
+  - Pei-Yuan Xiao:
       correspondence: "no"
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA
         - UCAS
         - UW
-  - Qijun Ruan:
+  - Qi-Jun Ruan:
       correspondence: "yes"
       orcid: 0009-0000-2143-5335
       institute:
@@ -24,12 +24,12 @@ author:
       institute:
         - FERRARA
         - IGAG
-  - Zhenxiu Jia:
+  - Zhen-Xiu Jia:
       correspondence: "no"
       orcid: 0000-0002-7514-4514
       institute:
         - ALPHA
-  - Lijing Yang:
+  - Li-Jing Yang:
       correspondence: "no"
       institute:
         - BCRMI

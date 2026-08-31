@@ -44,3 +44,5 @@ analysis/
 .open*/
 .brain/
 AGENTS.md
+
+.Rproj.user
