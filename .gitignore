@@ -40,4 +40,5 @@ analysis/
 
 
 # Open ScholarPeer working files (may contain confidential paper content)
-.open$/
+.open*/
+AGENTS.md
