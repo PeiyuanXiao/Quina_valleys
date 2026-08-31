@@ -868,11 +868,12 @@ icc_pct <- function(r, crlab = FALSE) {
 }
 ```
 
-Whether or not landscape variables had structural influences on lithic technology first requires that technological differences exist among localities. Our Bayesian multilevel model shows that such differences do exist. Locality-level variation accounts for `r icc_pct("GMsize", TRUE)` of the variation in Quina scraper size, `r icc_pct("NScar")` in total scar count, and `r icc_pct("Thickness")` in thickness, the `r num_word[nrow(icc_present)]` measures whose credible interval lies wholly above the 5% below which a locality share is treated as negligible. The remaining `r num_word[nrow(icc_undec)]` are undecided rather than shown to be uniform: their intervals run from near zero to values that would be substantial, and the design does not separate the two (@fig-landscape-model A; @tbl-landscape-icc; Table S17). Thus, differences among localities are expressed mainly in the dimensions of Quina scrapers.
+Whether or not landscape variables had structural influences on lithic technology first requires that technological differences exist among localities. Our Bayesian model shows that such differences do exist for three scraper attributes. Quina scraper size, thickness and total scar count show correlations with locality that exclude the region of practical equivalence (@fig-landscape-model). Locality-level variation accounts for `r icc_pct("GMsize", TRUE)` of the variation in Quina scraper size, `r icc_pct("NScar")` in total scar count, and `r icc_pct("Thickness")` in thickness, the `r num_word[nrow(icc_present)]`. These measures have credible intervals well above our 5% practical‑significance cutoff for locality effects, below this value we consider an effect negligible. For the other `r num_word[nrow(icc_undec)]` traits, the data are inconclusive: the locality share could be near zero or substantial, and our design cannot tell which (@fig-landscape-model A; @tbl-landscape-icc; Table S17). Thus, differences among localities are expressed mainly in the dimensions of Quina scrapers.
+
 
 ```{r}
 #| label: fig-landscape-model
-#| fig-cap: "Landscape structure of technological variation. Results from the Bayesian multivariate multilevel model showing (A) the proportion of variance attributable to among-locality differences and (B) standardised effects of basin, height above the channel, and distance to the channel across seven technological measures. Shading indicates negligible variance components in (A) and the region of practical equivalence (±0.1) in (B)."
+#| fig-cap: "Landscape structure of technological variation. Results from the Bayesian multivariate multilevel model showing (A) the proportion of variance attributable to among-locality differences and (B) standardised effects of basin, height above the channel, and distance to the channel across seven technological measures. Shading indicates negligible variance components in (A) and the region of practical equivalence (±0.1 standard deviations) in (B)."
 #| fig-width: 7.5
 #| fig-height: 3.4
 #| out-width: "5.9in"
@@ -880,7 +881,7 @@ Whether or not landscape variables had structural influences on lithic technolog
 barg$barg_main_figure(land_ref, barg$barg_fit("prior_ref"), land_nol)
 ```
 
-The three landscape variables, however, do not explain these differences. If basin, height above the channel and distance to the channel carried the between-locality signal, the locality share of the variance would fall when they enter the model. It does not fall: the median change across the seven measures is `r sprintf("%+.0f", 100 * med_rel)`% of the intercept-only value, `r num_word[n_icc_up]` of the seven rising and `r num_word[n_icc_dn]` falling, a pattern scattered about zero rather than a reduction (@tbl-landscape-icc). That comparison bears on the question directly and does not depend on any single coefficient being well resolved. The individual coefficients lead to the same conclusion: none of the `r n_slopes` effects provides clear evidence of a directional relationship, although most remain uncertain given that these predictors vary among only `r n_localities` localities rather than among individual specimens (@fig-landscape-model B; Supplementary material 2).
+The three landscape variables, however, do not explain these differences. If basin, height above the channel and distance to the channel influenced the between-locality signal, the locality share of the variance would fall when the landscape terms enter the model. @fig-landscape-model panel A shows it mostly does the opposite and increases. The median change across the seven measures is `r sprintf("%+.0f", 100 * med_rel)`% of the intercept-only value, `r num_word[n_icc_up]` of the seven rising and `r num_word[n_icc_dn]` falling, a pattern scattered about zero rather than a reduction (@tbl-landscape-icc). The individual coefficients lead to the same conclusion: none of the `r n_slopes` effects provides clear evidence of a directional relationship between artefact attributes and landscape variables, although most remain uncertain given that these predictors vary among only `r n_localities` localities rather than among individual specimens (@fig-landscape-model B; Supplementary material 2).
 
 ```{r}
 #| label: tbl-landscape-icc
@@ -901,7 +902,7 @@ knitr::kable(icc_fmt, row.names = FALSE, align = c("l", "r", "r", "r", "l"),
                            "Locality variation"))
 ```
 
-Quina scrapers therefore varies among localities, but that variation is not explained by basin, elevation, or distance to the channel at the resolution of the present dataset. Despite substantial differences in local raw material availability, raw material selection was remarkably consistent across the study area; the source of the remaining technological variation therefore lies outside the three landscape variables tested here.
+Quina scrapers therefore vary among localities, but that variation is not explained by basin, elevation, or distance to the channel at the resolution of the present dataset. Despite substantial differences in local raw material availability, raw material selection was remarkably consistent across the study area; the source of the remaining technological variation therefore lies outside the three landscape variables tested here.
 
 # Discussion
 
