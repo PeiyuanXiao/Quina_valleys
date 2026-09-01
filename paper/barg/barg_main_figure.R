@@ -97,7 +97,7 @@ ensure_barg_fits <- function(required = c("ref", "prior_ref", "noland", "manifes
   else
     message("[barg-cache] building missing fits (", paste(missing, collapse = ", "),
             ") by running  Rscript paper/barg/barg_fits.R.\n",
-            "This is the full run: nine MCMC fits with 20,000 post-warmup draws\n",
+            "This is the full run: eleven MCMC fits with 20,000 post-warmup draws\n",
             "each, and it will take hours. Set BARG_QUICK=1 for a minutes-long\n",
             "smoke test, or BARG_NOREFIT=1 to fail fast instead.")
   script <- file.path(here::here("paper", "barg", "barg_fits.R"))

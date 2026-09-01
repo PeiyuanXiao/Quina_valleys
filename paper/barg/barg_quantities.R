@@ -215,3 +215,47 @@ ppc_stat <- function(fit, resp, stat, nd = 1000, label = "") {
              rep_hi = unname(quantile(rep, 0.975)),
              p_upper = mean(rep >= obs), row.names = NULL)
 }
+
+# ==========================================================================
+# 7.  the basin x gradient extension (ref_basinx)
+# ==========================================================================
+# The reference model fits one height slope and one distance slope shared by
+# both basins; ref_basinx fits one of each per basin.  Binchuan is the
+# reference level of the factor, so the plain `zHeight` coefficient IS the
+# Binchuan slope and the interaction is the Huangping-minus-Binchuan
+# difference.  The Huangping slope is their sum, formed draw by draw so that
+# it carries the covariance of the two rather than adding their intervals.
+#
+# Everything is divided by link_sd, the same standardised axis the reference
+# slopes are reported on, so the ROPE is the same +/- ROPE_SD band.
+basin_slopes <- function(fit) {
+  dr <- as_draws_df(fit)
+  one <- function(x, r, g, what) {
+    z <- x / link_sd[[r]]; q <- eti(z); p <- 100 * mean(abs(z) < ROPE_SD)
+    data.frame(Response = r, Gradient = g, Quantity = what,
+               Median = median(z), CrI_lo = q[1], CrI_hi = q[2],
+               pct_in_ROPE = p, P_positive = mean(z > 0),
+               excl_zero = q[1] > 0 | q[2] < 0,
+               Verdict = rope_verdict(q[1], q[2], p, ROPE_SD), row.names = NULL)
+  }
+  bind_rows(lapply(resps, function(r) bind_rows(lapply(
+    c("zHeight", "zDistance"), function(g) {
+      b_bin <- dr[[paste0("b_", r, "_", g)]]
+      b_dif <- dr[[paste0("b_", r, "_BasinHuangping:", g)]]
+      bind_rows(one(b_bin,         r, g, "Binchuan"),
+                one(b_bin + b_dif, r, g, "Huangping"),
+                one(b_dif,         r, g, "difference"))
+    }))))
+}
+
+# P(every Huangping slope on one gradient is positive), computed jointly.
+# Fourteen medians that all lean one way look like strong evidence; the joint
+# probability is the honest version of that reading, and it is much smaller.
+basin_joint_positive <- function(fit, gradient = "zHeight") {
+  dr <- as_draws_df(fit)
+  M <- vapply(resps, function(r)
+    (dr[[paste0("b_", r, "_", gradient)]] +
+     dr[[paste0("b_", r, "_BasinHuangping:", gradient)]]) / link_sd[[r]],
+    numeric(nrow(dr)))
+  mean(apply(M, 1, function(z) all(z > 0)))
+}

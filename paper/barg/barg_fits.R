@@ -10,15 +10,20 @@
 # Set BARG_QUICK=1 for a fast pipeline smoke test (iter = 800, chains = 2,
 # written to paper/barg/fits_quick/ so the real cache is never overwritten).
 #
-# Nine runs, all with the same data, seed and backend:
+# Eleven runs, all on the same 165 specimens, with the same seed and backend:
 #
 #   ref        reference prior, the model the report estimates from
 #   noland     ~ 1 + (1 |p| Locality); no landscape terms.  Its ICC answers
 #              Q1 without the landscape terms competing for the same variance
 #   prior_ref  sample_prior = "only" under the reference prior (BARG 1.E)
-#   s1 .. s5   one-at-a-time prior changes (BARG Step 5)
+#   s1 .. s6   one-at-a-time prior changes (BARG Step 5).  s6 is the odd one:
+#              it fixes coi at 1 rather than widening a prior, making the two
+#              zero-one-inflated beta responses one-inflated (they have no zeros)
 #   ref_rg_ln  RG refitted as lognormal, the fallback if the gaussian
 #              posterior predictive check fails (BARG 3.A)
+#   ref_basinx one height slope and one distance slope per basin instead of
+#              one of each shared by both: the test of whether the landscape
+#              effects are uniform or basin-dependent (BARG Step 5)
 #
 # Nothing is refitted if the .rds already exists, so re-rendering the report
 # never triggers sampling.  Delete a file to force its refit.
@@ -42,6 +47,13 @@ stopifnot(requireNamespace("cmdstanr", quietly = TRUE))
 CMDSTAN_VERSION <- cmdstanr::cmdstan_version()
 BACKEND <- "cmdstanr"
 
+# Stamped on every fit this run produces and saved inside the .rds, so that a
+# cache assembled across more than one session reports the environment each
+# fit was actually made in rather than the environment of the latest run.
+ENV_NOW <- c(r_version = R.version.string,
+             brms      = as.character(utils::packageVersion("brms")),
+             cmdstan   = CMDSTAN_VERSION)
+
 fam_of <- function(f) switch(f, lognormal = lognormal(),
                              zoib = zero_one_inflated_beta(),
                              negbinomial = negbinomial(), gaussian = gaussian())
@@ -51,8 +63,16 @@ make_formula <- function(rhs, fams = resp_fam) {
     bf(as.formula(paste(r, "~", rhs)), family = fam_of(fams[[r]])))) + set_rescor(FALSE)
 }
 
-RHS_FULL <- "Basin + zHeight + zDistance + (1 |p| Locality)"
-RHS_NULL <- "1 + (1 |p| Locality)"
+RHS_FULL  <- "Basin + zHeight + zDistance + (1 |p| Locality)"
+RHS_NULL  <- "1 + (1 |p| Locality)"
+# One gradient slope per basin.  A slope that varies by LOCALITY is not
+# identified -- all three predictors are locality attributes, so within a
+# locality the predictor never moves and the random slope is collinear with
+# the random intercept.  The basin is the finest level at which the question
+# can be put, because height and distance do vary across the localities inside
+# each basin.  Two basins carry no variance to estimate, so this is a fixed
+# interaction rather than (zHeight | Basin).
+RHS_INTER <- "Basin * zHeight + Basin * zDistance + (1 |p| Locality)"
 
 # --------------------------------------------------------------------------
 fit_cached <- function(name, formula, prior, sample_prior = "no") {
@@ -70,6 +90,7 @@ fit_cached <- function(name, formula, prior, sample_prior = "no") {
   el <- as.numeric(difftime(Sys.time(), t0, units = "mins"))
   attr(fit, "barg_minutes") <- el
   attr(fit, "barg_name")    <- name
+  attr(fit, "barg_env")     <- ENV_NOW
   saveRDS(fit, f, compress = "xz")
   message(sprintf("[done ] %-10s %.1f min -> %s", name, el,
                   format(structure(file.size(f), class = "object_size"), units = "MB")))
@@ -90,7 +111,7 @@ fits$prior_ref <- fit_cached("prior_ref", make_formula(RHS_FULL),
 fits$noland <- fit_cached("noland", make_formula(RHS_NULL), prior_noland)
 
 # 4. the five one-at-a-time prior changes (BARG Step 5)
-for (nm in c("S1", "S2", "S3", "S4", "S5"))
+for (nm in c("S1", "S2", "S3", "S4", "S5", "S6"))
   fits[[tolower(nm)]] <- fit_cached(tolower(nm), make_formula(RHS_FULL),
                                     prior_specs[[nm]]$prior)
 
@@ -111,9 +132,15 @@ prior_rg_ln <- local({
 fits$ref_rg_ln <- fit_cached("ref_rg_ln",
                              make_formula(RHS_FULL, fam_rg_ln), prior_rg_ln)
 
+# 6. one gradient slope per basin (BARG Step 5).  The reference prior carries
+# over untouched: class "b" with no coef applies to every population-level
+# coefficient of a response, the two new interaction terms included.
+fits$ref_basinx <- fit_cached("ref_basinx", make_formula(RHS_INTER),
+                              prior_specs$REF$prior)
+
 # --------------------------------------------------------------------------
 # Per-fit diagnostics, computed once here and carried in the manifest so that
-# the report can print them without reopening nine 28 MB objects.
+# the report can print them without reopening eleven 28 MB objects.
 diagnostics <- do.call(rbind, lapply(names(fits), function(nm) {
   f  <- fits[[nm]]
   s  <- summarise_draws(as_draws_df(f), "rhat", "ess_bulk", "ess_tail")
@@ -127,15 +154,38 @@ diagnostics <- do.call(rbind, lapply(names(fits), function(nm) {
              row.names = NULL)
 }))
 
+# Environment per fit.  A fit made before ENV_NOW was stamped carries no
+# attribute of its own; it inherits what the previous manifest recorded for
+# it, which is the environment it was made in.  The scalar fields below
+# collapse to one string when every fit agrees and list the distinct values
+# when they do not, so the report can never claim a uniformity the cache does
+# not have.
+prev_mf <- tryCatch(readRDS(file.path(FITDIR, "manifest.rds")),
+                    error = function(e) NULL)
+env_of <- function(nm, f) {
+  a <- attr(f, "barg_env")
+  if (!is.null(a)) return(a[c("r_version", "brms", "cmdstan")])
+  if (!is.null(prev_mf$env_by_fit) && nm %in% rownames(prev_mf$env_by_fit))
+    return(prev_mf$env_by_fit[nm, ])
+  if (!is.null(prev_mf))
+    return(c(r_version = prev_mf$r_version, brms = prev_mf$brms,
+             cmdstan = prev_mf$cmdstan))
+  ENV_NOW
+}
+env_by_fit <- do.call(rbind, lapply(names(fits), function(nm) env_of(nm, fits[[nm]])))
+rownames(env_by_fit) <- names(fits)
+collapse1 <- function(v) paste(unique(v), collapse = "; ")
+
 manifest <- list(
   diagnostics = diagnostics,
   fitted_at   = Sys.time(),
   chains = CHAINS, iter = ITER, warmup = ITER / 2, cores = CORES,
   ndraws      = CHAINS * ITER / 2,
   seed        = SEED, backend = BACKEND,
-  cmdstan     = CMDSTAN_VERSION,
-  brms        = as.character(utils::packageVersion("brms")),
-  r_version   = R.version.string,
+  cmdstan     = collapse1(env_by_fit[, "cmdstan"]),
+  brms        = collapse1(env_by_fit[, "brms"]),
+  r_version   = collapse1(env_by_fit[, "r_version"]),
+  env_by_fit  = env_by_fit,
   quick       = QUICK,
   files       = list.files(FITDIR, pattern = "[.]rds$"),
   minutes     = vapply(fits, function(f) {
@@ -153,4 +203,3 @@ for (nm in names(fits)) {
                   nm, max(s$rhat), min(s$ess_bulk),
                   sum(np$Value[np$Parameter == "divergent__"])))
 }
-message("\nfits in: ", FITDIR)

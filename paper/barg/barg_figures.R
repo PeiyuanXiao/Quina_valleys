@@ -28,7 +28,8 @@ gf <- function(n) readRDS(file.path(FITDIR, paste0(n, ".rds")))
 fit_ref    <- gf("ref")
 fit_prior  <- gf("prior_ref")
 fit_noland <- gf("noland")
-SENS <- c(REF = "ref", S1 = "s1", S2 = "s2", S3 = "s3", S4 = "s4", S5 = "s5")
+SENS <- c(REF = "ref", S1 = "s1", S2 = "s2", S3 = "s3", S4 = "s4", S5 = "s5",
+          S6 = "s6")
 
 resp_f  <- function(x) factor(unname(resp_lab[x]), levels = unname(resp_lab))
 pred_f  <- function(x) factor(unname(pred_short[x]), levels = unname(pred_short))
@@ -316,8 +317,8 @@ save_fig("convergence.png",
 # ==========================================================================
 # SENSITIVITY: OVERLAID CUMULATIVE DISTRIBUTIONS
 # ==========================================================================
-# The key-quantity draws of all six fits are collected in one pass, loading
-# one fit at a time so that six large brmsfit objects are never in memory
+# The key-quantity draws of all seven fits are collected in one pass, loading
+# one fit at a time so that seven large brmsfit objects are never in memory
 # together.  Draws are thinned for the ECDF: a step function of 20000 points
 # is indistinguishable from one of 4000 and the figure files are far smaller.
 key_slopes <- bind_rows(

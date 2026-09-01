@@ -267,9 +267,9 @@ Three resampling settings govern the results reported in Part 2. All permutation
 
 # Part 2: Detailed results
 
-## Techno-typological characterisation of the retouch products
+## Techno-typological characterisation of the Quina retouch products
 
-This section describes the retouch products themselves. @tbl-retouch-products gives the metric and reduction attributes of the surface Quina scrapers and of the resharpening flakes that accompany them, and @fig-categorical-attributes gives the categorical attributes of the scrapers — the cover and position of cortex, the type of platform and the direction from which retouch was struck — as the percentage of specimens in each class. @fig-edge-angle-reduction sets edge angle against the three measures of how far reduction was carried, the relationships summarised in the main text. The typological attribution of the same specimens is reported in the main text.
+This section describes the characteristics of the Quina retouch products. @tbl-retouch-products reports the quantified attributes of the surface-collected Quina scrapers and resharpening flakes. @fig-categorical-attributes shows the categorical attributes of the scrapers, including cortex coverage and position, platform type, and the direction of retouch, expressed as the percentage of specimens in each category. @fig-edge-angle-reduction plots edge angle against three measures of reduction intensity; the corresponding relationships are discussed in the main text.
 
 \newpage
 
@@ -421,7 +421,7 @@ ggplot(long_ea, aes(y = .data[[focal_ea]])) +
 
 ## Technological consistency
 
-This section compares the surface Quina scrapers with the excavated Quina scrapers from Longtan, against the Longtan non-Quina scrapers as a control. @fig-qq shows the distribution of each of the six technological variables within each group, the check that stands behind the choice of test. @tbl-tc-permanova to @tbl-tc-pca give the full output of the comparison: the pairwise tests of group position and of group spread, the variable-by-variable tests, and the loadings of the ordination. @tbl-tc-sensitivity and @fig-jackknife then repeat the analysis with the surface specimens collected from within the area of the Longtan site removed. @fig-pvalue-curve gives the full equivalence *p*-value curves.
+This section compares the surface-collected Quina scrapers with the excavated Quina scrapers from Longtan, using the Longtan non-Quina scrapers as a control group. @fig-qq shows the distributions of the six technological variables for each group and provides the basis for assessing the assumptions underlying the statistical comparisons. @tbl-tc-permanova to @tbl-tc-pca provide the detailed results, including pairwise tests of differences in group position and dispersion, tests for individual variables, and the loadings from the ordination. @tbl-tc-sensitivity and @fig-jackknife repeat the analysis after sequentially excluding each locality in turn. @fig-pvalue-curve shows the full equivalence *p*-value curves, and @tbl-toster reports the specimen-level equivalence tests alongside the locality-level analysis.
 
 \newpage
 
@@ -957,10 +957,6 @@ tost_margin <- max(c(tost_tbl$w_p, tost_tbl$b_p)) - 0.05
 icc_of <- function(r) 100 * brms_icc$Median[brms_icc$Response == r]
 ```
 
-The equivalence test reported above resamples the surface material by locality: whole localities are drawn with replacement, each with all of its specimens, because the `r n_by_group[["SC_Quina"]]` surface scrapers come from `r eq_n_loc` localities and are not that many independent observations. The multilevel model of Part 2 puts the locality share of the variance at `r f(icc_of("Thickness"), 0)`% for thickness and `r f(icc_of("NScar"), 0)`% for the scar count (@tbl-brms-icc), so the assumption of independent specimens is not one this material supports. The cost of that choice is a wider interval, and @tbl-toster is there to say how much wider.
-
-The comparison holds the equivalence bound fixed and changes the treatment of uncertainty. For each measure Δ is the ρ bound of @fig-pvalue-curve carried back into that measure's own units, and the test is repeated at that same Δ with TOSTER [@R-TOSTER; @lakens2017; @lakens2018], in its parametric Welch form and in its studentised bootstrap form, both of which take the specimen as the unit. The specimen-level interval is the narrower on all `r tost_n_narrower` measures, by a median factor of `r f(tost_ratio_med, 2)` (`r f(tost_ratio_min, 2)` to `r f(tost_ratio_max, 2)`). At this Δ the Welch form declares equivalence on `r tost_n_w` of the six and the bootstrap form on `r tost_n_b`, and the measures that fall outside miss by less than `r f(tost_margin, 3)` in *p*. That is what a bound of this kind should be expected to produce: Δ is by construction the smallest bound at which the analysis reported here reaches *p* = 0.05, so it sits exactly on the edge of the claim and a change of method lands on one side of the edge or the other. **The analysis reported in this paper is the locality one**; the TOSTER columns record what treating the specimens as independent would have bought.
-
 \newpage
 
 ```{r}
@@ -1001,9 +997,11 @@ knitr::kable(tost_out, row.names = FALSE,
 
 ## Raw material economy
 
-This section reports what was available on the river bars and what was chosen from it. @fig-sample-points shows the sampling points at which the cobbles were recorded, and @fig-thin-section the petrography of the trachyte, the dominant raw material. @tbl-composition gives the raw material composition of the surveyed cobbles and of the surface Quina scrapers, valley by valley, and @tbl-electivity sets the two against one another as an index of selection. @fig-electivity-sensitivity then asks whether that index depends on how the gravel was sampled, by recomputing it with each sampling point, and each valley, left out in turn. @tbl-rawmat-permanova tests whether composition differs between sampling points, valleys and basins, and @tbl-clast-size reports the size of the surveyed cobbles by lithology. @tbl-cobble-dimensions, @tbl-cobble-roundness and @tbl-cobble-shape then give the field record of those same cobbles in full: the three axes as measured, roundness on the Powers scale, and the field-assigned shape term.
+This section documents the raw materials available on the river gravel bars and their representation in the surface assemblages. Two figures give the field setting: @fig-sample-points shows the locations at which cobbles were sampled, and @fig-thin-section illustrates the petrographic characteristics of trachyte.
 
-Those last three tables are the survey record rather than an analysis. All three axes, the roundness code and the shape term are complete for every one of the `r n_cob_round` surveyed cobbles, and nothing is tested on them here. The axes enter the analysis only through the quantities the main text reports, the geometric mean size of @tbl-clast-size and the compositional form of the Sneed–Folk analysis, which orders them as a ≥ b ≥ c and so does not use length, width and thickness as such; roundness and the field shape term enter nothing, the shape term because it mixes form with regularity and is superseded by the form analysis taken from the axes. They are tabulated so that the survey record can be read in full.
+The analytical results follow. @tbl-composition reports the raw material composition of the surveyed cobbles and surface Quina scrapers for each valley, and @tbl-electivity quantifies their relationship as an index of selection. @fig-electivity-sensitivity assesses the sensitivity of this index to the sampling scheme by recalculating it after omitting each sampling point and each valley in turn. @tbl-rawmat-permanova tests for differences in raw material composition among sampling points, valleys, and basins, and @tbl-clast-size reports the sizes of the surveyed cobbles by lithology.
+
+The last three tables are the field record of the same cobbles. @tbl-cobble-dimensions, @tbl-cobble-roundness, and @tbl-cobble-shape give the three measured axes, roundness scored using the Powers scale, and the shape category assigned in the field.
 
 \newpage
 
@@ -1299,40 +1297,15 @@ knitr::kable(shape_out, row.names = FALSE,
 
 ## Landscape structure
 
-This section asks whether the technological variation follows position in the landscape. @tbl-locality-matrix lists the localities that enter the analysis, with the number of Quina scrapers each yielded and the median of those scrapers on each of the seven measures. @tbl-brms-icc then gives the locality share of the variance in the model reported in the main text, which puts the question to the specimens themselves rather than to those locality medians.
+This section examines whether Quina scraper technological variation is associated with landscape position. @tbl-brms-icc reports the proportion of variance attributable to differences among localities for each of the seven measures, based on a single multivariate multilevel model fitted to the 166 Quina scrapers from 26 localities. Individual specimens were used rather than locality medians to retain within-locality variation and avoid giving localities with different sample sizes equal weight.
 
-The locality is a convenient summary but a poor unit of analysis: pooling a locality to its median discards the spread within it and weights a locality of two specimens as heavily as one of twenty. The three landscape predictors were therefore fitted to the `r brms_n` individual scrapers from `r brms_n_loc` localities in a single multivariate multilevel model. Of its `r nrow(brms_coef)` landscape coefficients, `r brms_cri_excl_zero` have a 95% credible interval clear of zero; they are plotted in Fig. 9 of the main text. The locality itself carries a modest share of the variance in every measure, with intraclass correlations from `r f(min(brms_icc$Median), 2)` to `r f(max(brms_icc$Median), 2)` (@tbl-brms-icc). The sampler converged: `r brms_div` divergent transitions, `r brms_treedepth` iterations at maximum treedepth, a maximum R-hat of `r f(brms_max_rhat, 3)` and a minimum effective sample size of `r n_fmt(round(brms_min_ess))` across `r n_fmt(brms_manifest$ndraws)` post-warmup draws, from `r brms_manifest$chains` chains of `r n_fmt(brms_manifest$iter)` iterations.
-
-The intraclass correlations are given here because the rest of the analysis rests on them: the clustered bootstrap of the equivalence test above, and the clustered resampling of the main text, both take the locality rather than the specimen as the unit on the strength of these numbers. The `r nrow(brms_coef)` landscape coefficients are not repeated here. They are reported in full in Supplementary material 2, written under the Bayesian Analysis Reporting Guidelines [@kruschke2021] and deposited with the repository as `paper/barg/barg_report.html`, which gives each coefficient with its posterior median, credible interval and the share of the posterior falling inside a region of practical equivalence, alongside the smallest such region this design could have decided against and the decision read across a grid of region widths. That report also carries the prior specification in full, the prior and posterior predictive checks, the complete convergence diagnostics, and a sensitivity analysis over six prior specifications. The table here, the figure in the main text and that report are all drawn from one and the same fit, the reference fit of the report, read from the cache `paper/barg/fits/ref.rds` that `paper/barg/barg_fits.R` writes; no model is fitted while either document renders.
-
-\newpage
-
-```{r}
-#| label: tbl-locality-matrix
-#| tbl-cap: "Locality-level analysis frame. Each row is one Quina locality, with the number of Quina scrapers complete on all seven measures and the median of those specimens on each. Distance and height are measured to and above the nearest channel."
-
-loc_out <- site_df |>
-  arrange(Basin, desc(n_art), Name) |>
-  transmute(Locality = Name, Basin = as.character(Basin),
-            n = as.character(n_art),
-            d = as.character(round(Distance_to_water)),
-            h = as.character(round(Height_above_river)),
-            GM = f(GM, 1),
-            Th = f(Thickness, 1), RLI = f(Retouch_length_index, 2),
-            GIUR = f(Ave_GIUR, 2), NS = f(N_Scar, 0),
-            RG = f(Ave_RG, 2), EA = f(Edge_Angle, 1))
-
-knitr::kable(loc_out, row.names = FALSE,
-             align = c("l", "l", rep("r", 10)),
-             col.names = c("Locality", "Basin", "*n*", "Distance (m)", "Height (m)",
-                           unname(variable_labels_land)))
-```
+The intraclass correlation was calculated for each posterior draw as the locality-level variance divided by the total variance, with both components evaluated on the response-specific link scale. The resulting ICCs are reported in @tbl-brms-icc. Model specification, priors and convergence diagnostics are reported in Supplementary material 2.
 
 \newpage
 
 ```{r}
 #| label: tbl-brms-icc
-#| tbl-cap: "Share of the variance in each measure that lies between localities rather than within them, from the specimen-level multivariate multilevel model. The unit is the individual Quina scraper rather than the locality median, and the seven measures are fitted together in one model, each with the likelihood its scale calls for, with locality carried as a random intercept correlated across responses. The intraclass correlation is computed for every posterior draw as the locality variance over the sum of the locality and residual variances, both on the link scale of the response. Residual variance is σ² for the gaussian and lognormal responses, log(1 + 1/μ + 1/shape) for the negative binomial, and the sum of the two trigamma terms for the beta responses, each evaluated at the model intercept."
+#| tbl-cap: "Intraclass correlations for the attributes from the Bayesian multivariate multilevel model. ICCs represent the proportion of variance attributable to differences among localities, calculated for each posterior draw on the response-specific link scale."
 
 icc_out <- data.frame(
   Response = unname(barg$resp_lab[brms_icc$Response]),
@@ -1350,13 +1323,13 @@ knitr::kable(icc_out, row.names = FALSE, align = c("l", "l", "r", "r", "r"),
 
 ## The localities not analysed
 
-The survey recorded more localities than the analysis uses. @tbl-locality-matrix lists those that enter it; @tbl-excluded-localities lists the eleven that do not, none of which yielded Quina retouch products. They are given here so that the survey record can be read in full; nothing reported in this paper is computed from them.
+The survey covered more localities than were included in the analysis. @tbl-excluded-localities lists the eleven that were excluded; none yielded Quina retouch products. They are included here to preserve the complete survey record, but no analyses reported in this paper use data from these localities.
 
 \newpage
 
 ```{r}
 #| label: tbl-excluded-localities
-#| tbl-cap: "The eleven surveyed localities that are not analysed in this paper. No Quina retouch products, neither Quina scrapers nor resharpening flakes, were recorded at any of them, so none meets the criterion for inclusion set out in the main text and none enters any analysis reported here or in @tbl-locality-matrix; they are listed for completeness of the survey record. All eleven lie in the Binchuan Basin. Landform is the position within the terrace sequence, as in Table 1 of the main text, with the one locality standing well above that sequence entered as a hilltop. Coordinates are degrees, minutes and seconds, elevation is metres above sea level, and height is metres above the local channel. The sheet these rows come from carries no artefact counts and no distance to the channel, neither having been recorded for a locality that yielded nothing to analyse."
+#| tbl-cap: "The eleven surveyed localities that are not analysed in this paper. No Quina retouch products, neither Quina scrapers nor resharpening flakes, were recorded at any of them, so none meets the criterion for inclusion set out in the main text and none enters any analysis reported in this paper; they are listed for completeness of the survey record. All eleven lie in the Binchuan Basin. Landform is the position within the terrace sequence, as in Table 1 of the main text, with the one locality standing well above that sequence entered as a hilltop. Coordinates are degrees, minutes and seconds, elevation is metres above sea level, and height is metres above the local channel. The sheet these rows come from carries no artefact counts and no distance to the channel, neither having been recorded for a locality that yielded nothing to analyse."
 
 dms <- function(x, hemi) {
   tot <- round(x * 3600, 1)
@@ -1428,19 +1401,17 @@ wds_basin_undef_pct <- 100 * wds_usedA_basin[["undef"]]
 n_sangyuan_scraper  <- sum(A_meta$river_ID == "Sangyuan", na.rm = TRUE)
 ```
 
-PERMANOVA reads a difference between groups as a difference in position, and it does so on the assumption that the groups are equally dispersed about their own centroids. PERMDISP shows that assumption to fail in several of the designs reported in Part 2, and where it fails the reading is no longer clean: a rejection may follow from unequal spread rather than from position, and a failure to reject may hide a difference in position that the unequal spread has masked. The *W*~d~\* statistic is a Welch-type correction to PERMANOVA which weights each group by its own dispersion instead of pooling them, so it does not carry that assumption [@alekseyenko2016; @hamidi2019]. It is computed here with the authors' own implementation, the `WdStar` package [@R-WdStar]. Setting it beside each PERMANOVA separates the two readings.
+PERMANOVA assesses differences in group position but assumes comparable within-group dispersion. Because PERMDISP indicates unequal dispersion in several designs in Part 2, we repeated the relevant analyses using the Welch-type W~d~* statistic, which accounts for group-specific dispersion [@alekseyenko2016; @hamidi2019], implemented in WdStar [@R-WdStar].
 
-@tbl-wds repeats every PERMANOVA reported in this supplement and in the main text with *W*~d~\* alongside, on the same dissimilarities, the same grouping and the same `r n_fmt(PERM)` permutations. Of the `r n_wds_total` models, `r n_wds_tested` can be tested this way, and all `r n_wds_agree` of them reach the conclusion their PERMANOVA reaches.
+@tbl-wds reports W~d~* alongside every PERMANOVA reported here and in the main text, using the same data and `r n_fmt(PERM)` permutations. Of the `r n_wds_total` models, `r n_wds_tested` were suitable for W~d~*, and all `r n_wds_agree` gave the same conclusions as PERMANOVA. Bonferroni adjustment also leaves all pairwise conclusions unchanged.
 
-Every PERMANOVA that rejects does so with PERMDISP rejecting as well, and each of them survives the correction at *p* < 0.001 with a *W*~d~\* statistic of the same order as the pseudo-*F* it replaces; those differences are differences in position and not in spread alone. Within each of the two families of three pairwise comparisons the Bonferroni adjustment leaves every conclusion unchanged.
-
-Two limits should be stated. *W*~d~\* takes a grouping factor, so a continuous predictor has no *W*~d~\* counterpart and none is given for one. And the statistic divides by the within-group dispersion, which the raw material designs can drive to zero: the `r n_sangyuan_scraper` surface Quina scrapers of the Sangyuan valley are all trachyte, so that group carries no internal dissimilarity and the statistic is undefined for the valley model, while `r f(wds_basin_undef_pct, 1)` per cent of the permutations of the basin model fall into the same degeneracy and leave its *p*-value undefined. Neither of those two designs has a dispersion problem to begin with (PERMDISP *p* `r fp(pd_usedA_basin[["p"]])` and `r fp(pd_usedA_river[["p"]])`), so nothing in their interpretation turns on the correction.
+W~d~* is defined only for grouping factors, not continuous predictors. It is also undefined when within-group dispersion is zero, as in the Sangyuan valley comparison and in `r f(wds_basin_undef_pct, 1)`% of basin-model permutations. Neither case shows significant dispersion differences by PERMDISP (p `r fp(pd_usedA_basin[["p"]])` and `r fp(pd_usedA_river[["p"]])`), so this does not affect the reported interpretation.
 
 \newpage
 
 ```{r}
 #| label: tbl-wds
-#| tbl-cap: "Every PERMANOVA reported in this supplement and in the main text, with PERMDISP and the Welch-type *W*~d~\\* statistic on the same dissimilarities, the same grouping and 9,999 permutations. PERMANOVA and PERMDISP columns repeat the values given in the tables of Part 2; *p*-values are unadjusted, and the Bonferroni adjustment within the two families of three pairwise comparisons changes no conclusion in either column. The *n* column gives the size of each group in the order the model fits them. An em dash marks a quantity that cannot be computed: *W*~d~\\* divides by the within-group dispersion, which is zero for a group whose members share a single raw material."
+#| tbl-cap: "PERMANOVA results with PERMDISP and the Welch-type W~d~* statistic, using the same dissimilarities, grouping factors, and 9,999 permutations. The PERMANOVA and PERMDISP columns reproduce the results reported in Part 2; p-values are unadjusted, and Bonferroni correction does not change any conclusion. n gives the group sizes in model order. An em dash indicates that W~d~* could not be computed because within-group dispersion was zero."
 
 wnum <- function(x, d = 2) if (is.finite(x)) f(x, d) else "—"
 wpv  <- function(p) if (is.na(p)) "—" else fpt(p)

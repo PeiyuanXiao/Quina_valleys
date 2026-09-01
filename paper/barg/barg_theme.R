@@ -29,10 +29,10 @@ POS  <- "#E07C90"; NEG <- "#6BA8CE"; MID <- "#F4F4F5"
 # ones beside it
 SLATE <- "#3F5871"
 
-# the six prior specifications, in a fixed order and with fixed colours, so
+# the seven prior specifications, in a fixed order and with fixed colours, so
 # that every sensitivity display reads the same way
-SENS_LEVELS <- c("REF", "S1", "S2", "S3", "S4", "S5")
-SENS_COLS   <- setNames(c(INK, PAL[1], PAL[2], PAL[3], PAL[5], PAL[4]), SENS_LEVELS)
+SENS_LEVELS <- c("REF", "S1", "S2", "S3", "S4", "S5", "S6")
+SENS_COLS   <- setNames(c(INK, PAL[1], PAL[2], PAL[3], PAL[5], PAL[4], PAL[6]), SENS_LEVELS)
 
 FIGDIR <- here::here("paper", "barg", "figures")
 dir.create(FIGDIR, showWarnings = FALSE, recursive = TRUE)

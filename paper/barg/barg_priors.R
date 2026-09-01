@@ -32,7 +32,7 @@ intercept_prior <- c(
 # thickness (SD 0.30).  phi and shape are given proper gamma priors; the brms
 # defaults gamma(0.01, 0.01) and inv_gamma(0.4, 0.3) put mass arbitrarily
 # close to zero, which makes the prior predictive distribution degenerate.
-aux_prior <- function(r) {
+aux_prior <- function(r, coi = "beta(1, 1)") {
   s <- sprintf("student_t(3, 0, %.6f)", link_sd[[r]])
   switch(resp_fam[[r]],
     lognormal   = set_prior(s, class = "sigma", resp = r),
@@ -40,21 +40,24 @@ aux_prior <- function(r) {
     negbinomial = set_prior("gamma(2, 0.1)", class = "shape", resp = r),
     zoib        = c(set_prior("gamma(2, 0.1)", class = "phi", resp = r),
                     set_prior("beta(1, 1)",    class = "zoi", resp = r),
-                    set_prior("beta(1, 1)",    class = "coi", resp = r)))
+                    set_prior(coi,             class = "coi", resp = r)))
 }
 
 # --------------------------------------------------------------------------
-# build_prior(b, sd, cor): assemble a full prior from three interchangeable
+# build_prior(b, sd, cor, coi): assemble a full prior from four interchangeable
 # pieces.  `b` and `sd` are functions of the response name returning a
-# brms prior string; `cor` is a single string for the 7 x 7 LKJ.
+# brms prior string; `cor` is a single string for the 7 x 7 LKJ; `coi` is a
+# single string for the conditional-one-inflation probability of the two
+# zero-one-inflated beta responses, and is the only piece that touches a
+# parameter no decision in the report depends on.
 # --------------------------------------------------------------------------
-build_prior <- function(b, sd, cor = "lkj(1)") {
+build_prior <- function(b, sd, cor = "lkj(1)", coi = "beta(1, 1)") {
   do.call(c, c(
     lapply(resps, function(r) c(
       set_prior(b(r),                 class = "b",         resp = r),
       set_prior(intercept_prior[[r]], class = "Intercept", resp = r),
       set_prior(sd(r),                class = "sd",        resp = r, group = "Locality"),
-      aux_prior(r))),
+      aux_prior(r, coi))),
     list(set_prior(cor, class = "cor", group = "Locality"))))
 }
 
@@ -84,7 +87,19 @@ prior_specs <- list(
              note  = "locality SD, a lighter tail than the half-t"),
   S5  = list(prior = build_prior(b_link,  sd_t3,   "lkj(2)"),
              label = "cor: lkj(2)",
-             note  = "26 clusters and 21 correlations; lkj(2) shrinks towards zero"))
+             note  = "26 clusters and 21 correlations; lkj(2) shrinks towards zero"),
+  # S6 differs from the others in kind.  S1 to S5 change how much the data are
+  # allowed to say about a quantity the report decides on; S6 removes a
+  # parameter the data cannot inform at all.  GIUR and the retouched perimeter
+  # have no zeros, so `coi` -- the probability that an inflated value is a one
+  # rather than a zero -- is estimating a proportion whose denominator is
+  # entirely ones.  Fixing it at 1 makes the family the one-inflated beta the
+  # data actually describe, and it removes the zero-inflation half that nothing
+  # supports.  See the demonstration in the report: because the zoib likelihood
+  # factorises, this cannot move any slope, phi or ICC.
+  S6  = list(prior = build_prior(b_link,  sd_t3,   "lkj(1)", coi = "constant(1)"),
+             label = "coi: constant(1)",
+             note  = "one-inflated beta; there are no zeros for coi to describe"))
 
 # The reduced model has no population-level slopes at all, so it takes the
 # reference prior minus the class-b lines.
