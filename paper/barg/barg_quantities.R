@@ -43,7 +43,7 @@ draw_summary <- function(x) {
 derived_diag <- function(x, dr) {
   d <- data.frame(value = x, .chain = dr$.chain,
                   .iteration = dr$.iteration, .draw = dr$.draw)
-  s <- summarise_draws(as_draws_df(d), "rhat", "ess_bulk", "ess_tail")
+  s <- posterior::summarise_draws(posterior::as_draws_df(d), "rhat", "ess_bulk", "ess_tail")
   data.frame(rhat = s$rhat, ess_bulk = s$ess_bulk, ess_tail = s$ess_tail)
 }
 
@@ -98,8 +98,8 @@ to_response_scale <- function(b, fam) {
 scale_unit <- function(r) unname(resp_unit[[r]])
 
 coef_table <- function(fit, which_preds = preds) {
-  dr <- as_draws_df(fit)
-  sm <- summarise_draws(dr, "rhat", "ess_bulk", "ess_tail")
+  dr <- posterior::as_draws_df(fit)
+  sm <- posterior::summarise_draws(dr, "rhat", "ess_bulk", "ess_tail")
   bind_rows(lapply(resps, function(r) bind_rows(lapply(which_preds, function(pp) {
     v <- paste0("b_", r, "_", pp)
     if (!v %in% names(dr)) return(NULL)
@@ -134,7 +134,7 @@ coef_table <- function(fit, which_preds = preds) {
 # 2.  ICC table, with diagnostics for the derived quantity (BARG 2.B / 2.C)
 # ==========================================================================
 icc_table <- function(fit) {
-  dr <- as_draws_df(fit)
+  dr <- posterior::as_draws_df(fit)
   bind_rows(lapply(resps, function(r) {
     icc  <- icc_draws(dr, r, resp_fam[[r]])
     sdl  <- dr[[paste0("sd_Locality__", r, "_Intercept")]]
@@ -154,8 +154,8 @@ icc_table <- function(fit) {
 # 3.  the 21 locality-intercept correlations (BARG 1.B / 3.B)
 # ==========================================================================
 cor_table <- function(fit) {
-  dr <- as_draws_df(fit)
-  sm <- summarise_draws(dr, "rhat", "ess_bulk", "ess_tail")
+  dr <- posterior::as_draws_df(fit)
+  sm <- posterior::summarise_draws(dr, "rhat", "ess_bulk", "ess_tail")
   vs <- grep("^cor_Locality__", names(dr), value = TRUE)
   bind_rows(lapply(vs, function(v) {
     parts <- strsplit(sub("^cor_Locality__", "", v), "_Intercept__")[[1]]
@@ -171,7 +171,7 @@ cor_table <- function(fit) {
 # 4.  the ROPE curve: posterior mass inside a ROPE, as its half-width varies
 # ==========================================================================
 rope_curve <- function(fit, grid = seq(0, 0.6, by = 0.005)) {
-  dr <- as_draws_df(fit)
+  dr <- posterior::as_draws_df(fit)
   bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
     v <- paste0("b_", r, "_", pp); if (!v %in% names(dr)) return(NULL)
     z <- abs(dr[[v]]) / link_sd[[r]]         # standardised, so one grid serves all
@@ -187,8 +187,8 @@ rope_curve <- function(fit, grid = seq(0, 0.6, by = 0.005)) {
 # prior_sd is taken from the sample_prior = "only" fit where one is supplied,
 # and otherwise from the analytic SD of the normal slope prior.
 prior_post_sd <- function(fit, prior_fit = NULL, b_sd = link_sd) {
-  dr <- as_draws_df(fit)
-  pr <- if (!is.null(prior_fit)) as_draws_df(prior_fit) else NULL
+  dr <- posterior::as_draws_df(fit)
+  pr <- if (!is.null(prior_fit)) posterior::as_draws_df(prior_fit) else NULL
   bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
     v <- paste0("b_", r, "_", pp); if (!v %in% names(dr)) return(NULL)
     psd <- if (!is.null(pr) && v %in% names(pr)) sd(pr[[v]]) else unname(b_sd[[r]])
@@ -229,7 +229,7 @@ ppc_stat <- function(fit, resp, stat, nd = 1000, label = "") {
 # Everything is divided by link_sd, the same standardised axis the reference
 # slopes are reported on, so the ROPE is the same +/- ROPE_SD band.
 basin_slopes <- function(fit) {
-  dr <- as_draws_df(fit)
+  dr <- posterior::as_draws_df(fit)
   one <- function(x, r, g, what) {
     z <- x / link_sd[[r]]; q <- eti(z); p <- 100 * mean(abs(z) < ROPE_SD)
     data.frame(Response = r, Gradient = g, Quantity = what,
@@ -252,7 +252,7 @@ basin_slopes <- function(fit) {
 # Fourteen medians that all lean one way look like strong evidence; the joint
 # probability is the honest version of that reading, and it is much smaller.
 basin_joint_positive <- function(fit, gradient = "zHeight") {
-  dr <- as_draws_df(fit)
+  dr <- posterior::as_draws_df(fit)
   M <- vapply(resps, function(r)
     (dr[[paste0("b_", r, "_", gradient)]] +
      dr[[paste0("b_", r, "_BasinHuangping:", gradient)]]) / link_sd[[r]],

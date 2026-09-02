@@ -28,10 +28,10 @@ library(WdStar)
 library(cmdstanr)
 library(rnaturalearthhires)
 
-# posterior is needed by the documents themselves, not by _analysis.R. Both
-# call functions carried in the barg report context (icc_table, coef_table,
-# barg_main_figure), and those close over as_draws_df() and summarise_draws().
-# The library() call inside barg_quantities.R runs when the pipeline builds
-# that context, in the pipeline's process -- loading the context into a render
-# session brings the functions but not their search path.
-library(posterior)
+# Deliberately NOT attached here: posterior. The documents call functions
+# carried in the barg report context (icc_table, coef_table, barg_main_figure)
+# which need as_draws_df() and summarise_draws(), but attaching posterior would
+# mask sd(), var(), mad(), match() and %in% for the whole render session, and
+# _analysis.R uses sd() seven times, var() three times and mad() once. Those
+# calls are namespace-qualified inside paper/barg/ instead, so the context
+# functions do not depend on the search path at all.

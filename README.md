@@ -56,7 +56,7 @@ The manuscript and its supplementary material are written in Quarto and can be f
 
 - The reproducibility machinery, at the project root:
 
-  - [`_targets.R`](_targets.R) and [`_targets.yaml`](_targets.yaml) — the pipeline: what depends on what, and what is rebuilt when. The `quick` project runs the same models at reduced iterations into a separate store.
+  - [`_targets.R`](_targets.R) — the pipeline: what depends on what, and what is rebuilt when. One pipeline, no reduced mode.
   - [`renv.lock`](renv.lock) — every R package version the analysis was run under. `renv::restore()` reproduces the library.
   - [`Dockerfile`](Dockerfile) — the full environment including **CmdStan 2.39.0**, which `renv.lock` cannot pin because it is a C++ toolchain rather than an R package. Published to `ghcr.io/peiyuanxiao/quina_valleys`.
   - [`.binder/Dockerfile`](.binder/Dockerfile) — the browser environment behind the Binder badge.
@@ -116,13 +116,9 @@ targets::tar_make(names = "fit_ref")      # one target and its dependencies
 targets::tar_read(barg_diag_tbl)          # per-fit Rhat, ESS, divergences
 ```
 
-A cold `tar_make()` is 30–60 minutes, almost all of it MCMC sampling; everything after that is minutes. For a fast check that the plumbing works, the `quick` project of [`_targets.yaml`](_targets.yaml) runs the same eleven models at reduced iterations into a separate store, and stops short of rendering so it cannot overwrite the real documents:
+A cold `tar_make()` is about an hour: 40 minutes of MCMC sampling, then the figures and the three renders. Everything after that is minutes, because targets rebuilds only what changed — edit a prior and the eleven fits are refitted, edit a figure and nothing is; edit prose and only that document is re-rendered. There is deliberately no reduced or "quick" mode: shortened chains would produce numbers the documents must not carry, and a mode that skipped rendering could not catch the errors that only rendering exposes.
 
-``` sh
-TAR_PROJECT=quick Rscript -e "targets::tar_make()"
-```
-
-The store `_targets/` is git-ignored and holds about 300 MB, most of it the eleven fitted models. It is the object to archive alongside the paper, and what a reader restores to re-render the documents without refitting.
+The store `_targets/` is git-ignored and holds about 460 MB, most of it the eleven fitted models. It is the object to archive alongside the paper, and what a reader restores to re-render the documents without refitting.
 
 **The Figure 1 maps are not in the pipeline.** They need a network connection, WhiteboxTools and an OpenGL stack, and their output is committed as `figures/study_area.png`, so they are run on their own; see [`paper/map/README.md`](paper/map/README.md).
 

@@ -45,7 +45,7 @@ The final `figures/study_area.png` is assembled by hand from these exported pane
 
 5. `locator_globe_figure.R` — the locator globe inset.
 
-6. `fig01_export_panels.R` — exports panels A and C at final placed size, with the traverse route drawn on the map. If the `BARG_QUICK` or palette argument is needed, pass it as command-line args.
+6. `fig01_export_panels.R` — exports panels A and C at final placed size, with the traverse route drawn on the map. If a palette argument is needed, pass it as command-line args.
 
 To rebuild only one panel, delete its output from `output/` and run the corresponding script directly — except panels A and C, which must go through `fig01_export_panels.R` to be exported at the correct placed size.
 
@@ -69,6 +69,6 @@ The 3-D block render at publication resolution is the most CPU-intensive step; t
 
 ## Environment variables and switches
 
-- `BARG_QUICK` / `BARG_NOREFIT` — these affect the Bayesian fits in `paper/barg/`, not the map scripts.
+- The map scripts take no environment variables of their own beyond those listed below. The Bayesian fits in `paper/barg/` are built by `targets::tar_make()` from the project root and are unrelated to these scripts.
 - `terra_map_3D_hyps.R` accepts optional command-line arguments: `Rscript terra_map_3D_hyps.R <variant> <warm_mix> <albedo_gain> <key_intensity> <aspect_mix> <albedo_contrast> <shadow_darken> <slab_m>`. With a variant tag, it renders a fast preview (80 samples).
 - `terra_map_2D.R` is sourced by `fig01_export_panels.R` with environment variables `PALETTE_MODE` ("sheet" or "landscape"), `MAP_EXT` (for the regional frame), `SKIP_EXPORT` (TRUE to skip the file write), and `SHOW_LEGEND`/`SHOW_GRID` (for bare-map mode).

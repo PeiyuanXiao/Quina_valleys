@@ -145,7 +145,7 @@ barg_diagnostics <- function(fit, spec = attr(fit, "barg_name")) {
 # that reconciled fits made in different sessions under different R versions:
 # one tar_make() produces every fit in one run, so r_version, brms and cmdstan
 # are single values and env_by_fit is uniform by construction.
-barg_manifest <- function(diagnostics, seed, chains, iter, cores, quick = FALSE) {
+barg_manifest <- function(diagnostics, seed, chains, iter, cores) {
   env1 <- c(r_version = R.version.string,
             brms      = as.character(utils::packageVersion("brms")),
             cmdstan   = cmdstanr::cmdstan_version())
@@ -160,7 +160,6 @@ barg_manifest <- function(diagnostics, seed, chains, iter, cores, quick = FALSE)
        brms      = unname(env1[["brms"]]),
        r_version = unname(env1[["r_version"]]),
        env_by_fit = env_by_fit,
-       quick = quick,
        files = paste0(diagnostics$fit, ".rds"),
        minutes = stats::setNames(diagnostics$minutes, diagnostics$fit))
 }

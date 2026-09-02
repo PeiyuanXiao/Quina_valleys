@@ -11,10 +11,14 @@
 # the data left the stale fit in place and the report re-rendered from it.
 # Here the fits are hashed against the two Excel files and the code that makes
 # them, so a change refits exactly what the change touched and nothing else.
-# The BARG_QUICK / BARG_NOREFIT environment variables and the fits_quick/
-# directory are gone; see _targets.yaml for the reduced-iteration project.
+# There is one pipeline and no reduced mode: the BARG_QUICK / BARG_NOREFIT
+# environment variables, the fits_quick/ directory and the short-lived "quick"
+# targets project are all gone.  A reduced run was worth having when a rebuild
+# meant refitting everything by hand; now targets rebuilds only what changed,
+# so the honest full run is also usually the fast one, and a mode that skips
+# rendering cannot catch the errors that only rendering exposes.
 #
-# Run from the project root.  The store is _targets/ (git-ignored, ~300 MB);
+# Run from the project root.  The store is _targets/ (git-ignored, ~460 MB);
 # it is the object to archive on Zenodo, not paper/barg/fits/.
 # ==========================================================================
 library(targets)
@@ -41,19 +45,14 @@ tar_option_set(
 
 tar_source(c("paper/barg/barg_context.R", "paper/barg/barg_models.R"))
 
-# ---- sampler settings ----------------------------------------------------
-# The "quick" project of _targets.yaml runs a reduced pipeline into its own
-# store, so a smoke test can never overwrite the real fits.  This replaces the
-# old BARG_QUICK environment variable and the fits_quick/ directory.
-QUICK       <- identical(Sys.getenv("TAR_PROJECT"), "quick")
-CHAINS      <- if (QUICK) 2L else 4L
-ITER        <- if (QUICK) 800L else 10000L   # 20000 post-warmup draws when full
-CORES       <- if (QUICK) 2L else 4L
-NDRAWS      <- if (QUICK) 60L else 100L      # overlay draws in predictive checks
-STAT_NDRAWS <- if (QUICK) 200L else 1000L
-THIN        <- if (QUICK) 1L else 5L         # ECDF thinning, sensitivity panels
-FIGDIR      <- here::here("paper", "barg",
-                          if (QUICK) "figures_quick" else "figures")
+# ---- sampler and figure settings -----------------------------------------
+CHAINS      <- 4L
+ITER        <- 10000L     # 20000 post-warmup draws
+CORES       <- 4L
+NDRAWS      <- 100L       # overlay draws in the predictive checks
+STAT_NDRAWS <- 1000L      # predictive draws behind the grouped-statistic checks
+THIN        <- 5L         # ECDF thinning, sensitivity panels
+FIGDIR      <- here::here("paper", "barg", "figures")
 
 fit_specs <- data.frame(spec = BARG_SPECS, stringsAsFactors = FALSE)
 
@@ -131,7 +130,7 @@ list(
   # the old manifest had to carry.
   tar_target(barg_mf, barg_manifest(barg_diag_tbl, seed = 2226,
                                     chains = CHAINS, iter = ITER,
-                                    cores = CORES, quick = QUICK)),
+                                    cores = CORES)),
 
   # ---- derived quantities and figures ------------------------------------
   tar_target(ppc_stat_tbl,
@@ -142,9 +141,7 @@ list(
               command = dplyr::bind_rows(!!!.x)),
 
   # Only three fits are open here; the sensitivity panels are drawn from the
-  # reductions above.  The quick project writes to its own directory: the store
-  # is separate but the figure paths would not be, and a smoke test must not
-  # overwrite the figures the report carries.
+  # reductions above.
   tar_target(barg_figs,
              ctx_report$barg_figures(
                list(ref = fit_ref, prior_ref = fit_prior_ref,
@@ -171,17 +168,15 @@ list(
   # ---- the documents -----------------------------------------------------
   # tar_quarto() reads each .qmd for tar_load()/tar_read() calls and wires the
   # dependencies itself, so rendering is part of the pipeline: tar_make() is
-  # the single command, with no separate render step.
+  # the single command, with no separate render step, and the documents are
+  # rebuilt whenever anything they quote has changed.
   #
-  # The quick project stops short of rendering. Its store is separate, but the
-  # three documents are not: they are written to the same paths whichever
-  # project produced them, so a smoke test that rendered would overwrite the
-  # real manuscript with reduced-iteration numbers. Under TAR_PROJECT=quick
-  # the pipeline therefore checks the computation and leaves the documents
-  # alone.
-  if (QUICK) NULL else list(
-    tar_quarto(barg_report,   path = "paper/barg/barg_report.qmd"),
-    tar_quarto(manuscript,    path = "paper/manuscript.qmd"),
-    tar_quarto(supplementary, path = "paper/supplementary.qmd")
-  )
+  # Note that tar_quarto() renders with the working directory set to the
+  # project root, where a standalone `quarto render` uses the document's own
+  # folder. The three documents are written not to depend on either: paths go
+  # through here(), tar_load() is given an explicit store, and barg_report.qmd
+  # includes its figures with rel_path = FALSE.
+  tar_quarto(barg_report,   path = "paper/barg/barg_report.qmd"),
+  tar_quarto(manuscript,    path = "paper/manuscript.qmd"),
+  tar_quarto(supplementary, path = "paper/supplementary.qmd")
 )

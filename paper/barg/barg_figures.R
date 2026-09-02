@@ -62,7 +62,7 @@ barg_sens_one <- function(fit, spec, thin = 5) {
     expand.grid(Response = resps, Predictor = "zHeight", stringsAsFactors = FALSE)) |>
     distinct()
 
-  d    <- as_draws_df(fit)
+  d    <- posterior::as_draws_df(fit)
   keep <- seq(1, nrow(d), by = thin)
 
   icc <- bind_rows(lapply(resps, function(r)
@@ -191,8 +191,8 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
   # ========================================================================
   # PRIOR AGAINST POSTERIOR, for every slope
   # ========================================================================
-  dr_post  <- as_draws_df(fit_ref)
-  dr_prior <- as_draws_df(fit_prior)
+  dr_post  <- posterior::as_draws_df(fit_ref)
+  dr_prior <- posterior::as_draws_df(fit_prior)
   pp_long <- bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
     v <- paste0("b_", r, "_", pp)
     bind_rows(data.frame(Response = r, Predictor = pp, which = "posterior",
@@ -252,7 +252,7 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
   n_by_loc <- sort(table(mod_dat$Locality), decreasing = TRUE)
   loc_lev  <- rev(names(n_by_loc))
 
-  re <- ranef(fit_ref)$Locality
+  re <- brms::ranef(fit_ref)$Locality
   cat_df <- bind_rows(lapply(resps, function(r) {
     k <- paste0(r, "_Intercept")
     data.frame(Locality = rownames(re), Response = r,
@@ -318,7 +318,7 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
   # ========================================================================
   # CONVERGENCE
   # ========================================================================
-  sm <- summarise_draws(dr_post, "rhat", "ess_bulk", "ess_tail")
+  sm <- posterior::summarise_draws(dr_post, "rhat", "ess_bulk", "ess_tail")
   sm <- sm[!is.na(sm$rhat) & !startsWith(sm$variable, "lp"), ]
   icc_d <- icc_table(fit_ref)
   diag_df <- bind_rows(

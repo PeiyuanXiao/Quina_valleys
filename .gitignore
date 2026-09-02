@@ -28,12 +28,10 @@ __pycache__/
 # Stray base-graphics device output (scripts regenerate it; never referenced)
 Rplots.pdf
 
-# The targets store: eleven cached Stan fits (~28 MB each) plus the analysis
+# The targets store: eleven cached Stan fits (~40 MB each) plus the analysis
 # environment and the pipeline metadata. Rebuilt by tar_make(); this is the
 # object that belongs in the OSF/Zenodo deposit, not in git.
 _targets/
-_targets_quick/
-paper/barg/figures_quick/
 paper/barg/dummy_data.csv
 
 # The hand-rolled fit cache targets replaced. Kept ignored so that an existing

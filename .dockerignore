@@ -11,8 +11,6 @@
 # The targets store: rebuilt inside the container by tar_make(), and mounted
 # from the host in CI. Never baked into the image.
 _targets/
-_targets_quick/
-paper/barg/figures_quick/
 
 # The hand-rolled fit cache targets replaced (~278 MB).
 paper/barg/fits/

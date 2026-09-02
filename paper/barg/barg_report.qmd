@@ -39,8 +39,14 @@ suppressPackageStartupMessages({
 # tar_load() looks for paper/barg/_targets/ and fails.
 TAR_STORE <- here::here("_targets")
 
-tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs,
-           fit_ref, fit_prior_ref, fit_noland, fit_ref_rg_ln, fit_ref_basinx),
+# The fits are NOT named in this tar_load(). targets materialises a target's
+# declared dependencies in the pipeline process before running the command, so
+# naming eleven brmsfit objects here would hold them in the parent while this
+# render loads its own copies in a subprocess -- which exhausts memory on a
+# 16 GB machine and fails the render. barg_diag_tbl stands in for them: it is
+# derived from all eleven, so any refit changes it and re-renders this
+# document, at a cost of a few hundred bytes rather than several gigabytes.
+tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs, barg_diag_tbl),
          store = TAR_STORE)
 
 # Copying the context in gives this document the same names the scripts used
@@ -50,15 +56,26 @@ tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs,
 # some of the same names for different things; they keep the ctx- prefix.
 list2env(as.list(ctx_report, all.names = TRUE), envir = globalenv())
 
-# The six S-fits and the two variants are read one at a time, so that the
-# render never holds more than two large fits in memory.  They are named in
-# the tar_load() below purely so that tar_quarto() sees them as dependencies
-# of this document; the call is never evaluated.
-if (FALSE) tar_load(c(fit_s1, fit_s2, fit_s3, fit_s4, fit_s5, fit_s6))
+# Every fit is read one at a time and dropped again, so that the render never
+# holds more than two large fits in memory.  tar_read_raw() is deliberate:
+# unlike tar_load() it is invisible to tar_quarto()'s dependency detection,
+# which is what keeps the fits out of the pipeline process (see above).
 gf  <- function(n) targets::tar_read_raw(paste0("fit_", n), store = TAR_STORE)
-FIG <- function(n) here("paper", "barg", "figures", n)
 
-fit_prior <- fit_prior_ref
+# SHOW(), not knitr::include_graphics(FIG()) directly: include_graphics
+# re-expresses an absolute path relative to the working directory, and
+# tar_quarto() renders with the working directory set to the project root
+# rather than to this document's folder, so the relative path it computes does
+# not resolve and the render dies at the first figure. rel_path = FALSE keeps
+# the absolute path, and because this document sets embed-resources: true the
+# image is base64-embedded at render time -- the output references nothing
+# external either way.
+FIG  <- function(n) here("paper", "barg", "figures", n)
+SHOW <- function(n) knitr::include_graphics(FIG(n), rel_path = FALSE)
+
+fit_ref    <- gf("ref")
+fit_prior  <- gf("prior_ref")
+fit_noland <- gf("noland")
 mf <- barg_mf
 
 # ---- everything the text and the tables quote ---------------------------
@@ -889,7 +906,7 @@ settle.
 ```{r}
 #| label: fig-main
 #| fig-cap: "**A** (Q1): the locality share of link-scale variance for each response. Circles are the model with the landscape terms, triangles the intercept-only model, joined by a line. Filled circles mark responses whose 95% interval clears the 0.05 negligibility band (shaded). **B** (Q2): the 21 landscape slopes, each divided by the link-scale SD of its own response so that all seven share one axis and the ROPE is a single band at +/- 0.1. The basin slope is Huangping relative to Binchuan; height and distance are standardised, so their slopes are the change over one SD of the predictor. Rows are in the same order in both panels. Any slope whose posterior SD is still more than half its prior SD is drawn grey and hollow, because it has not been informed enough by the data to be read as an estimate."
-knitr::include_graphics(FIG("barg_main.png"))
+SHOW("barg_main.png")
 ```
 
 ## The decision rule and the ROPE {#sec-decision-rule}
@@ -951,7 +968,7 @@ reason.
 ```{r}
 #| label: fig-rope
 #| fig-cap: "Posterior mass inside the ROPE as a function of the ROPE half-width, in link-scale SD units, for all 21 slopes. Dashed vertical line: the 0.1 half-width quoted in the text. Dotted horizontals: the 2.5% and 95% thresholds of the decision rule. A curve that has not reached 95% by a half-width the reader considers archaeologically negligible is a slope this design cannot declare absent."
-knitr::include_graphics(FIG("rope_curves.png"))
+SHOW("rope_curves.png")
 ```
 
 The same information in numbers, at five half-widths, is in Appendix F
@@ -1371,14 +1388,12 @@ There is no cache to delete to force a refit, and --- unlike the file-existence
 cache this pipeline replaced --- no way for the document to be rendered from a
 fit that no longer matches the code or the data that produced it.
 
-`targets::tar_visnetwork()` shows the graph and what in it is out of date.
-For a fast check of the plumbing that cannot disturb the real fits, the
-`quick` project of `_targets.yaml` runs the same pipeline at reduced
-iterations into a separate store:
-
-```bash
-TAR_PROJECT=quick Rscript -e "targets::tar_make()"
-```
+`targets::tar_visnetwork()` shows the graph and what in it is out of date, and
+`targets::tar_make(names = "fit_ref")` builds one target and its dependencies
+without touching the rest. There is deliberately no reduced or "quick" mode:
+a run at shortened chains would produce numbers this document must not carry,
+and one that skipped rendering could not catch the errors that only rendering
+exposes.
 
 ```{r}
 #| label: tbl-fit-times
@@ -1531,7 +1546,7 @@ counts that a flake could carry.
 ```{r}
 #| label: fig-prior-pred
 #| fig-cap: "Prior predictive distributions (grey) against the observed distribution (dark), one panel per response. Axes are clipped to the physically possible range of each measure; the table below reports what falls outside."
-knitr::include_graphics(FIG("ppc_prior.png"))
+SHOW("ppc_prior.png")
 ```
 
 ```{r}
@@ -1620,7 +1635,7 @@ d_any <- mf$diagnostics |> filter(divergent > 0)
 ```{r}
 #| label: fig-convergence
 #| fig-cap: "Rhat (A) and bulk effective sample size (B) for every estimated parameter, and for the seven ICCs, which are derived quantities computed draw by draw and diagnosed like any other."
-knitr::include_graphics(FIG("convergence.png"))
+SHOW("convergence.png")
 ```
 
 ## Chain resolution {#sec-resolution}
@@ -1695,19 +1710,19 @@ reporting parameter estimates at all, not as an optional extra.
 ```{r}
 #| label: fig-post-pred
 #| fig-cap: "Posterior predictive distributions (grey, 100 draws) against the observed distribution (dark), one panel per response."
-knitr::include_graphics(FIG("ppc_posterior.png"))
+SHOW("ppc_posterior.png")
 ```
 
 ```{r}
 #| label: fig-ppc-basin
 #| fig-cap: "Posterior predictive check by basin: the observed median of each response within each basin, against the distribution of that same statistic in the replicated datasets."
-knitr::include_graphics(FIG("ppc_group_basin.png"))
+SHOW("ppc_group_basin.png")
 ```
 
 ```{r}
 #| label: fig-ppc-locality
 #| fig-cap: "Posterior predictive check by locality, same statistic, all 26 localities. Localities of one specimen are, unsurprisingly, reproduced exactly."
-knitr::include_graphics(FIG("ppc_group_locality.png"))
+SHOW("ppc_group_locality.png")
 ```
 
 ## The checks that were specified in advance {#sec-ppc-stats}
@@ -1715,7 +1730,7 @@ knitr::include_graphics(FIG("ppc_group_locality.png"))
 ```{r}
 #| label: fig-ppc-stats
 #| fig-cap: "Targeted posterior predictive statistics. Diamond: the observed value. Open circle and bar: the median and 95% interval of the same statistic over the replicated datasets. Green means the observation falls inside the interval."
-knitr::include_graphics(FIG("ppc_stats.png"))
+SHOW("ppc_stats.png")
 ```
 
 ```{r}
@@ -1837,7 +1852,7 @@ cf |>
 ```{r}
 #| label: fig-prior-post
 #| fig-cap: "Prior (grey) against posterior (blue) for every slope, on the standardised axis. The shaded band is the ROPE. Where the two curves nearly coincide, the data have said little."
-knitr::include_graphics(FIG("prior_posterior.png"))
+SHOW("prior_posterior.png")
 ```
 
 ## Locality-level variance and correlation structure {#sec-icc}
@@ -1881,7 +1896,7 @@ in the main narrative.
 ```{r}
 #| label: fig-cor
 #| fig-cap: "Posterior median of each of the 21 locality-intercept correlations. Bold entries are those whose 95% equal-tailed interval excludes zero."
-knitr::include_graphics(FIG("correlation_matrix.png"))
+SHOW("correlation_matrix.png")
 ```
 
 ```{r}
@@ -1898,7 +1913,7 @@ cor_tb |>
 ```{r}
 #| label: fig-caterpillar
 #| fig-cap: "Locality offsets on the link scale, one panel per response, with 95% equal-tailed intervals. Localities are in one fixed order in every panel, largest assemblage first, with the specimen count in brackets. Reading down each panel shows partial pooling at work: the smaller the assemblage, the harder the offset is pulled towards zero and the wider its interval."
-knitr::include_graphics(FIG("locality_intercepts.png"))
+SHOW("locality_intercepts.png")
 ```
 
 ## The ROPE curve, numerically {#sec-rope-grid}
@@ -1971,13 +1986,13 @@ Cf. BARG Step 5.C.
 ```{r}
 #| label: fig-sens-icc
 #| fig-cap: "Q1 under all seven priors: the cumulative posterior distribution of each ICC. The shaded band is the ICC ROPE [0, 0.05]. A curve's height where it crosses the right edge of the band is P(ICC <= 0.05)."
-knitr::include_graphics(FIG("sensitivity_icc.png"))
+SHOW("sensitivity_icc.png")
 ```
 
 ```{r}
 #| label: fig-sens-slopes
 #| fig-cap: "Q2 under all seven priors, for the slopes most exposed to the prior: the three edge-angle slopes (the response that was prior-dominated under the original specification) and the height slope of every response. Cumulative distributions on the standardised axis, with the ROPE shaded."
-knitr::include_graphics(FIG("sensitivity_slopes.png"))
+SHOW("sensitivity_slopes.png")
 ```
 
 The curves are cumulative distributions rather than densities, because this

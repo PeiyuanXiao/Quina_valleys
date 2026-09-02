@@ -1,25 +1,29 @@
-# The check that runs on every push: does the pipeline still run end to end?
+# Builds the paper: eleven MCMC fits, every derived quantity and figure, and
+# the three rendered documents. One pipeline, no reduced mode -- a run that
+# skipped rendering could not catch the errors that only rendering exposes,
+# and targets rebuilds only what changed, so a warm run after a text edit is
+# minutes rather than hours.
 #
-# It runs the "quick" project of _targets.yaml -- the same eleven models at
-# reduced iterations, into a separate store, stopping short of rendering the
-# documents. That answers the question a push needs answered (is anything
-# broken?) in minutes rather than in the 30-60 minutes a full set of fits
-# takes. The full run is pipeline-full.yaml, on demand.
-name: pipeline (quick)
+# Cold (empty cache) this is a long job: eleven full fits on a two-core runner.
+# It fits inside the six-hour ceiling, and every later run restores the store
+# and refits only what the change touched.
+name: pipeline
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: "Ignore the cached store and rebuild everything"
+        type: boolean
+        default: false
 
 jobs:
-  quick:
+  build:
     runs-on: ubuntu-latest
-    # A cold run has to build the image and fit all eleven models at reduced
-    # iterations on a two-core runner. Once the store is cached, later runs are
-    # minutes.
-    timeout-minutes: 180
+    timeout-minutes: 360
     permissions:
       contents: read
       packages: read
@@ -36,12 +40,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Pull if the image is published, build it if not. The image workflow is
+      # Pull if the image is published, build it if not. docker-publish.yaml is
       # triggered by the same push and takes about ten minutes, so on a push
       # that touches the Dockerfile there is nothing to pull yet; and on a push
-      # that changes only R code that workflow does not run at all, so waiting
-      # for it is not an option either. Falling back to a local build removes
-      # the ordering dependency between the two workflows entirely.
+      # that changes only R code it does not run at all, so waiting for it is
+      # not an option either. Falling back to a local build removes the
+      # ordering dependency between the two workflows entirely.
       - name: Get the compendium image
         run: |
           if ! docker pull ${{ steps.img.outputs.name }}:latest; then
@@ -49,34 +53,41 @@ jobs:
             docker build -t ${{ steps.img.outputs.name }}:latest .
           fi
 
-      # targets knows what is stale, so a warm store means only what changed
-      # is recomputed. The key rolls per run and falls back to the newest
-      # earlier store for this branch.
-      - name: Restore the quick targets store
+      - name: Restore the targets store
+        if: ${{ !inputs.fresh }}
         uses: actions/cache@v4
         with:
-          path: _targets_quick
-          key: targets-quick-${{ runner.os }}-${{ github.sha }}
+          path: _targets
+          key: targets-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            targets-quick-${{ runner.os }}-
+            targets-${{ runner.os }}-
 
-      - name: tar_make (quick project)
+      - name: tar_make
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/work" -w /work \
-            -e RENV_PATHS_CACHE=/renv/cache \
-            -e TAR_PROJECT=quick \
             -e HOME=/work \
             ${{ steps.img.outputs.name }}:latest \
-            R -q -e "renv::restore(prompt = FALSE); targets::tar_make()"
+            R -q -e "targets::tar_make()"
 
       - name: Fix ownership of files the container wrote
         if: always()
-        run: sudo chown -R "$USER" _targets_quick paper/barg/figures_quick || true
+        run: sudo chown -R "$USER" . || true
+
+      - name: Convergence summary
+        if: always()
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/work" -w /work \
+            -e HOME=/work ${{ steps.img.outputs.name }}:latest \
+            R -q -e "print(targets::tar_read(barg_diag_tbl))" || true
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: quick-figures
-          path: paper/barg/figures_quick/
+          name: documents
+          path: |
+            paper/manuscript.docx
+            paper/supplementary.docx
+            paper/barg/barg_report.html
+            paper/barg/figures/
           if-no-files-found: warn

@@ -69,6 +69,14 @@ RUN R -q -e "install.packages('renv', repos = c(CRAN = 'https://packagemanager.p
 # ---- the compendium ------------------------------------------------------
 COPY --chown=${NB_UID}:${NB_UID} . ${HOME}/Quina_valleys
 
+# The whole home directory, not just the project inside it. Quarto writes to
+# $HOME/.cache/quarto on every invocation -- `quarto inspect` included, which
+# tar_quarto() runs while merely *reading* _targets.R -- and without a writable
+# home it dies with "PermissionDenied: mkdir '/home/rstudio/.cache/quarto'".
+# The root image never hits this because it runs as root.
+RUN mkdir -p ${HOME}/.cache ${HOME}/.local \
+ && chown -R ${NB_UID}:${NB_UID} ${HOME}
+
 # Binder requires the container to run as NB_USER; unlike the root Dockerfile
 # there is no s6 entrypoint here that needs root first.
 USER ${NB_USER}

@@ -4,6 +4,13 @@ What changed when the BARG report was reorganised from checklist order into a
 reading narrative for an archaeological readership, and what was deliberately
 left alone.
 
+> **Superseded in part, 2026-09-02.** This is a record of one past change, kept
+> as written. The machinery it refers to is gone: `paper/barg/fits/`,
+> `fits_quick/`, `barg_fits.R` and the `BARG_QUICK` / `BARG_NOREFIT` switches
+> were replaced by the `targets` pipeline in `_targets.R`, which is now built
+> with `tar_make()` and has no reduced mode. Read the notes below as history,
+> not as instructions.
+
 No number, statistic or result changed. Every code chunk body and every
 inline `` `r ... ` `` expression was moved verbatim; the 102 distinct inline
 expressions in the file before the restructure are the same 102 afterwards,
