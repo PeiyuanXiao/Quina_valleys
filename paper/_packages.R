@@ -27,3 +27,11 @@ library(cvequality)
 library(WdStar)
 library(cmdstanr)
 library(rnaturalearthhires)
+
+# posterior is needed by the documents themselves, not by _analysis.R. Both
+# call functions carried in the barg report context (icc_table, coef_table,
+# barg_main_figure), and those close over as_draws_df() and summarise_draws().
+# The library() call inside barg_quantities.R runs when the pipeline builds
+# that context, in the pipeline's process -- loading the context into a render
+# session brings the functions but not their search path.
+library(posterior)

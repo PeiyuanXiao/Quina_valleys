@@ -16,7 +16,10 @@ on:
 jobs:
   quick:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # A cold run has to build the image and fit all eleven models at reduced
+    # iterations on a two-core runner. Once the store is cached, later runs are
+    # minutes.
+    timeout-minutes: 180
     permissions:
       contents: read
       packages: read
@@ -33,8 +36,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull the compendium image
-        run: docker pull ${{ steps.img.outputs.name }}:latest
+      # Pull if the image is published, build it if not. The image workflow is
+      # triggered by the same push and takes about ten minutes, so on a push
+      # that touches the Dockerfile there is nothing to pull yet; and on a push
+      # that changes only R code that workflow does not run at all, so waiting
+      # for it is not an option either. Falling back to a local build removes
+      # the ordering dependency between the two workflows entirely.
+      - name: Get the compendium image
+        run: |
+          if ! docker pull ${{ steps.img.outputs.name }}:latest; then
+            echo "::notice::No published image to pull; building it locally."
+            docker build -t ${{ steps.img.outputs.name }}:latest .
+          fi
 
       # targets knows what is stale, so a warm store means only what changed
       # is recomputed. The key rolls per run and falls back to the newest

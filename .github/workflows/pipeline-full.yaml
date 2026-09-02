@@ -38,8 +38,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull the compendium image
-        run: docker pull ${{ steps.img.outputs.name }}:latest
+      # Pull if the image is published, build it if not; see the same step in
+      # pipeline.yaml for why the two workflows cannot be ordered.
+      - name: Get the compendium image
+        run: |
+          if ! docker pull ${{ steps.img.outputs.name }}:latest; then
+            echo "::notice::No published image to pull; building it locally."
+            docker build -t ${{ steps.img.outputs.name }}:latest .
+          fi
 
       - name: Restore the targets store
         if: ${{ !inputs.fresh }}

@@ -34,8 +34,14 @@ suppressPackageStartupMessages({
 # from the targets store.  Nothing here samples and there is no cache
 # directory to point at: run tar_make() and every fit this document reads is
 # current with the data and the code by construction.
+# knitr evaluates chunks with the working directory set to this document's own
+# folder, so the pipeline store has to be named explicitly: an unqualified
+# tar_load() looks for paper/barg/_targets/ and fails.
+TAR_STORE <- here::here("_targets")
+
 tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs,
-           fit_ref, fit_prior_ref, fit_noland, fit_ref_rg_ln, fit_ref_basinx))
+           fit_ref, fit_prior_ref, fit_noland, fit_ref_rg_ln, fit_ref_basinx),
+         store = TAR_STORE)
 
 # Copying the context in gives this document the same names the scripts used
 # to define by being sourced here -- resps, link_sd, ROPE_SD, coef_table(),
@@ -49,7 +55,7 @@ list2env(as.list(ctx_report, all.names = TRUE), envir = globalenv())
 # the tar_load() below purely so that tar_quarto() sees them as dependencies
 # of this document; the call is never evaluated.
 if (FALSE) tar_load(c(fit_s1, fit_s2, fit_s3, fit_s4, fit_s5, fit_s6))
-gf  <- function(n) targets::tar_read_raw(paste0("fit_", n))
+gf  <- function(n) targets::tar_read_raw(paste0("fit_", n), store = TAR_STORE)
 FIG <- function(n) here("paper", "barg", "figures", n)
 
 fit_prior <- fit_prior_ref

@@ -97,10 +97,15 @@ library(targets)
 # the pipeline's process and hands over objects, not an attached search path.
 source(here::here("paper", "_packages.R"))
 
+# knitr evaluates chunks with the working directory set to this document's own
+# folder, so the pipeline store has to be named explicitly: an unqualified
+# tar_load() looks for paper/_targets/ and fails.
+TAR_STORE <- here::here("_targets")
+
 # Every statistical result this document reports is computed by
 # paper/_analysis.R, which the pipeline runs as a single target. Loading the
 # whole environment leaves the inline references below working unchanged.
-tar_load(analysis_env)
+tar_load(analysis_env, store = TAR_STORE)
 list2env(as.list(analysis_env, all.names = TRUE), envir = globalenv())
 fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 
@@ -109,7 +114,7 @@ fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 # be stale. The context keeps its own name because barg_data.R defines
 # mod_dat, ROPE_SD and variables, names _analysis.R also uses for its own
 # versions of the same things.
-tar_load(c(ctx_report, fit_ref, barg_mf))
+tar_load(c(ctx_report, fit_ref, barg_mf), store = TAR_STORE)
 barg <- ctx_report
 brms_ref   <- fit_ref
 brms_coef  <- barg$coef_table(brms_ref)
