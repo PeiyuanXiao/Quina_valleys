@@ -1,0 +1,69 @@
+# The check that runs on every push: does the pipeline still run end to end?
+#
+# It runs the "quick" project of _targets.yaml -- the same eleven models at
+# reduced iterations, into a separate store, stopping short of rendering the
+# documents. That answers the question a push needs answered (is anything
+# broken?) in minutes rather than in the 30-60 minutes a full set of fits
+# takes. The full run is pipeline-full.yaml, on demand.
+name: pipeline (quick)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lower-case the image name
+        id: img
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the compendium image
+        run: docker pull ${{ steps.img.outputs.name }}:latest
+
+      # targets knows what is stale, so a warm store means only what changed
+      # is recomputed. The key rolls per run and falls back to the newest
+      # earlier store for this branch.
+      - name: Restore the quick targets store
+        uses: actions/cache@v4
+        with:
+          path: _targets_quick
+          key: targets-quick-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            targets-quick-${{ runner.os }}-
+
+      - name: tar_make (quick project)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            -e RENV_PATHS_CACHE=/renv/cache \
+            -e TAR_PROJECT=quick \
+            -e HOME=/work \
+            ${{ steps.img.outputs.name }}:latest \
+            R -q -e "renv::restore(prompt = FALSE); targets::tar_make()"
+
+      - name: Fix ownership of files the container wrote
+        if: always()
+        run: sudo chown -R "$USER" _targets_quick paper/barg/figures_quick || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quick-figures
+          path: paper/barg/figures_quick/
+          if-no-files-found: warn

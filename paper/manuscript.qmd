@@ -97,7 +97,23 @@ Keywords: `r rmarkdown::metadata$keywords`
 #| label: setup
 #| include: false
 
-source(here::here("paper", "_analysis.R"))
+library(targets)
+
+# The chunks below call ggplot(), mutate() and group_by() directly, so this
+# document needs the packages attached in its own session; _analysis.R runs in
+# the pipeline's process and hands over objects, not an attached search path.
+source(here::here("paper", "_packages.R"))
+
+# knitr evaluates chunks with the working directory set to this document's own
+# folder, so the pipeline store has to be named explicitly: an unqualified
+# tar_load() looks for paper/_targets/ and fails.
+TAR_STORE <- here::here("_targets")
+
+# Every statistical result this document reports is computed by
+# paper/_analysis.R, which the pipeline runs as a single target. Loading the
+# whole environment leaves all the inline references below working unchanged.
+tar_load(analysis_env, store = TAR_STORE)
+list2env(as.list(analysis_env, all.names = TRUE), envir = globalenv())
 
 ```
 
@@ -827,22 +843,17 @@ p_form <- ggplot(sf_pts, aes(x, y)) +
 #| label: landscape-model-quantities
 #| include: false
 
-# The Bayesian model is usually read from the cache barg_fits.R writes, with no
-# sampling here. If that cache is missing, ensure_barg_fits() will build it by
-# running Rscript paper/barg/barg_fits.R in a fresh R process. Set BARG_NOREFIT=1
-# to forbid sampling during a render, or BARG_QUICK=1 for a minutes-long
-# reduced-iteration smoke test. The barg scripts go into a private environment so
-# their mod_dat, ROPE_SD and variables do not overwrite the objects _analysis.R
-# defines.
-barg <- new.env(parent = globalenv())
-for (s in c("barg_data.R", "barg_quantities.R", "barg_theme.R",
-            "barg_main_figure.R")) source(here("paper", "barg", s), local = barg)
+# The Bayesian model comes from the pipeline. Nothing is sampled during a
+# render and nothing can be stale: tar_make() refits whatever the data or the
+# priors have invalidated before it renders this document. The context keeps
+# its own name because barg_data.R defines mod_dat, ROPE_SD and variables,
+# names _analysis.R also uses for its own versions of the same things.
+tar_load(c(ctx_report, fit_ref, fit_noland, fit_prior_ref), store = TAR_STORE)
+barg <- ctx_report
 
-# check to see if we have the fits already, if not, generate them
-barg$ensure_barg_fits()
-
-land_ref <- barg$barg_fit("ref")        # the three landscape terms
-land_nol <- barg$barg_fit("noland")     # intercept only, for the comparison
+land_ref <- fit_ref        # the three landscape terms
+land_nol <- fit_noland     # intercept only, for the comparison
+land_pri <- fit_prior_ref  # prior-only, for the prior/posterior width in Fig. 9B
 
 icc_land <- barg$icc_table(land_ref) |>
   select(Response, Verdict, m_ref = Median, lo_ref = CrI_lo, hi_ref = CrI_hi) |>
@@ -877,7 +888,7 @@ Whether or not landscape variables had structural influences on lithic technolog
 #| fig-height: 3.4
 #| out-width: "5.9in"
 
-barg$barg_main_figure(land_ref, barg$barg_fit("prior_ref"), land_nol)
+barg$barg_main_figure(land_ref, land_pri, land_nol)
 ```
 
 The three landscape variables, however, do not explain these differences. If basin, height above the channel and distance to the channel influenced the between-locality signal, the locality share of the variance would fall when the landscape terms enter the model. @fig-landscape-model panel A shows it mostly does the opposite and increases. The median change across the seven measures is `r sprintf("%+.0f", 100 * med_rel)`% of the intercept-only value, `r num_word[n_icc_up]` of the seven rising and `r num_word[n_icc_dn]` falling, a pattern scattered about zero rather than a reduction (@tbl-landscape-icc). The individual coefficients lead to the same conclusion: none of the `r n_slopes` effects provides clear evidence of a directional relationship between artefact attributes and landscape variables, although most remain uncertain given that these predictors vary among only `r n_localities` localities rather than among individual specimens (@fig-landscape-model B; Supplementary material 2). Because a landscape effect could in principle be present in one valley and absent in the other, we also refitted the model with a separate height and distance slope for each basin; the two basins could not be distinguished, although the Huangping slopes lean uniformly positive and a larger sample there might resolve them (Supplementary material 2).

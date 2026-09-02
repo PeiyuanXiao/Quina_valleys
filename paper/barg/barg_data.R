@@ -1,6 +1,6 @@
 # ==========================================================================
 # barg_data.R -- the analysis frame, the response families, and the constants
-# shared by barg_fits.R, barg_report.qmd and the figure code.
+# shared by barg_models.R, barg_report.qmd and the figure code.
 #
 # Sourced, never run on its own.  It reads only the two Excel files and
 # defines objects; it writes nothing and fits nothing.
@@ -22,12 +22,20 @@ SEED    <- 2226
 ROPE_SD <- 0.1          # ROPE half-width, in SD of the response on its link scale
 ICC_ROPE <- 0.05        # a locality share below this is treated as negligible
 
+# The two source spreadsheets.  barg_context.R sets these before sourcing, so
+# that _targets.R can track them with format = "file" and rebuild when they
+# change; the defaults keep the file sourceable on its own as before.
+if (!exists("SCRAPER_XLSX"))
+  SCRAPER_XLSX <- here("data", "Quina_scraper_surface.xlsx")
+if (!exists("SITE_XLSX"))
+  SITE_XLSX <- here("data", "Site_information.xlsx")
+
 variables <- c("Thickness", "Retouch_length_index", "Ave_GIUR",
                "N_Scar", "Ave_RG", "Edge_Angle")
 
 # ---- locality-level landscape attributes ---------------------------------
 # A locality with no basin recorded cannot enter the model.
-.sites <- read_excel(here("data", "Site_information.xlsx"))
+.sites <- read_excel(SITE_XLSX)
 names(.sites) <- trimws(names(.sites))
 site_land <- .sites |>
   transmute(Locality = trimws(as.character(Code)),
@@ -40,7 +48,7 @@ site_land <- .sites |>
 # GMsize is the geometric mean of the three linear dimensions,
 #   GMsize = (Length * Width * Thickness)^(1/3),
 # so it is not independent of the Thickness response.  See the report.
-.raw <- read_excel(here("data", "Quina_scraper_surface.xlsx"), "Quina scraper") |>
+.raw <- read_excel(SCRAPER_XLSX, "Quina scraper") |>
   mutate(Locality = trimws(as.character(Site_ID)),
          across(all_of(c(variables, "Length", "Width")), as.numeric),
          GMsize = (Length * Width * Thickness)^(1 / 3)) |>

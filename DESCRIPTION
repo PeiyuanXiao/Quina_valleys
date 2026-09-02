@@ -1,0 +1,80 @@
+Package: QuinaValleys
+Title: The Quina Landscape: A Regional Middle Palaeolithic Technological
+    System on the Southeastern Margin of the Tibetan Plateau
+Version: 0.1.0
+Authors@R: c(
+    person("Peiyuan", "Xiao", email = "pyxiao@uw.edu",
+           role = c("aut", "cre"), comment = c(ORCID = "0009-0000-9733-5875")),
+    person("Qijun", "Ruan", role = "aut",
+           comment = c(ORCID = "0009-0000-2143-5335")),
+    person("Davide", "Delpiano", role = "aut"),
+    person("Marco", "Peresani", role = "aut",
+           comment = c(ORCID = "0000-0001-6562-6336")),
+    person("Zhenxiu", "Jia", role = "aut",
+           comment = c(ORCID = "0000-0002-7514-4514")),
+    person("Lijing", "Yang", role = "aut"),
+    person("Ben", "Marwick", email = "bmarwick@uw.edu", role = "aut",
+           comment = c(ORCID = "0000-0001-7879-4531")),
+    person("Hao", "Li", email = "lihao@itpcas.ac.cn", role = "aut"))
+Description: Research compendium for the manuscript. Holds the data, the
+    analysis code and the Quarto sources for the manuscript, the supplementary
+    material and the Supplementary Bayesian Report. This is not an R package
+    and defines no functions for use elsewhere; the DESCRIPTION records the
+    authorship and the dependencies of the compendium in one machine-readable
+    place. The pipeline is declared in _targets.R and built with
+    targets::tar_make(); the package versions it was built under are pinned in
+    renv.lock.
+License: CC BY 4.0
+Encoding: UTF-8
+Depends:
+    R (>= 4.6.0)
+Imports:
+    bayesplot,
+    brms,
+    cmdstanr,
+    coin,
+    cvequality,
+    devtools,
+    dplyr,
+    ggplot2,
+    ggpubr,
+    ggrepel,
+    here,
+    knitr,
+    MASS,
+    patchwork,
+    posterior,
+    quarto,
+    readxl,
+    rmarkdown,
+    rnaturalearthhires,
+    rstatix,
+    scales,
+    targets,
+    tarchetypes,
+    tidyr,
+    tidyverse,
+    TOSTER,
+    vegan,
+    WdStar
+Suggests:
+    colorspace,
+    elevatr,
+    ggnewscale,
+    ggspatial,
+    osmdata,
+    ragg,
+    rayrender,
+    rayshader,
+    renv,
+    rgl,
+    rnaturalearth,
+    sf,
+    terra,
+    tidyterra,
+    whitebox
+Remotes:
+    alekseyenko/WdStar,
+    ropensci/rnaturalearthhires,
+    stan-dev/cmdstanr
+SystemRequirements: CmdStan (>= 2.39.0), Quarto (>= 1.4)

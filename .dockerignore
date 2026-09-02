@@ -1,0 +1,40 @@
+# Keep the build context small and the image clean. Without this, COPY . would
+# pull in the targets store, the superseded fit cache and the renv library --
+# well over half a gigabyte of files the image rebuilds or does not want.
+
+.git
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# The targets store: rebuilt inside the container by tar_make(), and mounted
+# from the host in CI. Never baked into the image.
+_targets/
+_targets_quick/
+paper/barg/figures_quick/
+
+# The hand-rolled fit cache targets replaced (~278 MB).
+paper/barg/fits/
+paper/barg/fits_quick/
+
+# renv restores the library from renv.lock during the build; the host's copy is
+# a different platform's binaries in any case. activate.R, settings.json and
+# renv.lock are COPYed explicitly by the Dockerfile before this takes effect.
+renv/library/
+renv/staging/
+renv/sandbox/
+renv/local/
+renv/cellar/
+
+# Large inputs and outputs that no part of the build reads.
+analysis/
+asset/
+data/cache/
+output/
+Rplots.pdf
+
+# Docker's own files and the CI definitions.
+Dockerfile
+.dockerignore
+.github/

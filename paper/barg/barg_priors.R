@@ -1,7 +1,7 @@
 # ==========================================================================
 # barg_priors.R -- the prior specifications for every fit in the BARG report.
 #
-# Sourced by barg_fits.R and by barg_report.qmd (the report prints the
+# Sourced into the model and report contexts by barg_context.R; the report
 # specifications without refitting anything).  Requires barg_data.R first.
 #
 # Every class that appears in get_prior() is given an explicit prior.  None

@@ -28,11 +28,18 @@ __pycache__/
 # Stray base-graphics device output (scripts regenerate it; never referenced)
 Rplots.pdf
 
-# Cached Stan fits for the BARG report (paper/barg/barg_fits.R rebuilds them;
-# ~20 MB each, nine of them). They belong in the OSF/Zenodo deposit, not in git.
+# The targets store: eleven cached Stan fits (~28 MB each) plus the analysis
+# environment and the pipeline metadata. Rebuilt by tar_make(); this is the
+# object that belongs in the OSF/Zenodo deposit, not in git.
+_targets/
+_targets_quick/
+paper/barg/figures_quick/
+paper/barg/dummy_data.csv
+
+# The hand-rolled fit cache targets replaced. Kept ignored so that an existing
+# checkout does not suddenly start tracking 300 MB of superseded fits.
 paper/barg/fits/
 paper/barg/fits_quick/
-paper/barg/dummy_data.csv
 
 # Scratch directory of exploratory analyses; nothing in the manuscript or the
 # supplementary material reads it.

@@ -26,20 +26,34 @@ bibliography: []
 knitr::opts_chunk$set(fig.align = "center", dpi = 300, out.width = "100%")
 suppressPackageStartupMessages({
   library(here); library(brms); library(posterior); library(dplyr)
-  library(tidyr); library(knitr)
+  library(tidyr); library(knitr); library(targets)
 })
-source(here("paper", "barg", "barg_data.R"))
-source(here("paper", "barg", "barg_priors.R"))
-source(here("paper", "barg", "barg_quantities.R"))
 
-FITDIR <- here("paper", "barg", if (nzchar(Sys.getenv("BARG_QUICK"))) "fits_quick" else "fits")
-gf  <- function(n) readRDS(file.path(FITDIR, paste0(n, ".rds")))
+# The analysis frame, the prior specifications and the derived-quantity
+# functions come from the report context the pipeline builds; the fits come
+# from the targets store.  Nothing here samples and there is no cache
+# directory to point at: run tar_make() and every fit this document reads is
+# current with the data and the code by construction.
+tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs,
+           fit_ref, fit_prior_ref, fit_noland, fit_ref_rg_ln, fit_ref_basinx))
+
+# Copying the context in gives this document the same names the scripts used
+# to define by being sourced here -- resps, link_sd, ROPE_SD, coef_table(),
+# icc_table() and the rest -- so the 2000 lines below are unchanged.  The two
+# manuscript documents cannot do this, because barg_data.R and _analysis.R use
+# some of the same names for different things; they keep the ctx- prefix.
+list2env(as.list(ctx_report, all.names = TRUE), envir = globalenv())
+
+# The six S-fits and the two variants are read one at a time, so that the
+# render never holds more than two large fits in memory.  They are named in
+# the tar_load() below purely so that tar_quarto() sees them as dependencies
+# of this document; the call is never evaluated.
+if (FALSE) tar_load(c(fit_s1, fit_s2, fit_s3, fit_s4, fit_s5, fit_s6))
+gf  <- function(n) targets::tar_read_raw(paste0("fit_", n))
 FIG <- function(n) here("paper", "barg", "figures", n)
 
-fit_ref    <- gf("ref")
-fit_prior  <- gf("prior_ref")
-fit_noland <- gf("noland")
-mf <- readRDS(file.path(FITDIR, "manifest.rds"))
+fit_prior <- fit_prior_ref
+mf <- barg_mf
 
 # ---- everything the text and the tables quote ---------------------------
 cf       <- coef_table(fit_ref)
@@ -47,7 +61,6 @@ icc_ref  <- icc_table(fit_ref)
 icc_nol  <- icc_table(fit_noland)
 cor_tb   <- cor_table(fit_ref)
 ppsd_ref <- prior_post_sd(fit_ref, fit_prior)
-ppc_stat_tbl <- readRDS(file.path(FITDIR, "ppc_stat_tbl.rds"))
 
 # The six S-fits are large.  They are loaded one at a time, reduced
 # to the quantities the report needs, and dropped again, so that the render
@@ -1301,13 +1314,15 @@ C++ toolchain that actually produced the draws.
 | `data/Site_information.xlsx` | locality attributes: basin, height above channel, distance to channel |
 | `paper/barg/barg_data.R` | builds the analysis frame; defines `link_sd`, the ROPE unit |
 | `paper/barg/barg_priors.R` | all seven prior specifications, in full |
-| `paper/barg/barg_fits.R` | runs and caches the eleven MCMC fits |
+| `paper/barg/barg_models.R` | the eleven model specifications, the sampler call, the diagnostics |
 | `paper/barg/barg_quantities.R` | every derived quantity: ICC, ROPE curves, HDI, MCSE, decisions |
+| `paper/barg/barg_context.R` | assembles the environments the pipeline runs the above in |
 | `paper/barg/barg_theme.R` | the figure style, copied from the manuscript pipeline |
 | `paper/barg/barg_figures.R` | every figure |
 | `paper/barg/barg_dummy_data.R` | the synthetic dataset described below |
 | `paper/barg/barg_report.qmd` | this document |
-| `paper/barg/fits/*.rds` | the cached fits, one per specification, written with `saveRDS()` |
+| `_targets.R` | the pipeline: what depends on what, and what is rebuilt when |
+| `_targets/` | the store, holding the eleven fits and the pipeline metadata |
 | `paper/barg/figures/*.png` | every figure at 300 dpi |
 
 Every table and every figure in this document is produced by the scripts in
@@ -1324,7 +1339,7 @@ above and is not modified by them.
 
 **Archive DOI:** `<10.17605/OSF.IO/XXXXXX>` --- to be minted on OSF or Zenodo at
 submission. The deposit will contain the four source files above, the
-`paper/barg/` scripts, the cached fits, and the rendered HTML.
+`paper/barg/` scripts, the `_targets/` store holding the fits, and the rendered HTML.
 
 If the specimen data cannot be released, `paper/barg/barg_dummy_data.R`
 generates a synthetic dataset with the same columns, types, ranges, locality
@@ -1335,17 +1350,29 @@ simulated from the fitted model and reproduces no individual specimen.
 ## Run the analysis
 
 ```bash
-Rscript paper/barg/barg_fits.R        # eleven MCMC runs; caches to paper/barg/fits/
-Rscript paper/barg/barg_figures.R     # reads the cache, writes paper/barg/figures/
-quarto render paper/barg/barg_report.qmd
+Rscript -e "targets::tar_make()"
 ```
 
-The first step is the only expensive one. `barg_fits.R` writes one `.rds` per
-specification and reads it back on any later run, so the second and third
-steps never resample, and re-rendering this document does not re-fit anything.
-To force a refit, delete the file in question. `BARG_QUICK=1` runs the whole
-pipeline at reduced iterations into `paper/barg/fits_quick/`, for testing the
-plumbing without disturbing the cache.
+That is the whole command. The pipeline fits the eleven models, derives the
+quantities, draws the figures and renders this document and the two manuscript
+documents, in dependency order.
+
+Only the fitting is expensive, and it is done once. Every later `tar_make()`
+compares the stored hash of each target against its inputs and rebuilds only
+what has actually changed: edit a prior in `barg_priors.R` and the eleven fits
+are refitted; edit a figure in `barg_figures.R` and nothing is refitted at all.
+There is no cache to delete to force a refit, and --- unlike the file-existence
+cache this pipeline replaced --- no way for the document to be rendered from a
+fit that no longer matches the code or the data that produced it.
+
+`targets::tar_visnetwork()` shows the graph and what in it is out of date.
+For a fast check of the plumbing that cannot disturb the real fits, the
+`quick` project of `_targets.yaml` runs the same pipeline at reduced
+iterations into a separate store:
+
+```bash
+TAR_PROJECT=quick Rscript -e "targets::tar_make()"
+```
 
 ```{r}
 #| label: tbl-fit-times

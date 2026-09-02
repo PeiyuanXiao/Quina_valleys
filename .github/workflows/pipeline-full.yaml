@@ -1,0 +1,82 @@
+# The real thing: eleven MCMC fits at full length, then the three documents.
+#
+# Manual, because it costs 30-60 minutes of sampling on a cold store and
+# nothing about a routine push needs it. With the store restored from cache it
+# is far shorter -- targets refits only what the change touched, which for a
+# text edit is nothing at all and for a prior change is the eleven fits.
+#
+# The rendered manuscript, supplementary material and Bayesian report are
+# uploaded as artifacts. They are what to compare against the committed
+# versions when checking that a refactor did not move any number.
+name: pipeline (full)
+
+on:
+  workflow_dispatch:
+    inputs:
+      fresh:
+        description: "Ignore the cached store and refit everything"
+        type: boolean
+        default: false
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360      # the free-runner ceiling; a cold run fits inside
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lower-case the image name
+        id: img
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the compendium image
+        run: docker pull ${{ steps.img.outputs.name }}:latest
+
+      - name: Restore the targets store
+        if: ${{ !inputs.fresh }}
+        uses: actions/cache@v4
+        with:
+          path: _targets
+          key: targets-full-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            targets-full-${{ runner.os }}-
+
+      - name: tar_make
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            -e RENV_PATHS_CACHE=/renv/cache \
+            -e HOME=/work \
+            ${{ steps.img.outputs.name }}:latest \
+            R -q -e "renv::restore(prompt = FALSE); targets::tar_make()"
+
+      - name: Fix ownership of files the container wrote
+        if: always()
+        run: sudo chown -R "$USER" . || true
+
+      - name: Convergence summary
+        if: always()
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/work" -w /work \
+            -e HOME=/work ${{ steps.img.outputs.name }}:latest \
+            R -q -e "print(targets::tar_read(barg_diag_tbl))" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: documents
+          path: |
+            paper/manuscript.docx
+            paper/supplementary.docx
+            paper/barg/barg_report.html
+            paper/barg/figures/
+          if-no-files-found: warn

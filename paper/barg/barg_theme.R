@@ -35,10 +35,13 @@ SENS_LEVELS <- c("REF", "S1", "S2", "S3", "S4", "S5", "S6")
 SENS_COLS   <- setNames(c(INK, PAL[1], PAL[2], PAL[3], PAL[5], PAL[4], PAL[6]), SENS_LEVELS)
 
 FIGDIR <- here::here("paper", "barg", "figures")
-dir.create(FIGDIR, showWarnings = FALSE, recursive = TRUE)
 
-save_fig <- function(name, plot, width, height) {
-  f <- file.path(FIGDIR, name)
+# save_fig() returns the path it wrote, so that the figure target in _targets.R
+# can declare its output with format = "file" and rebuild the figures when a
+# fit or the drawing code changes.
+save_fig <- function(name, plot, width, height, dir = FIGDIR) {
+  dir.create(dir, showWarnings = FALSE, recursive = TRUE)
+  f <- file.path(dir, name)
   ggsave(f, plot, width = width, height = height, dpi = 300, bg = "white")
   message("written: ", f)
   invisible(f)

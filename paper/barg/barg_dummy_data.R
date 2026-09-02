@@ -3,7 +3,7 @@
 # real one, for readers who need to verify that the pipeline runs without
 # having access to the specimen measurements.
 #
-# Reads:   paper/barg/fits/ref.rds  (the fitted reference model)
+# Reads:   the fit_ref target of the targets store (the fitted reference model)
 # Writes:  paper/barg/dummy_data.csv
 #
 # Run from the project root:  Rscript paper/barg/barg_dummy_data.R
@@ -20,7 +20,7 @@ suppressPackageStartupMessages({
 })
 source(here("paper", "barg", "barg_data.R"))
 
-fit <- readRDS(here("paper", "barg", "fits", "ref.rds"))
+fit <- targets::tar_read(fit_ref)
 set.seed(SEED)
 
 pp <- posterior_predict(fit, ndraws = 1)

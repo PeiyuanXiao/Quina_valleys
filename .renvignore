@@ -1,0 +1,13 @@
+# Kept out of the renv snapshot.
+
+# Scratch directory of exploratory analyses. Nothing in the manuscript or the
+# supplementary material reads it, and it is git-ignored.
+analysis/
+
+# The Figure 1 map pipeline. It needs sf, terra, elevatr, rayshader, rayrender,
+# rgl, whitebox, osmdata and tidyterra -- roughly doubling the lockfile and
+# requiring GDAL and an OpenGL stack in the container -- while its output is
+# committed as figures/study_area.png and the README marks it optional. It is
+# run on its own; see paper/map/README.md. The packages are recorded under
+# Suggests in DESCRIPTION so the requirement is still written down.
+paper/map/

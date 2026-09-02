@@ -90,26 +90,35 @@ editor_options:
 #| label: setup
 #| include: false
 
-source(here::here("paper", "_analysis.R"))
+library(targets)
+
+# The chunks below call ggplot(), mutate() and group_by() directly, so this
+# document needs the packages attached in its own session; _analysis.R runs in
+# the pipeline's process and hands over objects, not an attached search path.
+source(here::here("paper", "_packages.R"))
+
+# Every statistical result this document reports is computed by
+# paper/_analysis.R, which the pipeline runs as a single target. Loading the
+# whole environment leaves the inline references below working unchanged.
+tar_load(analysis_env)
+list2env(as.list(analysis_env, all.names = TRUE), envir = globalenv())
 fpt <- function(p) sub("^= ", "", vapply(p, fp, character(1)))
 
-# The Bayesian model is read from the cache barg_fits.R writes -- the same BARG
-# reference fit the manuscript figure draws. Nothing is sampled here; if the
-# cache is missing it is built first by ensure_barg_fits() running
-# Rscript paper/barg/barg_fits.R in a fresh R process (BARG_NOREFIT=1 forbids
-# that, BARG_QUICK=1 makes it a reduced-iteration smoke test).
-barg <- new.env(parent = globalenv())
-for (s in c("barg_data.R", "barg_quantities.R", "barg_theme.R",
-            "barg_main_figure.R")) source(here::here("paper", "barg", s), local = barg)
-barg$ensure_barg_fits()
-brms_ref   <- barg$barg_fit("ref")
+# The Bayesian model comes from the pipeline -- the same BARG reference fit the
+# manuscript figure draws. Nothing is sampled during a render and nothing can
+# be stale. The context keeps its own name because barg_data.R defines
+# mod_dat, ROPE_SD and variables, names _analysis.R also uses for its own
+# versions of the same things.
+tar_load(c(ctx_report, fit_ref, barg_mf))
+barg <- ctx_report
+brms_ref   <- fit_ref
 brms_coef  <- barg$coef_table(brms_ref)
 brms_icc   <- barg$icc_table(brms_ref)
 brms_n     <- barg$n_spec
 brms_n_loc <- barg$n_loc
 brms_cri_excl_zero <- sum(brms_coef$CrI_lo > 0 | brms_coef$CrI_hi < 0)
-# convergence is quoted from the manifest barg_fits.R writes beside the fits
-brms_manifest <- readRDS(file.path(barg$barg_fitdir(), "manifest.rds"))
+# convergence is quoted from the manifest the pipeline builds beside the fits
+brms_manifest <- barg_mf
 brms_diag_ref <- with(brms_manifest, diagnostics[diagnostics$fit == "ref", ])
 brms_div       <- brms_diag_ref$divergent
 brms_treedepth <- brms_diag_ref$max_treedepth

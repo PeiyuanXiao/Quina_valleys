@@ -1,22 +1,12 @@
 # _analysis.R -- every statistical result in the manuscript and supplementary.
 # Sourced by both .qmd files; defines objects in memory, writes nothing.
 # WdStar is not on CRAN: remotes::install_github("alekseyenko/WdStar").
-# The Bayesian landscape model is NOT fitted here; see paper/barg/barg_fits.R.
+# The Bayesian landscape model is NOT fitted here; see paper/barg/barg_models.R
 
-library(tidyverse)
-library(here)
-library(readxl)
-library(vegan)
-library(coin)
-library(rstatix)
-library(ggpubr)
-library(patchwork)
-library(ggrepel)
-library(grid)
-library(cvequality)
-library(WdStar) # remotes::install_github("alekseyenko/WdStar")
-library(cmdstanr) # remotes::install_github("stan-dev/cmdstanr")
-library(rnaturalearthhires)
+# The package list lives in _packages.R, because the two documents need the
+# same packages attached in their own render sessions and must not keep a
+# second copy of the list.
+source(here::here("paper", "_packages.R"))
 
 
 set.seed(2226)
