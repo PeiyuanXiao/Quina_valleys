@@ -732,9 +732,10 @@ jk_dens <- ggplot(jk_long, aes(x = R2)) +
 jk_forest <- ggplot(jk_long, aes(x = R2, y = lab)) +
   geom_vline(data = jk_vline, aes(xintercept = R2full), inherit.aes = FALSE,
              linetype = "dashed", linewidth = 0.35, colour = GREY) +
-  geom_point(aes(shape = Comparison, fill = psig), size = 1.9,
+  # one marker shape throughout: the strip already names the comparison, so a
+  # second shape would encode what the facet has encoded already
+  geom_point(aes(fill = psig), shape = 21, size = 1.9,
              colour = "grey25", stroke = 0.3) +
-  scale_shape_manual(values = setNames(c(21, 22), CMP), name = NULL) +
   scale_fill_manual(values = SIG_COLS, name = NULL, drop = FALSE) +
   geom_blank(data = jk_blank, aes(x = R2, y = lab), inherit.aes = FALSE) +
   # limits are pinned so no partial layer can reorder the localities
@@ -742,8 +743,7 @@ jk_forest <- ggplot(jk_long, aes(x = R2, y = lab)) +
                    expand = expansion(add = c(0.7, 0.7))) +
   scale_x_continuous(breaks = jk_breaks, expand = expansion(mult = c(0, 0.04))) +
   facet_wrap(~ Comparison, scales = "free_x") +
-  guides(fill = guide_legend(override.aes = list(shape = 21, size = 2.4)),
-         shape = "none") +
+  guides(fill = guide_legend(override.aes = list(size = 2.4))) +
   labs(x = expression(R^2 ~ "after dropping that locality"), y = NULL) +
   fig_theme +
   theme(strip.text = element_blank(), strip.background = element_blank(),
@@ -800,9 +800,10 @@ jk_B <- ggplot(sens_dat, aes(PC1, PC2)) +
         plot.margin = margin(4, 4, 4, 2))
 
 # One flat grid, not nested: B spans from the top of the density strip to the foot of the forest
+# The guides are deliberately not collected: each legend belongs to one panel
+# and is left under it, centred on that panel rather than on the whole figure.
 jk_dens + jk_forest + jk_B +
-  plot_layout(design = "AC\nBC", widths = c(1, 1.6), heights = c(1, 7),
-              guides = "collect") &
+  plot_layout(design = "AC\nBC", widths = c(1, 1.6), heights = c(1, 7)) &
   theme(legend.position = "bottom", legend.box = "horizontal",
         legend.justification = "center",
         legend.text = element_text(size = 6.6),
@@ -815,7 +816,7 @@ jk_dens + jk_forest + jk_B +
 
 ```{r}
 #| label: fig-pvalue-curve
-#| fig-cap: "Equivalence p-value curves for the difference between surface and Longtan Quina groups. (A) Multivariate centroid distance in six-variable z-scored space. (B) Six individual measures on a common ρ scale. (C) The same measures rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, corresponding to the established Quina–non-Quina contrast."
+#| fig-cap: "Equivalence p-value curves for the difference between surface and Longtan Quina groups. (A) Multivariate centroid distance in six-variable z-scored space. (B) Six individual attributes on a common ρ scale. (C) The same attributes rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, corresponding to the established Quina–non-Quina contrast."
 #| fig-width: 5.9
 #| fig-height: 7.8
 
@@ -833,15 +834,18 @@ uni     <- eq_pc_lev[seq_len(length(variables))]
 uni     <- uni[order(pc_d05[uni])]
 pc_ord  <- c(uni, MULTI_LAB)
 pc_cols <- setNames(c(PAL, INK), pc_ord)
-lw_all  <- setNames(c(rep(0.5, length(uni)), 1.1), pc_ord)
+lw_all  <- setNames(c(rep(0.5, length(uni)), 0.7), pc_ord)
 
 pcurve <- eq_pcurve
 pcurve$Measure <- factor(as.character(pcurve$Measure), levels = pc_ord)
 pc_cross <- data.frame(Measure = factor(pc_ord, levels = pc_ord),
                        Delta = unname(pc_d05[pc_ord]), p = 0.05)
-ANN_A <- "alpha = 0.05"
+ANN_A     <- "alpha == 0.05"          # parsed, so the symbol is drawn
+VLINE_LAB <- "Quina vs non-Quina"     # what the solid line at Delta = 1 is
 
-pc_base <- function(dfc, dfx) {
+# vline_y: where the label on the Delta = 1 line hangs from, which differs
+# between A and B because B keeps its legend in the upper right
+pc_base <- function(dfc, dfx, vline_y) {
   ggplot(dfc, aes(x = Delta, y = p, colour = Measure)) +
     geom_hline(yintercept = 0.05, linetype = "dashed",
                linewidth = 0.45, colour = GREY) +
@@ -850,11 +854,13 @@ pc_base <- function(dfc, dfx) {
     geom_point(data = dfx, shape = 21, size = 1.9, stroke = 0.6,
                fill = "white", show.legend = FALSE) +
     annotate("text", x = 1.19, y = 0.05, label = ANN_A, hjust = 1, vjust = -0.6,
-             size = 2.4, colour = GREY) +
+             size = 2.4, colour = GREY, parse = TRUE) +
+    annotate("text", x = 1, y = vline_y, label = VLINE_LAB, angle = 90,
+             hjust = 1, vjust = -0.45, size = 2.0, colour = TXT) +
     scale_linewidth_manual(values = lw_all, guide = "none") +
     scale_x_continuous(limits = c(0, 1.2), breaks = seq(0, 1.2, 0.2),
                        expand = expansion(mult = c(0.01, 0.02))) +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25),
                        expand = expansion(mult = c(0.01, 0.02))) +
     labs(x = expression("Equivalence bound " * Delta ~ "(units of " * rho * ")"),
          y = "Equivalence test p-value") +
@@ -863,21 +869,26 @@ pc_base <- function(dfc, dfx) {
 
 # ---- panel A: the multivariate centroid alone ----
 pc_A <- pc_base(pcurve[pcurve$Measure == MULTI_LAB, ],
-                pc_cross[pc_cross$Measure == MULTI_LAB, ]) +
+                pc_cross[pc_cross$Measure == MULTI_LAB, ], vline_y = 0.96) +
   scale_colour_manual(values = pc_cols, guide = "none") +
+  annotate("text", x = pc_d05[[MULTI_LAB]], y = 0.05, hjust = -0.18,
+           vjust = -0.9, size = 2.4, colour = INK, parse = TRUE,
+           label = sprintf("Delta == %s ~ rho", f(pc_d05[[MULTI_LAB]], 3))) +
   labs(x = NULL, tag = "A")
 
 # ---- panel B: the six single variables ----
 leg_lab <- setNames(sub(" \\(.*\\)$", "", uni), uni)
 pc_B <- pc_base(pcurve[pcurve$Measure %in% uni, ],
-                pc_cross[pc_cross$Measure %in% uni, ]) +
+                pc_cross[pc_cross$Measure %in% uni, ], vline_y = 0.62) +
   scale_colour_manual(values = pc_cols, breaks = uni, labels = leg_lab, name = NULL) +
-  guides(colour = guide_legend(override.aes = list(linewidth = 0.9))) +
-  labs(x = NULL, tag = "B") +
+  guides(colour = guide_legend(override.aes = list(linewidth = 0.9), ncol = 2)) +
+  labs(tag = "B") +
   theme(legend.position = "inside",
         legend.position.inside = c(0.99, 0.99),
         legend.justification.inside = c(1, 1),
-        legend.background = element_rect(fill = "white", colour = NA),
+        # half the panel border width, because the panel border is drawn on the
+        # panel edge and its outer half is clipped: 0.25 here inks the same
+        legend.background = element_rect(fill = "white", colour = INK, linewidth = 0.25),
         legend.text = element_text(size = 6.6, colour = TXT),
         legend.key.width = unit(0.45, "cm"),
         legend.key.height = unit(0.34, "cm"),
@@ -892,21 +903,18 @@ ccurve <- do.call(rbind, lapply(uni, function(m) {
   data.frame(Measure = m, Delta_raw = s$Delta * den_by_lab[[m]], p = s$p)
 }))
 ccurve$Measure <- factor(ccurve$Measure, levels = uni)
-unit_suffix <- c(Thickness = " mm", Retouch_length_index = "", Ave_GIUR = "",
-                 N_Scar = " scars", Ave_RG = " gen", Edge_Angle = "°")
 unit_digits <- c(Thickness = 1, Retouch_length_index = 3, Ave_GIUR = 3,
                  N_Scar = 1, Ave_RG = 2, Edge_Angle = 1)
 var_of_lab  <- setNames(names(variable_labels), unname(variable_labels))
 c_cross <- data.frame(Measure = factor(uni, levels = uni),
                       Delta_raw = unname(pc_d05[uni] * den_by_lab[uni]), p = 0.05)
-c_cross$lab <- vapply(seq_along(uni), function(i) {
-  v <- var_of_lab[[uni[i]]]
-  paste0(f(c_cross$Delta_raw[i], unit_digits[[v]]), unit_suffix[[v]])
-}, character(1))
+# the strip names the measure and its unit, so the crossing is a number alone
+c_cross$lab <- vapply(seq_along(uni), function(i)
+  f(c_cross$Delta_raw[i], unit_digits[[var_of_lab[[uni[i]]]]]), character(1))
 c_vline <- data.frame(Measure = factor(uni, levels = uni),
                       x = unname(den_by_lab[uni]))
 c_vtext <- data.frame(Measure = factor(uni[1], levels = uni),
-                      x = unname(den_by_lab[uni[1]]), lab = "Quina vs non-Quina")
+                      x = unname(den_by_lab[uni[1]]), lab = VLINE_LAB)
 pc_C <- ggplot(ccurve, aes(x = Delta_raw, y = p, colour = Measure)) +
   geom_hline(yintercept = 0.05, linetype = "dashed",
              linewidth = 0.45, colour = GREY) +
@@ -924,13 +932,17 @@ pc_C <- ggplot(ccurve, aes(x = Delta_raw, y = p, colour = Measure)) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25),
                      expand = expansion(mult = c(0.01, 0.02))) +
   facet_wrap(~ Measure, ncol = 3, scales = "free_x") +
-  labs(x = NULL, y = "Equivalence test p-value", tag = "C") +
+  labs(x = "Equivalence bound in each attribute's own units",
+       y = "Equivalence test p-value", tag = "C") +
   curve_theme +
   theme(strip.text = element_text(face = "bold", colour = INK, size = 6.6),
         axis.text.x = element_text(size = 6.4),
         panel.spacing.x = unit(5, "pt"))
 
-pc_A / pc_B / pc_C + plot_layout(heights = c(1, 2, 2.2))
+# A and B share the y scale, so they share a panel height, and the y title
+# they all repeat is collected into one on the left
+pc_A / pc_B / pc_C +
+  plot_layout(heights = c(1, 1, 2.2), axis_titles = "collect_y")
 ```
 
 \newpage
@@ -1097,7 +1109,6 @@ INK <- "#202124"; GREY <- "#5A5F66"
 material_colors_fig <- c(Trachyte = "#E07C90", Sandstone = "#6BA8CE",
                          Quartz = "#E6C25C", Mudstone = "#9B87C4",
                          Andesite = "#6FB98E")
-pctf <- function(x) paste0(f(100 * x, 1), "%")
 
 jacobs_D  <- function(r, p) (r - p) / (r + p - 2 * r * p)
 prop_of   <- function(df, m) mean(df$Material == m)
@@ -1107,7 +1118,7 @@ p_pooled  <- setNames(comp_avail$p[match(materials, comp_avail$Material)] / 100,
 
 # leave-one-out needs at least three groups: with two it repeats the single-group marker
 SETS <- c("Pooled", "Leave-one-out", "Single unit")
-build_sets <- function(group, unit) {
+build_sets <- function(group, unit, short) {
   ids <- levels(factor(group))
   n   <- length(ids)
   stopifnot(n >= 3)
@@ -1122,13 +1133,17 @@ build_sets <- function(group, unit) {
                       numeric(1), USE.NAMES = FALSE))))) |>
     mutate(D = jacobs_D(unname(r_obs[Material]), p),
            Set = factor(Set, levels = SETS))
-  list(pts = pts, n = n, unit = unit)
+  list(pts = pts, n = n, unit = unit, short = short)
 }
 
-curve_panel <- function(m, S) {
+curve_panel <- function(m, S, tag) {
   col <- unname(material_colors_fig[m])
   r   <- unname(r_obs[[m]])
-  crv <- tibble(p = seq(0, 1, length.out = 2001)) |> mutate(D = jacobs_D(r, p))
+  # the panel title is carried by a strip over a single facet, so that it reads
+  # as the facet strips of the other figures do
+  ttl <- sprintf("%s · %d %ss", m, S$n, S$unit)
+  crv <- tibble(p = seq(0, 1, length.out = 2001)) |>
+    mutate(D = jacobs_D(r, p), Title = ttl)
   dat <- S$pts[S$pts$Material == m, ]
   D_p <- dat$D[dat$Set == SETS[1]]
   rng <- range(dat$p)
@@ -1136,10 +1151,11 @@ curve_panel <- function(m, S) {
   set_shape <- setNames(c(21, 22, 24), SETS)
   set_size  <- setNames(c(2.9, 1.8, 1.8), SETS)
   set_fill  <- setNames(c(col, "white", "white"), SETS)
+  set_labs  <- c("All included", paste0("One ", S$short, " dropped"),
+                 paste0("One ", S$short, " on its own"))
 
-  # annotations go to the side of the line that the data leave empty
+  # the rug goes to the side of the line that the data leave empty
   hi    <- r > 0.5
-  lab_h <- if (hi) 1.22 else -0.22
   rug_s <- if (hi) "b" else "t"
 
   ggplot(crv, aes(p, D)) +
@@ -1149,9 +1165,6 @@ curve_panel <- function(m, S) {
     geom_hline(yintercept = 0, colour = INK, linewidth = 0.4) +
     geom_vline(xintercept = r, colour = GREY, linetype = "dashed",
                linewidth = 0.45) +
-    annotate("text", x = r, y = 0.40, hjust = lab_h, vjust = 0.5,
-             size = 2.3, colour = GREY, lineheight = 1.05,
-             label = paste0("neutral point\np = r = ", pctf(r))) +
     geom_line(colour = col, linewidth = 0.85) +
     # rug: marker positions stay readable where the curve markers crowd
     geom_rug(data = dat[dat$Set != SETS[1], ], aes(x = p), inherit.aes = FALSE,
@@ -1163,7 +1176,7 @@ curve_panel <- function(m, S) {
              vjust = if (hi) 2.4 else -1.6, size = 2.6,
              colour = INK, fontface = "bold",
              label = paste0("D = ", f(D_p, 2))) +
-    scale_shape_manual(values = set_shape, drop = FALSE) +
+    scale_shape_manual(values = set_shape, labels = set_labs, drop = FALSE) +
     scale_fill_manual(values = set_fill, drop = FALSE) +
     scale_size_manual(values = set_size, drop = FALSE, guide = "none") +
     scale_x_continuous(breaks = seq(0, 1, 0.25),
@@ -1173,29 +1186,33 @@ curve_panel <- function(m, S) {
                        expand = expansion(mult = c(0.02, 0.02))) +
     # clip rather than drop: D is exactly +-1 at the ends of the sweep
     coord_cartesian(xlim = c(0, 1), ylim = c(-1, 1)) +
+    facet_wrap(~ Title) +
     # the fill scale differs between panels, so the legend is carried by shape
     # alone, with fixed key fills so they still read solid-vs-open
     guides(fill = "none",
            shape = guide_legend(override.aes = list(
              fill = c(INK, "white", "white"), size = unname(set_size)))) +
-    labs(title = sprintf("%s · %d %ss", m, S$n, S$unit),
-         x = paste0("p, ", tolower(m), " among the surveyed cobbles"),
-         y = "Jacobs' electivity index D") +
+    labs(x = "Proportion of surveyed cobbles",
+         y = "Jacobs' electivity index D", tag = tag) +
     fig_theme +
-    theme(plot.title = element_text(face = "bold", size = 8.5, colour = INK),
-          axis.title = element_text(size = 8),
+    theme(axis.title = element_text(size = 8),
           plot.margin = margin(5, 8, 3, 5))
 }
 
-S_point  <- build_sets(cobbles$Loc,      "sampling point")
-S_valley <- build_sets(cobbles$river_ID, "valley")
+S_point  <- build_sets(cobbles$Loc,      "sampling point", "point")
+S_valley <- build_sets(cobbles$river_ID, "valley",         "valley")
+
+# Each row keeps its own legend, so the keys can name that row own unit, and
+# the y title is collected to the left of the row instead of written twice.
+# The rows are nested patchworks, which plot_annotation() would tag as two
+# elements, so the four tags are passed in by hand.
+row_of <- function(S, tags)
+  (curve_panel("Trachyte", S, tags[1]) | curve_panel("Sandstone", S, tags[2])) +
+    plot_layout(guides = "collect", axis_titles = "collect_y") &
+    theme(legend.position = "bottom", legend.box.spacing = unit(3, "pt"))
 
 # upper row: grouped by sampling point. lower row: grouped by valley.
-(curve_panel("Trachyte", S_point)  | curve_panel("Sandstone", S_point)) /
-  (curve_panel("Trachyte", S_valley) | curve_panel("Sandstone", S_valley)) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom", legend.box.spacing = unit(3, "pt"))
+row_of(S_point, c("A", "B")) / row_of(S_valley, c("C", "D"))
 ```
 
 \newpage

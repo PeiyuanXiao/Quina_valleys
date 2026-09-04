@@ -20,10 +20,20 @@ FROM rocker/verse:4.6.1
 
 LABEL maintainer="Peiyuan Xiao <pyxiao@uw.edu>"
 
-ARG NB_USER=rstudio
-ARG NB_UID=1000
-ENV NB_USER=${NB_USER}
-ENV NB_UID=${NB_UID}
+# Deliberately ENV and not ARG. BinderHub invokes repo2docker with
+# `--user-name=jovyan --user-id=1000`, and repo2docker hands those to every
+# build as `--build-arg NB_USER=jovyan --build-arg NB_UID=1000`. An ARG here
+# would accept that override, and `USER ${NB_USER}` at the foot of this file
+# would then abort the build with "unable to find user jovyan": rocker/verse
+# ships exactly one uid-1000 account and it is named rstudio
+# (DEFAULT_USER=rstudio), with no jovyan anywhere in /etc/passwd. As ENV the
+# two build args simply go unconsumed -- Docker warns and continues -- which is
+# how rocker/binder itself is built: its published images carry ENV
+# NB_USER=rstudio and USER rstudio, and mybinder.org launches them happily,
+# because it only requires the container to run as uid 1000, not to call that
+# user jovyan. They must still be *set*, since the Binder machinery reads them.
+ENV NB_USER=rstudio
+ENV NB_UID=1000
 ENV HOME=/home/${NB_USER}
 
 # Pinned to a fixed, user-independent path: renv otherwise puts the project

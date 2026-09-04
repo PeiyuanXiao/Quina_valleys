@@ -53,13 +53,6 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
   # the legend names them as that one contrast rather than by model type.
   M_WITH <- "With landscape terms"; M_WITHOUT <- "Without landscape terms"
 
-  # Filled or hollow is the Q1 verdict, in the words main-text Table 4 uses, so
-  # that the figure and the table read against each other.  The two legend rows
-  # each vary one thing only -- the first two filled symbols differing in shape,
-  # the second two circles differing in fill -- so that neither row can be
-  # mistaken for the other's code.
-  D_YES <- "Locality variation present"; D_NO <- "Undecided"
-
   icc_ref <- icc_table(fit_ref)   |> mutate(Model = M_WITH)
   icc_nol <- icc_table(fit_noland)|> mutate(Model = M_WITHOUT)
 
@@ -69,8 +62,7 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
   icc_both <- bind_rows(icc_ref, icc_nol) |>
     mutate(Resp = factor(unname(resp_lab[Response]), levels = lev),
            Model = factor(Model, levels = c(M_WITH, M_WITHOUT)),
-           Decided = factor(ifelse(CrI_lo > ICC_ROPE, D_YES, D_NO),
-                            levels = c(D_YES, D_NO)),
+           Decided = CrI_lo > ICC_ROPE,
            Panel = "Between-locality variation")
 
   # The panel is faceted on a constant, purely so that it carries the same grey
@@ -83,20 +75,13 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
                    aes(xmin = CrI_lo, xmax = CrI_hi), linewidth = 0.35, colour = SLATE) +
     geom_point(aes(shape = Model, fill = Decided), size = 1.9, stroke = 0.4,
                colour = SLATE) +
-    scale_shape_manual(values = setNames(c(21, 24), c(M_WITH, M_WITHOUT)),
-                       guide = guide_legend(order = 1,
-                                            override.aes = list(fill = SLATE))) +
-    scale_fill_manual(values = setNames(c(SLATE, "white"), c(D_YES, D_NO)),
-                      drop = FALSE,
-                      guide = guide_legend(order = 2,
-                                           override.aes = list(shape = 21))) +
+    scale_shape_manual(values = setNames(c(21, 24), c(M_WITH, M_WITHOUT))) +
+    scale_fill_manual(values = c(`TRUE` = SLATE, `FALSE` = "white"), guide = "none") +
     scale_x_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1), expand = c(0.01, 0)) +
     facet_wrap(~ Panel) +
     labs(x = "Intraclass correlation coefficient", y = NULL, tag = "A") +
     fig_theme +
-    theme(legend.position = "bottom", legend.box = "vertical",
-          legend.box.just = "left",   # the two rows share a left edge
-          legend.margin = margin(t = -4, b = 0), legend.spacing.y = unit(3, "pt"),
+    theme(legend.position = "bottom", legend.margin = margin(t = -4, b = 0),
           legend.key.height = unit(11, "pt"), legend.key.width = unit(11, "pt"),
           legend.text = element_text(size = 8, margin = margin(l = 1, r = 7)),
           strip.text = element_text(size = STRIP_PT),
