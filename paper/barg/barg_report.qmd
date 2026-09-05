@@ -1,8 +1,59 @@
 ---
-title: "Landscape-scaled technological structure in surface-collected Quina scrapers"
-subtitle: "One Bayesian workflow, reported under the Bayesian Analysis Reporting Guidelines (Kruschke 2021)"
-author: "Peiyuan Xiao"
-date: today
+title: "Supplementary material 2"
+subtitle: "Landscape-scaled technological structure in surface-collected Quina scrapers"
+author:
+  - Pei-Yuan Xiao:
+      correspondence: "no"
+      orcid: 0009-0000-9733-5875
+      institute:
+        - ALPHA
+        - UCAS
+        - UW
+  - Qi-Jun Ruan:
+      correspondence: "yes"
+      orcid: 0009-0000-2143-5335
+      institute:
+        - YPICRA
+  - Davide Delpiano:
+      correspondence: "no"
+      institute:
+        - FERRARA
+  - Marco Peresani:
+      correspondence: "no"
+      orcid: 0000-0001-6562-6336
+      institute:
+        - FERRARA
+        - IGAG
+  - Zhen-Xiu Jia:
+      correspondence: "no"
+      orcid: 0000-0002-7514-4514
+      institute:
+        - ALPHA
+  - Li-Jing Yang:
+      correspondence: "no"
+      institute:
+        - BCRMI
+  - Ben Marwick:
+      correspondence: "yes"
+      email: bmarwick@uw.edu
+      orcid: 0000-0001-7879-4531
+      institute:
+        - UW
+  - Hao Li:
+      correspondence: "yes"
+      email: lihao@itpcas.ac.cn
+      institute:
+        - ALPHA
+# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
+institute:
+  - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
+  - UCAS: University of Chinese Academy of Sciences, Beijing, China
+  - UW: Department of Anthropology, University of Washington, Seattle, WA, USA
+  - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, Yunnan, China
+  - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
+  - IGAG: Consiglio Nazionale delle Ricerche-Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
+  - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
+date: now
 format:
   html:
     toc: true
