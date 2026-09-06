@@ -3,7 +3,7 @@ title: "Supplementary material 1"
 subtitle: "The Quina Landscape: a regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
 author:
   - Pei-Yuan Xiao:
-      correspondence: "no"
+      correspondence: "yes"
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA

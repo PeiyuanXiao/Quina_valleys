@@ -3,7 +3,7 @@ title: "Supplementary material 2"
 subtitle: "Landscape-scaled technological structure in surface-collected Quina scrapers"
 author:
   - Pei-Yuan Xiao:
-      correspondence: "no"
+      correspondence: "yes"
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA

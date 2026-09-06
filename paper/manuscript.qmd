@@ -2,7 +2,7 @@
 title: "The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
 author:
   - Pei-Yuan Xiao:
-      correspondence: "no"
+      correspondence: "yes"
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA
