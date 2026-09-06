@@ -17,15 +17,10 @@
 # meant refitting everything by hand; now targets rebuilds only what changed,
 # so the honest full run is also usually the fast one, and a mode that skips
 # rendering cannot catch the errors that only rendering exposes.
-#
-# Run from the project root.  The store is _targets/ (git-ignored, ~460 MB);
-# it is the object to archive on Zenodo, not paper/barg/fits/.
 # ==========================================================================
 library(targets)
 library(tarchetypes)
 
-# Quarto resolves Rscript from PATH and ignores R_HOME, so a machine where R
-# is not on PATH renders nothing.  Harmless where Rscript is already found.
 if (!nzchar(Sys.which("Rscript")))
   Sys.setenv(PATH = paste(R.home("bin"), Sys.getenv("PATH"),
                           sep = .Platform$path.sep))
@@ -33,12 +28,8 @@ if (!nzchar(Sys.which("Rscript")))
 tar_option_set(
   packages = c("here", "brms", "posterior", "dplyr", "tidyr", "ggplot2",
                "patchwork", "bayesplot", "scales", "readxl", "cmdstanr"),
-  # rds rather than qs: a brmsfit made with the cmdstanr backend carries an
-  # external pointer, and saveRDS/readRDS is the round trip this project has
-  # always used for these objects.
   format = "rds",
   seed = 2226,
-  # eleven brmsfit objects are ~28 MB each; keep only what a target needs
   memory = "transient",
   garbage_collection = TRUE
 )
@@ -47,11 +38,11 @@ tar_source(c("paper/barg/barg_context.R", "paper/barg/barg_models.R"))
 
 # ---- sampler and figure settings -----------------------------------------
 CHAINS      <- 4L
-ITER        <- 10000L     # 20000 post-warmup draws
+ITER        <- 10000L     
 CORES       <- 4L
-NDRAWS      <- 100L       # overlay draws in the predictive checks
-STAT_NDRAWS <- 1000L      # predictive draws behind the grouped-statistic checks
-THIN        <- 5L         # ECDF thinning, sensitivity panels
+NDRAWS      <- 100L       
+STAT_NDRAWS <- 1000L      
+THIN        <- 5L         
 FIGDIR      <- here::here("paper", "barg", "figures")
 
 fit_specs <- data.frame(spec = BARG_SPECS, stringsAsFactors = FALSE)
@@ -64,10 +55,6 @@ fits <- tar_map(
   tar_target(diag, barg_diagnostics(fit, spec))
 )
 
-# The seven fits the sensitivity ECDFs overlay, each reduced to the quantities
-# those panels need in a target of its own. One fit is opened at a time: eleven
-# full brmsfit objects do not fit in 16 GB together, and the reductions are
-# small enough that redrawing the panels never reopens a fit.
 sens_specs <- list(
   spec   = c("ref", "s1", "s2", "s3", "s4", "s5", "s6"),
   label  = c("REF", "S1", "S2", "S3", "S4", "S5", "S6"),
@@ -93,11 +80,6 @@ list(
              format = "file"),
 
   # ---- the code, also tracked by content ---------------------------------
-  # barg_context.R and barg_models.R are loaded by tar_source() and tracked as
-  # functions. The scripts the contexts sys.source() at run time are not seen
-  # by that static analysis, so they are declared here. Without this, editing
-  # a prior would leave the fits untouched -- exactly the silent staleness the
-  # old file-existence cache suffered from, reintroduced through the back door.
   tar_target(barg_model_src,
              file.path(here::here("paper", "barg"),
                        c("barg_data.R", "barg_priors.R")),
@@ -112,8 +94,6 @@ list(
              format = "file"),
 
   # ---- the two contexts --------------------------------------------------
-  # Split so that editing a figure helper cannot invalidate eleven MCMC fits:
-  # the fits see only the data and the priors.
   tar_target(ctx_model,  { barg_model_src
                            barg_context_model(scraper_xlsx, site_xlsx) }),
   tar_target(ctx_report, { barg_report_src
@@ -125,9 +105,6 @@ list(
               command = dplyr::bind_rows(!!!.x)),
 
   # ---- provenance --------------------------------------------------------
-  # One tar_make() produces every fit in one session, so the R, brms and
-  # CmdStan versions are single values rather than the per-fit reconciliation
-  # the old manifest had to carry.
   tar_target(barg_mf, barg_manifest(barg_diag_tbl, seed = 2226,
                                     chains = CHAINS, iter = ITER,
                                     cores = CORES)),
@@ -139,9 +116,6 @@ list(
   sens,
   tar_combine(sens_long, sens[["sens_draw"]],
               command = dplyr::bind_rows(!!!.x)),
-
-  # Only three fits are open here; the sensitivity panels are drawn from the
-  # reductions above.
   tar_target(barg_figs,
              ctx_report$barg_figures(
                list(ref = fit_ref, prior_ref = fit_prior_ref,
@@ -151,14 +125,7 @@ list(
              format = "file"),
 
   # ---- the frequentist half ----------------------------------------------
-  # paper/_analysis.R is one target, not 245.  It runs in seconds and writes
-  # nothing, so there is nothing for targets to save by splitting it; and it
-  # sets one seed at the top and advances the RNG in source order, which a
-  # dependency-ordered split would silently change.  Its 156 inline references
-  # in manuscript.qmd keep working because the whole environment is loaded.
   tar_target(analysis_env, {
-    # declares the dependencies; _analysis.R resolves the data paths itself
-    # with here(), and analysis_src carries its own source and _packages.R
     list(scraper_xlsx, site_xlsx, longtan_xlsx, basin_xlsx, analysis_src)
     e <- new.env(parent = globalenv())
     sys.source(here::here("paper", "_analysis.R"), envir = e)
@@ -166,16 +133,6 @@ list(
   }),
 
   # ---- the documents -----------------------------------------------------
-  # tar_quarto() reads each .qmd for tar_load()/tar_read() calls and wires the
-  # dependencies itself, so rendering is part of the pipeline: tar_make() is
-  # the single command, with no separate render step, and the documents are
-  # rebuilt whenever anything they quote has changed.
-  #
-  # Note that tar_quarto() renders with the working directory set to the
-  # project root, where a standalone `quarto render` uses the document's own
-  # folder. The three documents are written not to depend on either: paths go
-  # through here(), tar_load() is given an explicit store, and barg_report.qmd
-  # includes its figures with rel_path = FALSE.
   tar_quarto(barg_report,   path = "paper/barg/barg_report.qmd"),
   tar_quarto(manuscript,    path = "paper/manuscript.qmd"),
   tar_quarto(supplementary, path = "paper/supplementary.qmd")

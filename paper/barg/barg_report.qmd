@@ -44,7 +44,6 @@ author:
       email: lihao@itpcas.ac.cn
       institute:
         - ALPHA
-# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
   - UCAS: University of Chinese Academy of Sciences, Beijing, China
@@ -56,9 +55,6 @@ institute:
 date: now
 format:
   html:
-    toc: true
-    toc-depth: 3
-    toc-location: left
     number-sections: true
     code-tools: true
     embed-resources: true
@@ -80,47 +76,15 @@ suppressPackageStartupMessages({
   library(tidyr); library(knitr); library(targets); library(ggplot2)
 })
 
-# The analysis frame, the prior specifications and the derived-quantity
-# functions come from the report context the pipeline builds; the fits come
-# from the targets store.  Nothing here samples and there is no cache
-# directory to point at: run tar_make() and every fit this document reads is
-# current with the data and the code by construction.
-# knitr evaluates chunks with the working directory set to this document's own
-# folder, so the pipeline store has to be named explicitly: an unqualified
-# tar_load() looks for paper/barg/_targets/ and fails.
 TAR_STORE <- here::here("_targets")
 
-# The fits are NOT named in this tar_load(). targets materialises a target's
-# declared dependencies in the pipeline process before running the command, so
-# naming eleven brmsfit objects here would hold them in the parent while this
-# render loads its own copies in a subprocess -- which exhausts memory on a
-# 16 GB machine and fails the render. barg_diag_tbl stands in for them: it is
-# derived from all eleven, so any refit changes it and re-renders this
-# document, at a cost of a few hundred bytes rather than several gigabytes.
 tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs, barg_diag_tbl),
          store = TAR_STORE)
 
-# Copying the context in gives this document the same names the scripts used
-# to define by being sourced here -- resps, link_sd, ROPE_SD, coef_table(),
-# icc_table() and the rest -- so the 2000 lines below are unchanged.  The two
-# manuscript documents cannot do this, because barg_data.R and _analysis.R use
-# some of the same names for different things; they keep the ctx- prefix.
 list2env(as.list(ctx_report, all.names = TRUE), envir = globalenv())
 
-# Every fit is read one at a time and dropped again, so that the render never
-# holds more than two large fits in memory.  tar_read_raw() is deliberate:
-# unlike tar_load() it is invisible to tar_quarto()'s dependency detection,
-# which is what keeps the fits out of the pipeline process (see above).
 gf  <- function(n) targets::tar_read_raw(paste0("fit_", n), store = TAR_STORE)
 
-# SHOW(), not knitr::include_graphics(FIG()) directly: include_graphics
-# re-expresses an absolute path relative to the working directory, and
-# tar_quarto() renders with the working directory set to the project root
-# rather than to this document's folder, so the relative path it computes does
-# not resolve and the render dies at the first figure. rel_path = FALSE keeps
-# the absolute path, and because this document sets embed-resources: true the
-# image is base64-embedded at render time -- the output references nothing
-# external either way.
 FIG  <- function(n) here("paper", "barg", "figures", n)
 SHOW <- function(n) knitr::include_graphics(FIG(n), rel_path = FALSE)
 
@@ -129,16 +93,12 @@ fit_prior  <- gf("prior_ref")
 fit_noland <- gf("noland")
 mf <- barg_mf
 
-# ---- everything the text and the tables quote ---------------------------
 cf       <- coef_table(fit_ref)
 icc_ref  <- icc_table(fit_ref)
 icc_nol  <- icc_table(fit_noland)
 cor_tb   <- cor_table(fit_ref)
 ppsd_ref <- prior_post_sd(fit_ref, fit_prior)
 
-# The six S-fits are large.  They are loaded one at a time, reduced
-# to the quantities the report needs, and dropped again, so that the render
-# never holds more than two fits in memory at once.
 SENS <- c(REF = "ref", S1 = "s1", S2 = "s2", S3 = "s3", S4 = "s4", S5 = "s5",
           S6 = "s6")
 ppsd_s1  <- NULL
@@ -183,15 +143,6 @@ rlab <- function(x) unname(resp_lab[x])
 plab <- function(x) unname(pred_lab[x])
 ```
 
-<!-- --------------------------------------------------------------------
-     Cross-chapter computations.
-
-     Every object defined in the chunks below is consumed by inline R in
-     more than one chapter, or in a chapter that now sits above the chunk's
-     original position in the document.  They are gathered here, unchanged,
-     so that definition always precedes use.  Nothing is printed.
-     -------------------------------------------------------------------- -->
-
 ```{r}
 #| label: q1-readout
 #| echo: false
@@ -200,9 +151,8 @@ present <- icc_dec |> filter(Verdict == "locality variation present")
 undec   <- icc_dec |> filter(Verdict == "undecided")
 icc_j <- icc_ref |> select(Response, ref = Median, ref_lo = CrI_lo) |>
   left_join(icc_nol |> select(Response, nol = Median), by = "Response") |>
-  mutate(change = ref - nol, rel = change / nol)   # positive = ICC rose
+  mutate(change = ref - nol, rel = change / nol)
 
-# how the Q1 decision behaves across the seven priors
 icc_sens <- sens_long |>
   filter(startsWith(Quantity, "ICC: ")) |>
   mutate(Resp = sub("^ICC: ", "", Quantity),
@@ -234,7 +184,6 @@ n_acc <- sum(cf$Verdict == "accept the null value")
 best  <- cf |> arrange(Min_ROPE / link_sd[Response]) |> head(3)
 worst2 <- cf |> arrange(desc(Min_ROPE / link_sd[Response])) |> head(3)
 dir_max <- cf |> arrange(desc(Dir_certainty)) |> head(3)
-# the edge-angle ICC across the seven priors, quoted in the limitations below
 ea     <- sens_long |> filter(Quantity == paste0("ICC: ", rlab("EdgeAngle")))
 ea_ref <- ea |> filter(Spec == "REF")
 ea_min <- ea |> arrange(Median) |> slice(1)
@@ -277,11 +226,6 @@ worst_shift <- sens_long |>
 ```{r}
 #| label: s6-identity
 #| echo: false
-# S6, the one-inflated refit.  coef_table() and icc_table() carry the median
-# and its Monte Carlo standard error, so the comparison with the reference can
-# be made in MCSE units: if the two posteriors are the same distribution, their
-# medians should differ by a couple of MCSEs and by nothing more.  The fit is
-# loaded once here, reduced, and dropped.
 s6_q <- local({
   f <- gf("s6")
   out <- list(cf = coef_table(f), icc = icc_table(f))
@@ -309,12 +253,9 @@ s6_icc_id <- icc_ref |>
          z = abs(d) / sqrt(ref_mcse^2 + s6_mcse^2),
          rel_sd = abs(d) / ref_sd)
 
-# every decision the report draws, under both specifications
 s6_same_slope <- all(s6_id$ref_v == s6_id$s6_v)
 s6_same_icc   <- all(s6_icc_id$ref_v == s6_icc_id$s6_v)
 
-# what the reference fit's own coi implies: a probability of an exact zero,
-# and an expected count of zeros, in a sample that contains none
 coi_ref  <- dr_ref[["coi_GIUR"]]
 zoi_ref  <- dr_ref[["zoi_GIUR"]]
 p0_ref   <- zoi_ref * (1 - coi_ref)
@@ -385,12 +326,10 @@ Yes, for `r nrow(present)` of the seven measurements:
 `r paste(rlab(present$Response), collapse = ", ")`. Between
 `r fmt(min(present$Median) * 100, 0)`% and
 `r fmt(max(present$Median) * 100, 0)`% of the variation in those measures sits
-between localities rather than between specimens within a locality. For
-`r nrow(firm)` of the seven measures the finding survives every one of the prior
-settings the model was refitted under, which is the stronger and safer
-reading (@sec-q1). The remaining `r nrow(undec)` measures are undecided: the
-data are compatible both with substantial differences between localities and
-with none.
+between localities rather than between specimens within a locality, and for
+`r nrow(firm)` of them the finding survives every one of the prior settings the
+model was refitted under. The remaining `r nrow(undec)` are undecided
+(@sec-q1).
 
 ### Q2: Do Basin, Elevation or Distance to the Channel Explain the Differences?
 
@@ -398,18 +337,17 @@ Not clearly. Of the `r nrow(cf)` landscape effects estimated,
 `r n_rej` show an effect large enough to matter, `r n_acc`
 `r if (n_acc == 1) "is" else "are"` close enough to zero to be called
 practically negligible, and the remaining `r n_und` are too uncertain to
-separate the two. A more direct piece of evidence points the same way: adding
-all three landscape attributes to a model that lacks them barely moves the
-share of variation sitting between localities, the median change across the
-seven measures being `r sprintf("%+.1f", med_rel * 100)`% (@sec-q1).
+separate the two. Adding all three landscape attributes to a model that lacks
+them barely moves the share of variation sitting between localities, the
+median change across the seven measures being
+`r sprintf("%+.1f", med_rel * 100)`% (@sec-q1, @sec-q2).
 
-An undecided result is a finding rather than a failure to obtain one. It says
-which effect sizes the data exclude and which remain indistinguishable from
-zero. For each landscape effect we therefore report the smallest effect the
-data can rule out, in the units of the measurement itself. For the three
-best-resolved effects those bounds are
+An undecided result is a finding rather than a failure to obtain one, so for
+each landscape effect we report the smallest effect the data can rule out, in
+the units of the measurement itself. For the three best-resolved effects those
+bounds are
 `r paste(sprintf("%s with %s, +/- %s %s", rlab(best$Response), tolower(plab(best$Predictor)), fmt(abs(best$Min_ROPE_resp), 0), best$Min_ROPE_unit), collapse = "; ")`.
-@tbl-min-rope gives the same bound for all `r nrow(cf)` effects, in degrees,
+@tbl-coef-full gives the same bound for all `r nrow(cf)` effects, in degrees,
 retouch generations, or percentages of the measurement.
 
 ## What the Study Cannot Settle
@@ -522,32 +460,26 @@ are in, and adds three that arise from the model rather than from the sample.
 Cf. BARG Preamble A.
 :::
 
-Four considerations led to a Bayesian treatment.
-
-First, the seven measures on a Quina scraper are not on one scale. Thickness and
-overall size are positive and right-skewed; the geometric index of unifacial
-reduction (GIUR) and the retouched share of the perimeter are proportions with
-mass piled at one; the scar count is a count; the edge angle and the number of
-retouch generations are treated as unbounded. A single multivariate model that
-gives each measure the likelihood its scale calls for, and still shares one
-locality-level random structure across all seven, is straightforward to write
-down and fit by MCMC, and awkward to fit any other way.
-
-Second, Q1 asks for the share of link-scale variance attributable to locality, an
-intraclass correlation built from a variance component and a residual variance
-that are themselves functions of several parameters. Under MCMC that ratio is
-computed draw by draw and inherits a genuine interval, with no approximation
-and no delta-method step.
-
-Third, Q2 puts a claim of absence under test: the landscape variables do not explain
-the between-locality differences. A frequentist test can only fail to reject
-such a claim. A posterior distribution combined with a region of practical
-equivalence can accept it, reject it, or report that the data do not decide
-(@sec-decision-rule).
-
-Finally, the variance component Q1 asks about is estimated from `r n_loc`
-clusters (@sec-design-sample). Asymptotic intervals deserve little trust at
-that number of clusters; posterior intervals require no such argument.
+Four considerations led to a Bayesian treatment. The seven measures on a Quina
+scraper are not on one scale -- thickness and overall size are positive and
+right-skewed, the geometric index of unifacial reduction (GIUR) and the
+retouched share of the perimeter are proportions with mass piled at one, the
+scar count is a count, and the edge angle and the number of retouch generations
+are treated as unbounded -- and a single multivariate model that gives each
+measure the likelihood its scale calls for while still sharing one
+locality-level random structure across all seven is straightforward to write
+down and fit by MCMC, and awkward to fit any other way. Q1 asks for the share
+of link-scale variance attributable to locality, an intraclass correlation
+built from a variance component and a residual variance that are themselves
+functions of several parameters; under MCMC that ratio is computed draw by draw
+and inherits a genuine interval, with no approximation and no delta-method
+step. Q2 puts a claim of absence under test, which a frequentist test can only
+fail to reject, whereas a posterior distribution combined with a region of
+practical equivalence can accept it, reject it, or report that the data do not
+decide (@sec-decision-rule). And the variance component Q1 asks about is
+estimated from `r n_loc` clusters (@sec-design-sample), a number at which
+asymptotic intervals deserve little trust while posterior intervals require no
+such argument.
 
 ## Goals and the Two Research Questions {#sec-goals}
 
@@ -753,25 +685,19 @@ one-inflated beta shape the data actually show: mass at 1, none at 0, and the
 zero-inflation half deleted instead of estimated. brms implements the constant
 by moving `coi_GIUR` and `coi_RLI` out of the Stan `parameters` block into
 `transformed parameters`, so two parameters genuinely leave the sampled space
-instead of receiving a tight prior. @tbl-diag-all shows the change: S6 is
-estimated over
+instead of receiving a tight prior, and @tbl-diag-all shows S6 estimated over
 `r mf$diagnostics$n_par[mf$diagnostics$fit == "s6"]` parameters against
-`r mf$diagnostics$n_par[mf$diagnostics$fit == "ref"]` for the reference and
-every other prior specification.
-
-The reference fit shows why the change is worth making. Under `beta(1, 1)` and
-`r sum(mod_dat$GIUR == 1)` ones out of `r n_spec` specimens, the posterior for
-GIUR's `coi` centres on `r fmt(median(coi_ref), 3)` rather than on 1, so the
-reference model reserves
+`r mf$diagnostics$n_par[mf$diagnostics$fit == "ref"]` for the reference. The
+reference fit shows why that is worth doing: under `beta(1, 1)` and
+`r sum(mod_dat$GIUR == 1)` ones out of `r n_spec` specimens, its posterior for
+GIUR's `coi` centres on `r fmt(median(coi_ref), 3)` rather than on 1, reserving
 `r fmt(100 * (1 - median(coi_ref)), 1)`% of the inflation mass for an outcome
-that cannot occur. Multiplied through by `zoi`, that puts the probability of an
-exact zero at `r fmt(median(p0_ref), 4)` and predicts
-**`r fmt(n0_exp, 2)`** zeros among the `r n_spec` specimens, where the data
-contain none. The misfit is small, it points in a direction the data have
-already excluded, and removing it costs nothing.
+that cannot occur, which puts the probability of an exact zero at
+`r fmt(median(p0_ref), 4)` and predicts **`r fmt(n0_exp, 2)`** zeros among the
+`r n_spec` specimens, where the data contain none.
 
-No conclusion can change under the refit, and the reason deserves stating,
-because it is stronger than a sensitivity result. The zero-one-inflated
+No conclusion can change under the refit, and the reason is stronger than a
+sensitivity result. The zero-one-inflated
 beta likelihood factorises: an observation contributes
 $\mathrm{zoi}\cdot\mathrm{coi}$ if it equals 1,
 $\mathrm{zoi}\cdot(1-\mathrm{coi})$ if it equals 0, and
@@ -780,9 +706,8 @@ predictor enters only the third term; `zoi` and `coi` enter only the first two,
 take no predictors, and have their own priors. The posterior therefore
 separates, and the slopes, `phi`, the locality SDs and the locality correlation
 matrix come from the interior observations alone whatever value `coi` takes.
-S6 tests something narrower than whether the answers survive a different `coi`,
-since they cannot depend on it. It checks that this reasoning, and the code
-that implements it, are both right.
+S6 therefore checks that this reasoning, and the code that implements it, are
+both right, rather than whether the answers survive a different `coi`.
 
 ```{r}
 #| label: tbl-s6-identity
@@ -799,23 +724,18 @@ s6_id |>
 Across all `r nrow(s6_id)` slopes the largest difference between the two
 posterior medians is `r fmt(max(abs(s6_id$d)), 4)` on the link scale, which is
 **`r fmt(100 * max(s6_id$rel_sd), 1)`%** of that slope's own posterior SD and
-`r fmt(max(s6_id$z), 1)` Monte Carlo standard errors. For the seven ICCs the
+`r fmt(max(s6_id$z), 1)` Monte Carlo standard errors; for the seven ICCs the
 largest difference is `r fmt(max(abs(s6_icc_id$d)), 4)`, or
-`r fmt(max(s6_icc_id$z), 1)` MCSEs. The MCSE figure is the maximum over
-`r nrow(s6_id)` comparisons, so a value of three or four is the ordinary
-behaviour of a maximum rather than a discrepancy; the percentage of the
-posterior SD is the plainer reading, and by it the two fits agree to within a
-few percent of the width of the thing being estimated.
-
-The decisions agree exactly.
+`r fmt(max(s6_icc_id$z), 1)` MCSEs. The MCSE figure is a maximum over
+`r nrow(s6_id)` comparisons, so a value of three or four is ordinary behaviour
+rather than a discrepancy; by the percentage of the posterior SD, the plainer
+reading, the two fits agree to within a few percent of the width of the thing
+being estimated. The decisions agree exactly.
 `r if (s6_same_slope && s6_same_icc) sprintf("All %d slope verdicts and all %d ICC verdicts are the same under the two specifications.", nrow(s6_id), nrow(s6_icc_id)) else sprintf("%d of the %d slope verdicts and %d of the %d ICC verdicts differ, which the factorisation says should not happen and which needs explaining before either fit is used.", sum(s6_id$ref_v != s6_id$s6_v), nrow(s6_id), sum(s6_icc_id$ref_v != s6_icc_id$s6_v), nrow(s6_icc_id))`
 
 This document therefore reports S6 as the specification the data support and
 keeps the reference fit as the source of every other number. Exchanging them
-would change nothing, and @tbl-s6-identity is the evidence for that claim. A
-reader building on this analysis should prefer the one-inflated form, both
-because GIUR and the retouched perimeter cannot be zero for a retouched tool
-and because it removes a parameter with nothing to estimate.
+would change nothing, and @tbl-s6-identity is the evidence for that claim.
 
 ## Priors {#sec-priors}
 
@@ -935,10 +855,11 @@ is why BARG item 5.B, sensitivity to a genuinely informed prior, has nothing
 to attach to in this analysis, and the gap is itself a statement about how
 little is established for these measures.
 
-The complete prior is in Appendix A (@sec-priors-full): every row
-`prior_summary()` returns, the rows it still labels `default`, the generated
-Stan prior block, and the brms defaults that the explicit specification
-replaced.
+The complete prior is in Appendix A (@sec-priors-full): the rows
+`prior_summary()` still labels `default` and why the sampler never reaches
+them, the brms defaults that the explicit specification replaced, and the
+generated Stan prior block, whose `lprior` statements are what was actually
+added to the log posterior.
 
 ## Fitting and Model Checks {#sec-fitting}
 
@@ -952,13 +873,13 @@ gives the convergence and resolution diagnostics for all eleven runs.
 Three checks separate the fitted model from the results, and this section
 states their outcomes so that a reader can decide how much of the evidence to
 inspect. The prior predictive draws stay inside the physically possible range
-of every measure, which is what that check is asked to establish (Appendix C,
-@sec-prior-pred). The sampler converged; Appendix D (@sec-convergence) gives
+of every measure, which is what that check is asked to establish (Appendix B,
+@sec-prior-pred). The sampler converged; Appendix C (@sec-convergence) gives
 R-hat, divergences and treedepth saturation for all eleven runs. On the posterior
-predictive side (Appendix E, @sec-post-pred), the negative binomial reproduces
+predictive side (Appendix D, @sec-post-pred), the negative binomial reproduces
 the overdispersion of the scar count, while the gaussian likelihood for
 retouch generations smooths over their discreteness, a real limitation of that
-family visible in @fig-post-pred. @tbl-ppc-stats reports the test statistics
+family visible in @fig-post-pred. @fig-ppc-stats reports the test statistics
 fixed in advance, among them the pile-up of GIUR and retouched-perimeter
 values at exactly 1, against their predictive distributions.
 
@@ -1176,19 +1097,8 @@ Of the `r nrow(cf)` slopes, at the 0.1 SD ROPE: `r n_rej` reject the null
 value, `r n_acc` accept it, and `r n_und` are undecided. The intervals are too
 wide for the ROPE. That is what a design delivers when `r n_loc` localities
 supply every predictor and one binary contrast represents basin
-(@sec-design-sample).
-
-```{r}
-#| label: tbl-coef-decision
-cf |>
-  transmute(Response = rlab(Response), Predictor = plab(Predictor),
-            `median [95% ETI], link scale` = ci(Median, CrI_lo, CrI_hi),
-            `standardised` = ci(Std_median, Std_lo, Std_hi, 2),
-            `% in ROPE` = fmt(pct_in_ROPE, 1),
-            `direction certainty` = fmt(Dir_certainty, 3),
-            Decision = Verdict) |>
-  kt(caption = "Q2 decisions at the 0.1 SD ROPE, with the estimate and interval each rests on. 'Direction certainty' is max(P(beta > 0), P(beta < 0)): 0.5 means the posterior is split evenly about zero, 1.0 that the sign is certain.")
-```
+(@sec-design-sample). @tbl-coef-full gives each of the `r nrow(cf)` decisions
+beside the estimate, the interval and the ROPE mass it rests on.
 
 ```{r}
 #| label: prior-dom-readout
@@ -1214,20 +1124,10 @@ would have fitted entirely inside, namely $\max(|\text{lower}|,
 |\text{upper}|)$. Anything wider than that, this design *can* declare
 practically zero; anything narrower, it cannot. Translating that bound into
 the response's own units turns "we could not decide" into a quantitative
-statement of what the study was able to rule out.
-
-```{r}
-#| label: tbl-min-rope
-cf |>
-  mutate(sd_units = Min_ROPE / link_sd[Response]) |>
-  arrange(sd_units) |>
-  transmute(Response = rlab(Response), Predictor = plab(Predictor),
-            `min ROPE, link scale` = Min_ROPE,
-            `min ROPE, SD units` = sd_units,
-            `min ROPE, response scale` = sprintf("+/- %s %s",
-              fmt(abs(Min_ROPE_resp), 1), Min_ROPE_unit)) |>
-  kt(caption = "The smallest ROPE this design could have accepted, per slope, ordered from the best-resolved to the worst. Read the last column as: an effect smaller than this, in the response's own units, is what the study can rule out; an effect larger than this it cannot.", digits = 3)
-```
+statement of what the study was able to rule out. The last column of
+@tbl-coef-full gives that bound for every slope, in the response's own units:
+an effect smaller than it is what the study can rule out, an effect larger than
+it is what the study cannot.
 
 The slopes with a *small* minimum acceptable ROPE are where the "undecided"
 label most misleads. For the three best-resolved slopes the 95% interval sits
@@ -1311,19 +1211,10 @@ differ.
 ### The Two Basins' Slopes Side by Side
 
 The contrasts give only part of the picture, because a difference can be
-undecided while the two slopes it separates look nothing alike.
-
-```{r}
-#| label: tbl-basinx-slopes
-bx |> filter(Quantity != "difference") |>
-  transmute(Response = rlab(Response),
-            Gradient = ifelse(Gradient == "zHeight", "Height", "Distance"),
-            Basin = Quantity,
-            `std median` = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
-            `P(> 0)` = P_positive, Verdict) |>
-  arrange(Response, Gradient, Basin) |>
-  kt(caption = "The gradient slopes within each basin, on the same standardised axis. Binchuan is estimated from its 21 localities and Huangping from its 5.")
-```
+undecided while the two slopes it separates look nothing alike. Binchuan's
+slopes are estimated from its `r gl("Binchuan", "n")` localities and
+Huangping's from its `r gl("Huangping", "n")`, on the same standardised axis as
+the contrasts above.
 
 The pattern is one-sided.
 `r sum(bx_bin$Median > 0)` of the `r nrow(bx_bin)` Binchuan slopes are positive
@@ -1354,7 +1245,7 @@ settle.
 
 ## How Far the Conclusions Depend on the Prior {#sec-prior-dependence}
 
-Six fits differ from the reference in exactly one prior each, and Appendix G
+Six fits differ from the reference in exactly one prior each, and Appendix F
 (@sec-sensitivity) reports every ICC and every slope under all seven. The
 summary is short.
 
@@ -1381,7 +1272,7 @@ for Q2, one basin contrast, and assemblages of very unequal size. Three
 further limits arise from the model rather than from the sample.
 
 1. The 21 correlations are weakly identified. Estimating a 7 x 7 correlation
-   matrix from `r n_loc` clusters asks a great deal, so @tbl-cor describes the
+   matrix from `r n_loc` clusters asks a great deal, so @fig-cor describes the
    fitted structure rather than reporting a set of findings. S5 shows how much
    the LKJ concentration moves them.
 
@@ -1430,10 +1321,8 @@ R packages       brms, cmdstanr, posterior, bayesplot, here, readxl,
                  dplyr, tidyr, ggplot2, patchwork, knitr, quarto (CLI)
 ```
 
-The backend must be cmdstanr. An rstan fit of the same model with the same
-seed is a valid fit and a different one, and the CmdStan version above is part
-of the specification, because `sessionInfo()` records the R packages while
-saying nothing about the C++ toolchain that produced the draws.
+The backend must be cmdstanr, and the CmdStan version above is part of the
+specification; the caption of @tbl-software gives the reason.
 
 ## Retrieve the Files
 
@@ -1493,29 +1382,26 @@ documents, in dependency order.
 Only the fitting is expensive, and it runs once. Every later `tar_make()`
 compares the stored hash of each target against its inputs and rebuilds only
 what has changed: edit a prior in `barg_priors.R` and the eleven fits are
-refitted; edit a figure in `barg_figures.R` and no fit is touched. No cache
-has to be deleted to force a refit, and, unlike the file-existence cache this
-pipeline replaced, no path exists by which the document could be rendered from
-a fit that no longer matches the code or the data behind it.
+refitted; edit a figure in `barg_figures.R` and no fit is touched.
 
 `targets::tar_visnetwork()` shows the graph and what in it is out of date, and
 `targets::tar_make(names = "fit_ref")` builds one target and its dependencies
-without touching the rest. The pipeline deliberately offers no reduced or
-"quick" mode: a run at shortened chains would produce numbers this document
-must not quote, and one that skipped rendering would miss the errors that only
-rendering exposes.
+without touching the rest.
 
 ```{r}
-#| label: tbl-fit-times
+#| label: fit-times-readout
+#| echo: false
 r_by_fit <- if (!is.null(mf$env_by_fit))
   mf$env_by_fit[names(mf$minutes), "r_version"] else
   rep(mf$r_version, length(mf$minutes))
-kt(data.frame(Fit = names(mf$minutes),
-              `Wall-clock minutes` = round(unname(mf$minutes), 1),
-              R = sub("^R version ", "", r_by_fit),
-              check.names = FALSE),
-   caption = "Time taken by each run on the machine that produced this document, and the R version that run was produced under. NA means the fit was read from cache on this run rather than resampled.", digits = 1)
+r_all <- unique(sub("^R version ", "", r_by_fit))
 ```
+
+The eleven runs took between `r fmt(min(mf$minutes, na.rm = TRUE), 1)` and
+`r fmt(max(mf$minutes, na.rm = TRUE), 1)` minutes each on the machine that
+produced this document, a median of
+`r fmt(median(mf$minutes, na.rm = TRUE), 1)`,
+`r if (length(r_all) == 1) sprintf("all of them under %s", r_all) else sprintf("across %d R versions (%s), the cache having been assembled over more than one session", length(r_all), paste(r_all, collapse = ", "))`.
 
 ## Session Information
 
@@ -1581,16 +1467,16 @@ takes the most specific match, so these parents are never reached. The `L` row
 is brms's own restatement of the user-supplied `lkj(1)` in the Cholesky
 parameterisation it actually samples in.
 
-The authoritative record is the generated Stan program (@sec-formal) rather
-than `prior_summary()`. Its prior block, extracted verbatim, is the complete
-list of what was added to the log posterior:
+The authoritative record is the generated Stan program rather than
+`prior_summary()`. Its prior block, extracted verbatim, is the complete list of
+what was added to the log posterior:
 
 ```{r}
 #| label: stan-lprior
 lines <- strsplit(brms::stancode(fit_ref), "\n")[[1]]
 lp    <- grep("lprior \\+=", lines)
 last  <- max(lp)
-while (grepl("^\\s*-", lines[last + 1])) last <- last + 1   # continuation lines
+while (grepl("^\\s*-", lines[last + 1])) last <- last + 1
 cat(paste(trimws(lines[min(lp):last]), collapse = "\n"))
 ```
 
@@ -1620,26 +1506,7 @@ gp |>
   kt(caption = "The brms defaults for every class other than b and sd. None of them is used by the reference fit; each was replaced by an explicit prior. The Intercept and sigma rows are read off the data, which would make them empirical priors rather than the vague priors a reader would assume.")
 ```
 
-# Appendix B. Formal Specification and Stan Code {#sec-formal}
-
-::: {.barg}
-Cf. BARG Step 1.D.
-:::
-
-```{r}
-#| label: brms-formula
-fit_ref$formula
-```
-
-The Stan program brms generated from it, in full:
-
-```{r}
-#| label: stan-code
-#| attr-output: "style='max-height:420px;overflow:auto;'"
-cat(brms::stancode(fit_ref))
-```
-
-# Appendix C. Prior Predictive Check {#sec-prior-pred}
+# Appendix B. Prior Predictive Check {#sec-prior-pred}
 
 ::: {.barg}
 Cf. BARG Step 1.E.
@@ -1681,7 +1548,7 @@ The prior predictive distributions are wide, deliberately so, since they
 encode ignorance about the effects; but they stay inside the possible range of
 every measure, and the prior passes.
 
-# Appendix D. Computation, Convergence and Resolution {#sec-computation}
+# Appendix C. Computation, Convergence and Resolution {#sec-computation}
 
 ## Software and Settings {#sec-software}
 
@@ -1699,7 +1566,7 @@ kt(data.frame(
             as.character(utils::packageVersion("posterior")),
             mf$chains, mf$iter, mf$warmup, format(mf$ndraws, big.mark = ","),
             mf$seed, "0.8 (default)", "10 (default)")),
-  caption = "Computational settings. Chains, iterations, warmup, seed, sampler settings, brms and CmdStan are identical for all eleven runs. The R row lists every distinct R version in the cache; where it shows more than one, the cache was assembled over more than one session, and @tbl-fit-times gives the version each run was produced under. The backend is locked to cmdstanr: an rstan fit of the same model is not bit-for-bit reproducible against a cmdstanr fit, and the CmdStan version pins the C++ that sessionInfo() does not capture.")
+  caption = sprintf("Computational settings. Chains, iterations, warmup, seed, sampler settings, brms and CmdStan are identical for all eleven runs, %s. The backend is locked to cmdstanr: an rstan fit of the same model is not bit-for-bit reproducible against a cmdstanr fit, and the CmdStan version pins the C++ that sessionInfo() does not capture.", if (length(r_all) == 1) "as is the R version the R row names" else sprintf("while the R row lists the %d distinct R versions in the cache, which was assembled over more than one session", length(r_all))))
 ```
 
 All results in this report come from the full run recorded above:
@@ -1755,19 +1622,10 @@ that differ in location or in scale.
 ```{r}
 #| label: rank-prep
 #| echo: false
-# Drawn in this document rather than by barg_figures.R. Every input is already
-# in memory here (dr_ref, and the ICC draws derived from it), so the figure
-# costs nothing beyond the draws the report has already loaded; putting it in
-# the figure target would instead rebuild all thirteen cached PNGs, several of
-# which need a fit reopened.
 NBIN  <- 20L
 nchn  <- length(unique(dr_ref$.chain))
 ndrw  <- nrow(dr_ref)
 
-# The seven ICCs are what Q1 rests on, and include the smallest ESS in the
-# analysis.  The sampled parameters are chosen by the two effective sample
-# sizes the report quotes, plus the log posterior density; unique() collapses
-# the first two when the same parameter is worst on both.
 icc_mat <- vapply(resps, function(r) icc_draws(dr_ref, r, resp_fam[[r]]),
                   numeric(ndrw))
 colnames(icc_mat) <- paste0("ICC: ", rlab(resps))
@@ -1784,7 +1642,6 @@ rank_long <- bind_rows(lapply(colnames(rank_mat), function(v) {
   count(Quantity, chain, bin) |>
   mutate(Quantity = factor(Quantity, levels = colnames(rank_mat)))
 
-# a near-square grid, so that the panel count does not leave a ragged last row
 rank_ncol <- ceiling(sqrt(ncol(rank_mat)))
 ```
 
@@ -1809,7 +1666,6 @@ ggplot(rank_long, aes(bin, n, colour = chain)) +
   geom_hline(yintercept = ndrw / (NBIN * nchn), linetype = "dashed",
              linewidth = 0.3, colour = GREY) +
   geom_step(direction = "mid", linewidth = 0.4) +
-  # the sampled parameters have long brms names; wrap rather than clip them
   facet_wrap(~ Quantity, ncol = rank_ncol,
              labeller = label_wrap_gen(width = 24)) +
   scale_colour_manual(values = PAL[seq_len(nchn)], name = "chain") +
@@ -1853,10 +1709,6 @@ full_tbl <- bind_rows(
                        Mode, HDI_lo, HDI_hi, MCSE_lo, MCSE_med, MCSE_hi, SD,
                        rhat, ess_bulk, ess_tail))
 
-# The locality offsets and the locality-intercept correlations are dropped from
-# the printed table only: fig-caterpillar draws the first set and tbl-cor gives
-# the second with its own diagnostics, and full_tbl stays complete so that the
-# ESS, MCSE and digit summaries below still describe every quantity.
 is_offset <- startsWith(full_tbl$Parameter, "r_Locality__")
 is_cor    <- startsWith(full_tbl$Parameter, "cor_Locality__")
 shown_tbl <- full_tbl[!is_offset & !is_cor, ]
@@ -1925,16 +1777,12 @@ can be applied to this document rather than merely cited.
 dig <- full_tbl |>
   filter(is.finite(MCSE_med), MCSE_med > 0, is.finite(SD), SD > 0) |>
   mutate(
-    # decimal places whose last digit the Monte Carlo error leaves alone,
-    # taking "leaves alone" as MCSE below half a unit in that place
     d_mcse = floor(-log10(2 * MCSE_med)),
-    # decimal places needed for two significant digits of the posterior SD:
-    # beyond this the posterior itself says nothing
     d_post = floor(-log10(SD)) + 2)
 d_min   <- min(dig$d_mcse)
 d_med   <- median(dig$d_mcse)
-n_bound <- sum(dig$d_post > dig$d_mcse)   # simulation is the binding limit
-n_free  <- sum(dig$d_post <= dig$d_mcse)  # posterior width is the binding limit
+n_bound <- sum(dig$d_post > dig$d_mcse)
+n_free  <- sum(dig$d_post <= dig$d_mcse)
 n_over3 <- sum(dig$d_mcse < 3)
 ```
 
@@ -1978,7 +1826,7 @@ two parts, of which only the second is a real defence.
 The first part is cost, and it is a weaker excuse than it looks. One fit of
 this model takes about `r fmt(median(mf$minutes, na.rm = TRUE), 0)` minutes on
 the machine that produced this document, taking the median over the eleven
-runs of @tbl-fit-times, so the few hundred refits a calibration check needs
+runs (@sec-reproducibility), so the few hundred refits a calibration check needs
 come to roughly
 `r fmt(median(mf$minutes, na.rm = TRUE) * 300 / (60 * 24), 1)` days of
 continuous computation, and less than that in parallel. That is affordable.
@@ -2010,7 +1858,7 @@ analysis most clearly still owes, and a reader should treat the evidence in
 this appendix as evidence about the sampler rather than about the calibration
 of the model.
 
-# Appendix E. Posterior Predictive Checks {#sec-post-pred}
+# Appendix D. Posterior Predictive Checks {#sec-post-pred}
 
 ::: {.barg}
 Cf. BARG Step 3.A. Kruschke (2021) treats this check as a precondition for
@@ -2081,8 +1929,6 @@ family moves the conclusions:
 
 ```{r}
 #| label: tbl-rg-alt
-# the RG response is on the log link in the comparison fit, so its ROPE has to
-# be rebuilt from the log-scale SD rather than taken from link_sd
 ls_ln  <- sd(log(mod_dat$RG))
 dr_ln  <- local({ f <- gf("ref_rg_ln"); d <- as_draws_df(f); rm(f); gc(); d })
 rg_alt <- bind_rows(lapply(preds, function(pp) {
@@ -2124,7 +1970,7 @@ above the value of 1 a Poisson would imply; the replicated interval is
 [`r fmt(ns_disp$rep_lo, 2)`, `r fmt(ns_disp$rep_hi, 2)`]. The negative
 binomial captures it.
 
-# Appendix F. Full Posterior Summaries {#sec-posterior-summary}
+# Appendix E. Full Posterior Summaries {#sec-posterior-summary}
 
 ::: {.barg}
 Cf. BARG Step 3.B.
@@ -2143,15 +1989,20 @@ printed decimal places the simulation supports.
 
 ```{r}
 #| label: tbl-coef-full
-#| tbl-cap: "The 21 landscape slopes in full. `median`, `2.5%`, `97.5%` are on the link scale; `std` columns divide by the link-scale SD of the response; `response scale` translates the median to a percentage change per unit of the predictor (log and logit links) or leaves it in the response's own units (identity link)."
+#| tbl-cap: "The 21 landscape slopes in full, each with the decision it supports beside the estimate, the interval and the ROPE mass that decision rests on. `median`, `2.5%`, `97.5%` are on the link scale; `std` columns divide by the link-scale SD of the response, which is the axis the 0.1 ROPE is defined on; `response scale` translates the median to a percentage change per unit of the predictor (log and logit links) or leaves it in the response's own units (identity link). 'Direction certainty' is max(P(beta > 0), P(beta < 0)): 0.5 means the posterior is split evenly about zero, 1.0 that the sign is certain. The last column is the smallest ROPE half-width at which the 95% interval would have fitted entirely inside, in the response's own units (@sec-min-rope)."
 cf |>
   transmute(Response = rlab(Response), Predictor = plab(Predictor), Link,
             median = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
             mode = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
             `std median` = Std_median, `std 2.5%` = Std_lo, `std 97.5%` = Std_hi,
+            `% in ROPE` = fmt(pct_in_ROPE, 1),
+            `direction certainty` = fmt(Dir_certainty, 3),
+            Decision = Verdict,
             `response scale [95% ETI]` = sprintf("%s [%s, %s]",
               fmt(Resp_median, 1), fmt(Resp_lo, 1), fmt(Resp_hi, 1)),
-            unit = Min_ROPE_unit) |>
+            unit = Min_ROPE_unit,
+            `min ROPE, response scale` = sprintf("+/- %s %s",
+              fmt(abs(Min_ROPE_resp), 1), Min_ROPE_unit)) |>
   kt(caption = NULL, digits = 3)
 ```
 
@@ -2222,7 +2073,7 @@ cor_tb |>
 SHOW("locality_intercepts.png")
 ```
 
-# Appendix G. Sensitivity Analysis in Full {#sec-sensitivity}
+# Appendix F. Sensitivity Analysis in Full {#sec-sensitivity}
 
 ::: {.barg}
 Cf. BARG Step 5.
@@ -2320,7 +2171,7 @@ kt(changed |> select(-n_distinct_dec),
 
 ---
 
-# Appendix H. BARG Conformance {#sec-barg}
+# Appendix G. BARG Conformance {#sec-barg}
 
 Kruschke (2021) sets out a checklist for reporting a Bayesian analysis. The
 table below places every item on it against the section that answers it. The
@@ -2339,7 +2190,7 @@ reader following the argument will have passed every row already.
 | **1.A.** Data variables, their roles and types | Seven responses, three locality-level predictors, one grouping factor, with the observed range of each; the complete-case filter is audited step by step; the estimand and the design that produced the sample are stated separately | @sec-design, @sec-data, @tbl-data-vars, @tbl-dropped |
 | **1.B.** The likelihood and its parameters, separating those of theoretical interest from nuisance parameters | One multivariate model over four distributional families, with the linear predictor written out; the slopes and the locality SDs answer the questions, the intercepts, dispersion parameters and 21 correlations do not | @sec-likelihood, @tbl-likelihood |
 | **1.C.** The prior distribution and its justification | Every class given an explicit prior, the slope prior scaled to each response's own link-scale SD, with the share of prior mass inside each response's ROPE as the argument for scaling it | @sec-priors, @sec-priors-full |
-| **1.D.** Formal specification of the model | The brms formula and the complete generated Stan program | @sec-formal |
+| **1.D.** Formal specification of the model | model formula / Stan code available from the analysis code or archive | analysis code or archive |
 | **1.E.** Prior predictive check | The reference prior refitted with `sample_prior = "only"`, and the simulated data checked against the physically possible range of each measure | @sec-prior-pred, @tbl-prior-pred |
 | **2.A.** Software, versions and settings | R, brms, backend and CmdStan versions, chains, iterations, warmup, seed, `adapt_delta` and `max_treedepth`, for all eleven runs | @sec-software, @tbl-software |
 | **2.B.** MCMC chain convergence | R-hat, divergent transitions and treedepth saturation, for the reference fit and for all eleven runs, with rank plots of the chains behind the reference fit | @sec-convergence, @tbl-diag-all, @fig-mcmc-rank |
