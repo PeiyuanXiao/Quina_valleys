@@ -10,6 +10,7 @@ author:
         - UW
   - Qi-Jun Ruan:
       correspondence: "yes"
+      email: ruanqijun000@163.com
       orcid: 0009-0000-2143-5335
       institute:
         - YPICRA
@@ -32,6 +33,14 @@ author:
       correspondence: "no"
       institute:
         - BCRMI
+  - Ming Zhang:
+      correspondence: "no"
+      institute:
+        - BCRMI
+  - Jian Sun:
+      correspondence: "no"
+      institute:
+        - DCRMI
   - Ben Marwick:
       correspondence: "yes"
       email: bmarwick@uw.edu
@@ -52,6 +61,7 @@ institute:
   - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
   - IGAG: Consiglio Nazionale delle Ricerche—Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
   - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
+  - DCRMI: Dali Bai Autonomous Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
 title-block-published: "Last updated"
 date: now
 date-format: long

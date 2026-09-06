@@ -11,6 +11,7 @@ author:
         - UW
   - Qi-Jun Ruan:
       correspondence: "yes"
+      email: ruanqijun000@163.com
       orcid: 0009-0000-2143-5335
       institute:
         - YPICRA
@@ -33,6 +34,14 @@ author:
       correspondence: "no"
       institute:
         - BCRMI
+  - Ming Zhang:
+      correspondence: "no"
+      institute:
+        - BCRMI
+  - Jian Sun:
+      correspondence: "no"
+      institute:
+        - DCRMI
   - Ben Marwick:
       correspondence: "yes"
       email: bmarwick@uw.edu
@@ -44,14 +53,16 @@ author:
       email: lihao@itpcas.ac.cn
       institute:
         - ALPHA
+# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
   - UCAS: University of Chinese Academy of Sciences, Beijing, China
   - UW: Department of Anthropology, University of Washington, Seattle, WA, USA
   - YPICRA: Yunnan Provincial Institute of Cultural Relics and Archaeology, Kunming, Yunnan, China
   - FERRARA: Department of Human Studies, Prehistoric and Anthropological Science Unit, University of Ferrara, Ferrara, Italy
-  - IGAG: Consiglio Nazionale delle Ricerche-Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
+  - IGAG: Consiglio Nazionale delle Ricerche—Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
   - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
+  - DCRMI: Dali Bai Autonomous Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
 date: now
 format:
   html:
