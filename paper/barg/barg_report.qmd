@@ -76,7 +76,10 @@ execute:
   warning: false
   message: false
   echo: false
-bibliography: []
+bibliography:
+  - ../references.bib
+  - ../packages.bib
+csl: "../../templates/elsevier-harvard.csl"
 ---
 
 ```{r setup}
@@ -292,44 +295,48 @@ priors, how the model was fitted and checked, the posterior estimates, the
 decisions drawn from them, and how far those decisions depend on choices that
 could have been made differently.
 
-The analysis follows two published guidelines, which divide the labour between
-them. Kruschke (2021) specifies what a completed Bayesian analysis should
-report, item by item, and @sec-barg shows where each requirement is answered.
-Gelman, Vehtari, McElreath, et al. (2026) instead describe how model
-development proceeds before there is a final analysis to report: fit a model,
+The analysis follows two published guidelines. 
+Kruschke (2021) specifies what a completed Bayesian analysis should
+report, item by item, and we follow this specification in this document. @sec-barg provides the checklist and shows where each requirement is answered in this document.
+Gelman, Vehtari, McElreath, et al. (2026) describe how model
+development should proceed before there is a final analysis to report: fit a model,
 check how well it performs, find the problems, change the model, and go round
 again. They argue that a real analytical problem is better understood by
-comparing several plausible models than by relying on one.
+comparing several plausible models than by relying on one. We follow Gelman, Vehtari, McElreath, et al. (2026) in presenting the estimand and the design before any model appears (@sec-design), so
+that the resolution of both research questions is fixed in the open rather
+than inferred from wide intervals later; setting out all eleven
+fits together with the reason each exists (@sec-model-series), including the two that record a
+defect the analysis found in itself; and stating which computational check
+this report has not performed, why, and what a follow-up should do instead  (@sec-sbc).
 
-This supplement therefore follows the order in which the analysis was
+This supplement follows the order in which the analysis was
 conducted, from @sec-design to @sec-reproducibility, and puts the reporting
 checklist at the end. A reader auditing coverage can work through the
-checklist without interrupting the narrative.
+checklist without interrupting the narrative. We introduce the technical vocabulary used throughout in @sec-reading-guide. The appendices give the complete tables, the model code and the diagnostics. 
 
-The appendices give the complete tables, the model code and the diagnostics. A
-reader less familiar with Bayesian terminology can begin with
-@sec-reading-guide, which introduces the vocabulary used throughout.
+## What Our Bayesian Model Analysed
 
-## What Was Analysed
-
-`r n_spec` surface-collected Quina scrapers from `r n_loc` localities in two
-basins, Binchuan and Huangping. Seven attributes were taken on each
+We looked at `r n_spec` surface-collected Quina scrapers from `r n_loc` localities in two
+basins, Binchuan and Huangping. Seven attributes were recorded from each
 specimen: its thickness, its overall size, its GIUR, the retouched share of
 its perimeter, its total scar count, its edge angle, and the number of retouch
-generations recorded on it. Three further attributes describe the locality
-rather than the specimen: which basin it lies in, how high it sits above the
-channel, and how far it is from the channel. Each is the same for every
+generations recorded on it. Three further attributes describe the locality: which basin it lies in, how high it sits above the
+channel, and how far it is from the channel. Each locality attribute is the same for every
 specimen collected from that locality.
 
-One multilevel model takes all seven attributes at once, so that a single
+Our multilevel model takes all seven attributes at once, so that a single
 locality structure is shared across them instead of seven separate analyses
 being run and compared afterwards. The model gives every locality its own
-baseline for every attribute, and it answers two questions. How much of the
+baseline for every attribute, and it answers two questions: 
+
+- How much of the
 variation in each attribute occurs between localities rather than among
-specimens within a locality? And how much of that difference between
+specimens within a locality?      
+
+- And how much of that difference between
 localities do the three landscape attributes explain?
 
-## What Was Found
+## What Our Bayesian Model Found
 
 ### Q1: Do the Localities Differ from One Another?
 
@@ -348,7 +355,7 @@ Not clearly. Of the `r nrow(cf)` landscape effects estimated,
 `r n_rej` show an effect large enough to matter, `r n_acc`
 `r if (n_acc == 1) "is" else "are"` close enough to zero to be called
 practically negligible, and the remaining `r n_und` are too uncertain to
-separate the two. Adding all three landscape attributes to a model that lacks
+separate. Adding all three landscape attributes to a model that lacks
 them barely moves the share of variation sitting between localities, the
 median change across the seven measures being
 `r sprintf("%+.1f", med_rel * 100)`% (@sec-q1, @sec-q2).
@@ -361,7 +368,7 @@ bounds are
 @tbl-coef-full gives the same bound for all `r nrow(cf)` effects, in degrees,
 retouch generations, or percentages of the measurement.
 
-## What the Study Cannot Settle
+## What Our Bayesian Model Cannot Settle
 
 Basin, height above the channel and distance to the channel are recorded once
 per locality, so the three landscape attributes are estimated from
@@ -373,8 +380,8 @@ to particular measures.
 
 # Reading Guide {#sec-reading-guide}
 
-Eleven terms do most of the technical work in what follows. Each is glossed
-again, in one clause, where it first appears in the main narrative.
+Before discussing the Bayesian Model in detail, we provide definitions of the key terms to guide the reader. Each term is glossed
+again, in one clause, where it first appears in the main narrative below.
 
 | Term | What it means here |
 |---|---|
@@ -398,10 +405,10 @@ Gelman, Vehtari, McElreath, et al. (2026, ch. 10) set out the chain any
 empirical claim depends on. A generative theory motivates an estimand; the
 theory and the estimand together justify a design; the design yields a sample;
 and a statistical model, the estimator, turns that sample into an estimate.
-The links exist whether or not the analyst names them, and a reader can walk
-the chain backwards from a conclusion to find the one that fails. This section
-names them for the present study, because three facts about the design fix the
-resolution of everything that follows, and because the specimen count
+A reader can walk
+the chain backwards from a conclusion to find the link that fails. This section
+names them for the present study, because three facts about the design set the
+resolution of everything that follows. In addition, the specimen count
 overstates what the design delivers for the second research question.
 
 ## Theory and Estimand
@@ -410,8 +417,7 @@ The theory is that the technological character of a Quina assemblage varies
 with where in a valley system its makers worked, so that assemblages from
 different parts of a basin should differ in systematic ways.
 
-Two quantities to be estimated follow from it, and the rest of the document
-keeps them apart (@sec-goals). Q1 is the proportion of the variation in each
+Two quantities to be estimated follow from our theory (@sec-goals). Q1 is the proportion of the variation in each
 of the seven measures that occurs between localities rather than among
 specimens within the same locality. Q2 is the difference in each measure
 associated with belonging to one basin rather than the other, together with
@@ -422,19 +428,14 @@ fixed.
 Q2 estimates an association. The study did not assign the localities their
 elevations, it states no causal diagram, and it derives no adjustment set from
 one. A slope near zero therefore means that the landscape attribute fails to
-predict the measure across these `r n_loc` localities. It does not establish
-that moving an assemblage's position in the landscape would leave the measure
-unchanged. A causal reading would need a design that separates the landscape
-variables from whatever else distinguishes one locality from another.
+predict the measure across these `r n_loc` localities. 
 
 ## Design and Sample {#sec-design-sample}
 
-Three features of the sample constrain every result below. They follow from
-how the material was collected, so no choice of model, no choice of prior and
-no further specimens can overcome them.
+Three features of how the material was collected constrain our results. 
 
-For Q2 the unit of information is the locality, and there are `r n_loc` of
-them. Basin, height above the channel and distance to the channel are recorded
+For Q2 the unit of information is the locality, we have `r n_loc` of
+these. Basin, height above the channel and distance to the channel are recorded
 once per locality and are identical for every specimen collected there. The
 `r n_spec` specimens sharpen the estimate of within-locality variation and of
 each locality's overall level. They add no independent information about the
@@ -471,26 +472,29 @@ are in, and adds three that arise from the model rather than from the sample.
 Cf. BARG Preamble A.
 :::
 
-Four considerations led to a Bayesian treatment. The seven measures on a Quina
+Four considerations led us to a Bayesian treatment. The seven measures on a Quina
 scraper are not on one scale -- thickness and overall size are positive and
 right-skewed, the geometric index of unifacial reduction (GIUR) and the
-retouched share of the perimeter are proportions with mass piled at one, the
+retouched share of the perimeter are proportions ranging 0-1, the
 scar count is a count, and the edge angle and the number of retouch generations
-are treated as unbounded -- and a single multivariate model that gives each
-measure the likelihood its scale calls for while still sharing one
-locality-level random structure across all seven is straightforward to write
-down and fit by MCMC, and awkward to fit any other way. Q1 asks for the share
+are treated as unbounded (@sec-data). This requires a single multivariate model that gives each
+measure the likelihood its scale calls for, while still sharing one
+locality-level random structure across all seven. A Bayesian model is the most straightforward way to handle these diverse variables and the nested structure. 
+
+Q1 asks for the share
 of link-scale variance attributable to locality, an intraclass correlation
 built from a variance component and a residual variance that are themselves
 functions of several parameters; under MCMC that ratio is computed draw by draw
 and inherits a genuine interval, with no approximation and no delta-method
-step. Q2 puts a claim of absence under test, which a frequentist test can only
-fail to reject, whereas a posterior distribution combined with a region of
-practical equivalence can accept it, reject it, or report that the data do not
-decide (@sec-decision-rule). And the variance component Q1 asks about is
+step. The variance component Q1 asks about is
 estimated from `r n_loc` clusters (@sec-design-sample), a number at which
 asymptotic intervals deserve little trust while posterior intervals require no
 such argument.
+
+Q2 puts a claim of absence under test, which a frequentist test can only
+fail to reject, whereas a posterior distribution combined with a region of
+practical equivalence can accept it, reject it, or report that the data do not
+decide (@sec-decision-rule). 
 
 ## Goals and the Two Research Questions {#sec-goals}
 
@@ -498,10 +502,10 @@ such argument.
 Cf. BARG Preamble B.
 :::
 
-The study has two goals. The first is estimation: the size of each landscape
+Our study has two goals. The first is estimation: the size of each landscape
 effect and the amount of locality-level variation, with the uncertainty on
 each. The second is decision: whether each landscape effect is small enough to
-treat as practically absent. Predicting new specimens is outside both.
+treat as practically absent. 
 
 Formal model selection is outside the scope as well. One model answers the two
 research questions, and the analysis estimates its parameters instead of
@@ -521,13 +525,10 @@ between localities rather than among specimens within the same locality
 locality resemble each other, relative to how much the localities differ.
 
 Q2 asks whether basin, elevation above the channel or distance to the channel
-explains that between-locality variation. The population-level slopes supply
-the answer (@sec-posterior-summary, @sec-q2).
+explains that between-locality variation. This is answered by population-level slopes (@sec-posterior-summary, @sec-q2).
 
-The order of the questions matters. Q2 has something to explain only if Q1
-shows that the localities differ in the first place. A "yes" for Q1 alongside
-an undecided result for Q2 is no contradiction: the two answer different
-questions, and this document reports them separately.
+The order of the questions is important. Q2 only has something to explain if Q1
+shows that the localities differ in the first place. 
 
 ## Data {#sec-data}
 
@@ -564,13 +565,13 @@ than in any measurement protocol, and it is stated here because it has a
 consequence.
 
 Thickness is one of the three factors in GMsize, so the two responses share a
-component before any archaeology enters. The model is fitted with
+component. The model is fitted with
 `set_rescor(FALSE)`, which assumes the *residuals* of the seven responses are
 independent given the locality intercepts, and that assumption is not credible
-for this pair. The practical consequence is confined. With `rescor = FALSE`
+for this pair. In practice the consequence is limited. With `rescor = FALSE`
 the multivariate model factorises into seven univariate models sharing only
 the correlated random intercepts, so the slopes and their intervals for each
-response remain valid marginally. The invalid readings are two: any statement
+response remain valid marginally. The invalid readings are confined to: any statement
 about the *joint* uncertainty of the thickness slope and the size slope, and
 any treatment of those two responses as independent evidence. The observed
 correlation between their locality intercepts (@sec-cor) is therefore partly
@@ -688,9 +689,9 @@ perimeter. There is therefore no zero inflation at all to model: the fitted
 determine almost completely, and the zero-inflation half of the family is
 supported by nothing. The family is effectively a one-inflated beta.
 
-### S6, the One-Inflated Refit {#sec-oneinflated}
+### S6, the One-Inflated Refit {#sec-oneinflated} <!-- BM: what is S6? Can we give a little definition? -->
 
-The paragraph above describes a defect rather than a design choice, and S6 acts
+The paragraph above describes a defect <!-- BM: due to what? --> rather than a design choice, and S6 acts
 on it. Setting `coi` to `constant(1)` in `barg_priors.R` gives the family the
 one-inflated beta shape the data actually show: mass at 1, none at 0, and the
 zero-inflation half deleted instead of estimated. brms implements the constant
@@ -745,8 +746,7 @@ being estimated. The decisions agree exactly.
 `r if (s6_same_slope && s6_same_icc) sprintf("All %d slope verdicts and all %d ICC verdicts are the same under the two specifications.", nrow(s6_id), nrow(s6_icc_id)) else sprintf("%d of the %d slope verdicts and %d of the %d ICC verdicts differ, which the factorisation says should not happen and which needs explaining before either fit is used.", sum(s6_id$ref_v != s6_id$s6_v), nrow(s6_id), sum(s6_icc_id$ref_v != s6_icc_id$s6_v), nrow(s6_icc_id))`
 
 This document therefore reports S6 as the specification the data support and
-keeps the reference fit as the source of every other number. Exchanging them
-would change nothing, and @tbl-s6-identity is the evidence for that claim.
+keeps the reference fit as the source of every other number. 
 
 ## Priors {#sec-priors}
 
@@ -763,7 +763,7 @@ from `r fmt(min(link_sd), 3)` for `r rlab(names(which.min(link_sd)))` to
 (@tbl-likelihood). A single nominal slope prior, `normal(0, 1)` say, is
 therefore a very different statement about each of them. The clearest way to
 see it is the share of the prior that falls inside that response's own ROPE,
-the interval of slopes the analysis is prepared to call practically zero.
+the interval of slopes that we are prepared to call practically zero.
 
 ```{r}
 #| label: tbl-prior-rope
@@ -808,12 +808,7 @@ every quantity in the report can be read off directly.
 
 ### The Reference Prior
 
-Every class that `get_prior()` lists receives an explicit prior, and nothing
-stays at a brms default. Two reasons. BARG Step 1.C asks for the prior in
-full, and an inherited default goes unreported by construction; the default
-intercept prior, `student_t(3, median(y), 2.5 mad(y))`, is also read off the
-data. Beyond that, `sample_prior = "only"`, which the prior predictive check
-of @sec-prior-pred needs, requires every prior to be proper.
+Every class receives an explicit prior with justification, following BARG Step 1.C 
 
 | Class | Prior | Reason |
 |---|---|---|
@@ -826,8 +821,8 @@ of @sec-prior-pred needs, requires every prior to be proper.
 | `zoi`, `coi` | `beta(1, 1)` | uniform on (0, 1); this is also the brms default, stated here rather than inherited |
 | `cor` (7x7) | `lkj(1)` | uniform over correlation matrices; varied in S5 |
 
-The intercept priors are set from what a lithic analyst would have called
-possible for a retouched flake tool before seeing these `r n_spec` pieces,
+The intercept priors are set from what we have called
+plausible for a retouched flake tool before seeing these specific `r n_spec` pieces,
 mapped through the link. Each is far wider than the observed spread.
 
 ```{r}
@@ -858,13 +853,12 @@ standard construction behind weakly informative priors. It remains a mild
 empirical-Bayes element. S1 and S2 in @sec-sensitivity vary this scale by
 factors of roughly 1/8 to 2.5 and show what turns on it.
 
-None of the priors used here is informed by previous work, because there is
+None of the priors used here are informed by previous work, because there is
 none to draw on. No published posterior or meta-analytic estimate exists for
 any of these seven measures in Quina assemblages; there is no prior literature
 on, for instance, how edge angle varies with elevation above a channel. That
 is why BARG item 5.B, sensitivity to a genuinely informed prior, has nothing
-to attach to in this analysis, and the gap is itself a statement about how
-little is established for these measures.
+to attach to in this analysis.
 
 The complete prior is in Appendix A (@sec-priors-full): the rows
 `prior_summary()` still labels `default` and why the sampler never reaches
@@ -874,19 +868,18 @@ added to the log posterior.
 
 ## Fitting and Model Checks {#sec-fitting}
 
-brms (Bürkner 2017) fitted the model with the cmdstanr backend, running
+We used the R package brms (Bürkner 2017) to fit the model with the cmdstanr backend, running
 `r mf$chains` chains of `r format(mf$iter, big.mark = ",")` iterations for
 `r format(mf$ndraws, big.mark = ",")` post-warmup draws in total. Ten further
-fits use identical settings; @sec-model-series says what each one is for.
+fits use identical settings; @sec-model-series records what each one is for.
 @tbl-software gives versions, seeds and sampler settings, and @sec-computation
 gives the convergence and resolution diagnostics for all eleven runs.
 
-Three checks separate the fitted model from the results, and this section
-states their outcomes so that a reader can decide how much of the evidence to
-inspect. The prior predictive draws stay inside the physically possible range
-of every measure, which is what that check is asked to establish (Appendix B,
-@sec-prior-pred). The sampler converged; Appendix C (@sec-convergence) gives
-R-hat, divergences and treedepth saturation for all eleven runs. On the posterior
+We conducted three checks on the model outputs to help decide how much of the evidence to
+inspect. First, the prior predictive draws stay inside the physically possible range
+of every measure (Appendix B,
+@sec-prior-pred). Second, the sampler converged; Appendix C (@sec-convergence) gives
+R-hat, divergences and treedepth saturation for all eleven runs. Third, on the posterior
 predictive side (Appendix D, @sec-post-pred), the negative binomial reproduces
 the overdispersion of the scar count, while the gaussian likelihood for
 retouch generations smooths over their discreteness, a real limitation of that
@@ -898,7 +891,7 @@ values at exactly 1, against their predictive distributions.
 
 # The Model Series {#sec-model-series}
 
-Eleven fits underlie this report, and only one of them supplies the
+We generated eleven fits but only one of them supplies the
 numbers in the results tables. The other ten exist because a single fit cannot
 show which of its answers depend on the analyst rather than on the scrapers.
 Gelman, Vehtari, McElreath, et al. (2026, ch. 9) treat this as the step that
@@ -925,15 +918,13 @@ Two of these entries record a defect the analysis found in itself: `s1` the
 unscaled slope prior that says something different about each response
 (@sec-priors), and `s6` a `coi` parameter estimating the frequency of an
 outcome that cannot occur (@sec-oneinflated). Neither defect showed up in the
-research question, in the data or in the convergence diagnostics. Both
-surfaced from comparing the fitted parameters with what the sample contains,
-and that comparison is the part of the work a results table has no room for.
+research question, in the data or in the convergence diagnostics. <!-- BM: I think we need a bit more context about this defect --> Both
+surfaced from comparing the fitted parameters with what the sample contains.
 
-Fitting eleven models rather than one opens a familiar risk, and naming it is
-part of reporting it. A reader cannot tell from the finished document how many
+Fitting eleven models rather than one opens a familiar risk: a reader cannot tell from the finished document how many
 further specifications were tried and set aside, and a set of fits chosen after
 seeing the results can be made to bracket whatever range the analyst prefers.
-Two features of the design limit the room for that here. Each of `s1` to `s6`
+Two features of our design limit the room for that here. Each of `s1` to `s6`
 changes exactly one line of the reference prior, so the set is determined by
 the reference specification rather than by the results; and no fit was dropped,
 so @tbl-diag-all lists all eleven, including the
@@ -948,12 +939,12 @@ much of the answer that choice governs.
 
 ::: {.barg}
 Cf. BARG Step 4.E, which requires every decision to appear beside the estimate
-and interval it rests on. Every decision table below gives all three.
+and interval it rests on.
 :::
 
-@fig-main answers both questions at a glance. The sections that follow give
-the rule those answers are drawn from, then each question in turn, then how
-much of the answer depends on the prior, and finally what the design cannot
+@fig-main answers both of our questions at a glance. The sections that follow give
+the rule those answers are drawn from, then answers each question in turn, then states how
+much of the answer depends on the prior, and finally what our design cannot
 settle.
 
 ```{r}
@@ -998,23 +989,23 @@ predictor by one unit shifts the response by less than a tenth of that
 response's total spread. Expressing the bound in link-scale SD units is what
 lets one number serve seven responses on three link scales (@tbl-prior-rope).
 
-Two qualifications attach to it. The first is that 0.1 is a convention. No
-archaeological argument supports it, and none exists in the literature: nobody
+There are two qualifications to this. First is that 0.1 is a convention, there are no
+archaeological arguments for it. Nobody
 has established how large a difference in edge angle or scar count a lithic
 analyst would need before calling it a real difference in technological
-behaviour, and this report constructs no such argument either.
+behaviour. <!-- BM: this is where Eerkens and Bettinger on the Weber fraction would be good to cite --> 
 
-The second qualification is more serious. BARG asks for ROPE limits fixed by
+Second, BARG asks for ROPE limits fixed by
 theoretical and practical considerations *before the results are seen*, and
 this analysis fails that precondition, because the model had already been
-fitted and inspected before the report was written. Choosing a half-width now,
+fitted and inspected before we wrote the report. Choosing a half-width now,
 with the posteriors in view, would allow the bound to be tuned until it
 delivered a preferred verdict.
 
-Reporting the whole curve answers the objection where defending a single
-number would not. The posterior mass inside the ROPE appears below as a
+To counter this, the posterior mass inside the ROPE appears below as a
 continuous function of the half-width, so that a reader with a defensible
-bound of their own can read the answer off at it. The equivalence $p$-value
+bound of their own can read the answer off at it. A reader who wants the mass at a particular half-width can read it off the
+curve. The equivalence $p$-value
 curves of the companion analysis use the same device for the same reason.
 
 ```{r}
@@ -1022,10 +1013,6 @@ curves of the companion analysis use the same device for the same reason.
 #| fig-cap: "Posterior mass inside the ROPE as a function of the ROPE half-width, in link-scale SD units, for all 21 slopes. Dashed vertical line: the 0.1 half-width quoted in the text. Dotted horizontals: the 2.5% and 95% thresholds of the decision rule. A curve that has not reached 95% by a half-width the reader considers archaeologically negligible is a slope this design cannot declare absent."
 SHOW("rope_curves.png")
 ```
-
-A reader who wants the mass at a particular half-width can read it off the
-curve; `rope_curve()` in `barg_quantities.R` returns it numerically for any
-grid of half-widths.
 
 ## Q1: Is There Technological Variation Between Localities? {#sec-q1}
 
@@ -1041,7 +1028,7 @@ Their posterior medians are
 `r fmt(min(present$Median) * 100, 0)`% and `r fmt(max(present$Median) * 100, 0)`%
 of the link-scale variance in those measures sits between localities rather
 than within them. The remaining `r nrow(undec)` are undecided: their intervals
-run from near zero to values that would be substantial, and the design does
+run from near zero to values that would be substantial, and our model design does
 not separate the two.
 
 ```{r}
@@ -1055,8 +1042,8 @@ icc_ref |>
   kt(caption = "Q1 decisions. The ROPE for the ICC is [0, 0.05]: a locality share of link-scale variance below 5% is treated as negligible. Unlike the slope ROPE this bound is one-sided and has a natural reading -- 5% of variance is a share no archaeological argument would build on.")
 ```
 
-Q1 is the only part of the analysis that returns a decisive answer, so how far
-it survives the prior deserves setting out in detail (@tbl-sens-verdict).
+Q1 is the only part of the analysis that returns a decisive answer, and how far
+it survives the prior is set out in detail below (@tbl-sens-verdict).
 
 `r if (nrow(firm) > 0) sprintf("For %s the decision is 'locality variation present' under every one of the seven priors.", paste(firm$Resp, collapse = " and ")) else ""`
 `r if (nrow(flips) > 0) sprintf("For %s it is not: the 2.5%% limit sits so close to the 0.05 bound that %s pushes it just below, and the verdict becomes undecided (2.5%% limit %s under %s, against %s under the reference). The median barely moves (%s against %s), so the decision turns on a boundary rather than on a change in the estimate.", paste(unique(flip_detail$Resp), collapse = " and "), paste(unique(flip_detail$Spec), collapse = " and "), fmt(flip_detail$lo[1], 3), flip_detail$Spec[1], fmt(icc_sens$lo[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3), fmt(flip_detail$Median[1], 3), fmt(icc_sens$Median[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3)) else "No ICC decision changes under any of the seven priors."`
@@ -1097,11 +1084,11 @@ largest of which starts from an intercept-only median of only
 `r fmt(best_j$nol, 3)`, so that ratio is unstable rather than meaningful. The
 pattern is noise scattered about zero. This is direct evidence on Q2, and it
 survives however poorly any single coefficient is resolved: whatever separates
-the localities, these three landscape variables do not supply it.
+the localities, these three landscape variables are not it.
 
 ## Q2: Do the Landscape Variables Explain It? {#sec-q2}
 
-The analysis identifies no landscape variable that matters, and for most of
+The analysis identifies no landscape variable that matters to the stone artefacts, and for most of
 them it also cannot establish that they do not.
 
 Of the `r nrow(cf)` slopes, at the 0.1 SD ROPE: `r n_rej` reject the null
@@ -1119,7 +1106,7 @@ dom <- ppsd_ref |> filter(ratio > 0.5)
 
 `r if (nrow(dom) == 0) sprintf("No slope in Panel B is prior-dominated: the largest posterior/prior SD ratio over all %d is %s, so every point in the panel is an estimate the data have shaped.", nrow(ppsd_ref), fmt(max(ppsd_ref$ratio), 2)) else sprintf("Prior-dominated slopes, drawn grey and hollow in Panel B: %s. Their posteriors are still more than half as wide as their priors; they are shown for completeness and should not be interpreted.", paste(sprintf("%s ~ %s (ratio %s)", rlab(dom$Response), plab(dom$Predictor), fmt(dom$ratio, 2)), collapse = "; "))`
 
-`r if (n_acc > 0) sprintf("What the analysis can state positively is confined to %s: %s.", if (n_acc == 1) "a single slope" else sprintf("%d slopes", n_acc), paste(sprintf("%s with %s (%s on the standardised axis, %s%% of the posterior inside the ROPE)", rlab(acc$Response), tolower(plab(acc$Predictor)), ci(acc$Std_median, acc$Std_lo, acc$Std_hi, 2), fmt(acc$pct_in_ROPE, 1)), collapse = "; ")) else "No slope can be positively called practically zero at this bound either."`
+`r if (n_acc > 0) sprintf("What our analysis can state positively is confined to %s: %s.", if (n_acc == 1) "a single slope" else sprintf("%d slopes", n_acc), paste(sprintf("%s with %s (%s on the standardised axis, %s%% of the posterior inside the ROPE)", rlab(acc$Response), tolower(plab(acc$Predictor)), ci(acc$Std_median, acc$Std_lo, acc$Std_hi, 2), fmt(acc$pct_in_ROPE, 1)), collapse = "; ")) else "No slope can be positively called practically zero at this bound either."`
 
 Direction certainty tells the same story from the other side. The largest
 value over all `r nrow(cf)` slopes is `r fmt(max(cf$Dir_certainty), 3)`
@@ -1232,10 +1219,9 @@ The pattern is one-sided.
 and `r sum(bx_bin$Median < 0)` negative, scattered about zero, and
 `r sum(bx_bin$excl_zero)` have an interval excluding zero. All
 `r nrow(bx_hua)` Huangping slopes are positive, and `r sum(bx_hua$excl_zero)`
-have an interval excluding zero. On its face that is the shape the question was
-asking about: a landscape signal in one basin and none in the other.
+have an interval excluding zero. So we have a landscape signal in one basin and none in the other.
 
-Three things argue for reading it as a hint rather than a finding. The
+That said, a closer look suggest it is best to read this as a directional hint rather than a firm finding. The
 Huangping intervals are `r fmt(bx_wide, 1)` times as wide as Binchuan's, so
 correspondingly less information sits behind the larger medians; a big point
 estimate with a wide interval is what a small sample looks like. The intervals
@@ -1246,19 +1232,10 @@ probability that all `r length(resps)` Huangping height slopes are
 *simultaneously* positive is **`r fmt(100 * bx_joint_h, 0)`%**, well short of
 the near certainty that `r nrow(bx_hua)` positive medians might suggest.
 
-This design could ask the question and could not answer it. Huangping
-contributes `r gl("Huangping", "n")` localities, and the number of localities
-sets the resolution of every landscape question in this report
-(@sec-design-sample). The Q2 answer therefore survives intact, with one
-addition: the answer was tested for basin-dependence, the test came back
-undecided, and a directional hint remains that a larger Huangping sample could
-settle.
-
 ## How Far the Conclusions Depend on the Prior {#sec-prior-dependence}
 
-Six fits differ from the reference in exactly one prior each, and Appendix F
-(@sec-sensitivity) reports every ICC and every slope under all seven. The
-summary is short.
+Six fits differ from the reference in exactly one prior each. Appendix F
+(@sec-sensitivity) reports every ICC and every slope under all seven. 
 
 Of the `r nrow(changed)` quantities, **`r n_changed`**
 `r if (n_changed == 1) "receives" else "receive"` a different
@@ -1275,9 +1252,9 @@ movement is under a tenth of the interval width.
 The edge-angle ICC is the quantity most exposed to the prior, for a reason
 that deserves stating in its own right, and @sec-resolution-limits gives it.
 
-## What This Study Can and Cannot Resolve {#sec-resolution-limits}
+## What Our Bayesian Model Can and Cannot Resolve {#sec-resolution-limits}
 
-The three limits set by the design itself are stated in @sec-design-sample:
+The three limits set by our design itself are stated in @sec-design-sample:
 `r n_loc` localities rather than `r n_spec` specimens as the effective sample
 for Q2, one basin contrast, and assemblages of very unequal size. Three
 further limits arise from the model rather than from the sample.
@@ -1311,7 +1288,7 @@ further limits arise from the model rather than from the sample.
    `r paste(firm$Resp, collapse = " and ")` keep the same decision
    under all seven priors`r if (nrow(flips) > 0) sprintf(" while %s changes only because its 2.5%% limit is already touching the bound", paste(unique(flip_detail$Resp), collapse = " and ")) else ""`.
 
-3. Retouch generations are discrete and modelled as continuous
+3. Retouch generations are discrete and modelled as continuous <!-- BM: why? -->
    (@sec-post-pred), and GMsize contains Thickness (@sec-data) while the model
    assumes independent residuals across responses.
 
@@ -1386,7 +1363,7 @@ simulated from the fitted model and reproduces no individual specimen.
 Rscript -e "targets::tar_make()"
 ```
 
-That is the whole command. The pipeline fits the eleven models, derives the
+That command starts the pipeline that fits the eleven models, derives the
 quantities, draws the figures and renders this document and the two manuscript
 documents, in dependency order.
 
@@ -1412,7 +1389,7 @@ The eleven runs took between `r fmt(min(mf$minutes, na.rm = TRUE), 1)` and
 `r fmt(max(mf$minutes, na.rm = TRUE), 1)` minutes each on the machine that
 produced this document, a median of
 `r fmt(median(mf$minutes, na.rm = TRUE), 1)`,
-`r if (length(r_all) == 1) sprintf("all of them under %s", r_all) else sprintf("across %d R versions (%s), the cache having been assembled over more than one session", length(r_all), paste(r_all, collapse = ", "))`.
+`r if (length(r_all) == 1) sprintf("all of them under R version %s", r_all) else sprintf("across %d R versions (%s), the cache having been assembled over more than one session", length(r_all), paste(r_all, collapse = ", "))`.
 
 ## Session Information
 
@@ -1840,7 +1817,7 @@ the machine that produced this document, taking the median over the eleven
 runs (@sec-reproducibility), so the few hundred refits a calibration check needs
 come to roughly
 `r fmt(median(mf$minutes, na.rm = TRUE) * 300 / (60 * 24), 1)` days of
-continuous computation, and less than that in parallel. That is affordable.
+continuous computation, and less than that in parallel. That is affordable. <!-- BM: so just do it? -->
 Gelman, Vehtari, McElreath, et al. (2026, sec. 14.3) add that a handful of
 replications beats none, because ranks at the extremes of the range reveal
 gross problems even in small numbers. Cost alone therefore does not justify
@@ -2056,10 +2033,10 @@ icc_ref |>
 ## The 21 Locality-Intercept Correlations {#sec-cor}
 
 ::: {.barg}
-Cf. BARG Step 1.B and 3.B. These 21 parameters are part of the model and no
-research question is about them, so they are reported here in full rather than
-in the main narrative.
+Cf. BARG Step 1.B and 3.B. 
 :::
+
+The 21 parameters are explored here to provide additional context to our model.
 
 ```{r}
 #| label: fig-cor
@@ -2148,7 +2125,7 @@ report's summaries are quantiles: a horizontal slice at 0.025 and 0.975 reads
 off the interval limits directly, and the vertical distance between two curves
 at the ROPE edge is the change in the quantity the decision rule uses.
 
-BARG asks for the numbers as well as the pictures, and for every parameter
+BARG recommends providing the numbers as well as the pictures, and for every parameter
 rather than only the plotted ones:
 
 ```{r}
@@ -2161,7 +2138,7 @@ sens_long |>
   kt(caption = NULL)
 ```
 
-## Do the Conclusions Change? {#sec-5e}
+## Do the Conclusions Change Between Fits?? {#sec-5e} 
 
 ::: {.barg}
 Cf. BARG Step 5.E. Some movement is inevitable, so the criterion is whether

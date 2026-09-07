@@ -51,3 +51,12 @@ analysis/
 AGENTS.md
 
 .Rproj.user
+
+# Open ScholarPeer MCP runtime (venv + server, gitignored)
+.open-scholar-peer/
+
+# API keys (never commit)
+.env
+
+#  log files
+*.log
