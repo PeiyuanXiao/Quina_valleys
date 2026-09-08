@@ -34,16 +34,38 @@ tar_option_set(
   garbage_collection = TRUE
 )
 
-tar_source(c("paper/barg/barg_context.R", "paper/barg/barg_models.R"))
+tar_source(c("paper/barg/barg_context.R", "paper/barg/barg_models.R",
+             "paper/barg/barg_sbc.R"))
 
 # ---- sampler and figure settings -----------------------------------------
 CHAINS      <- 4L
-ITER        <- 10000L     
+ITER        <- 10000L
 CORES       <- 4L
-NDRAWS      <- 100L       
-STAT_NDRAWS <- 1000L      
-THIN        <- 5L         
+NDRAWS      <- 100L
+STAT_NDRAWS <- 1000L
+THIN        <- 5L
 FIGDIR      <- here::here("paper", "barg", "figures")
+
+# ---- posterior SBC -------------------------------------------------------
+# N_SBC simulations, each one refit of the reference model to a dataset the
+# reference posterior generated, dealt round-robin into N_SBC_BATCH branches.
+# The batches exist for two reasons: one Stan compilation is amortised over the
+# simulations inside a batch, and an interrupted run resumes at the last
+# completed batch rather than at the beginning.  Round-robin dealing means a
+# partial result is still spread over the whole reference posterior rather than
+# over its first tenth.
+#
+# 100 simulations put the simultaneous 95% band on the rank ECDF at about
+# 0.135, which is the resolution of the check: a miscalibration smaller than
+# that would not show.  Each refit costs about two minutes against about three
+# for a reference fit -- a rank needs only 4,000 draws where the three-decimal
+# quantiles of the report need 20,000, but each refit conditions on 330 rows
+# rather than 165, because posterior SBC requires the observed data in the
+# refit alongside the simulated data (see barg_sbc.R).  Raising N buys
+# resolution slowly: the cost is linear in N while the band shrinks only as
+# 1/sqrt(N), so doubling to 200 would cost twice as much for a band of 0.095.
+N_SBC       <- 100L
+N_SBC_BATCH <- 10L
 
 fit_specs <- data.frame(spec = BARG_SPECS, stringsAsFactors = FALSE)
 
@@ -92,12 +114,18 @@ list(
   tar_target(analysis_src,
              file.path(here::here("paper"), c("_analysis.R", "_packages.R")),
              format = "file"),
+  tar_target(sbc_src,
+             file.path(here::here("paper", "barg"),
+                       c("barg_data.R", "barg_priors.R", "barg_quantities.R")),
+             format = "file"),
 
-  # ---- the two contexts --------------------------------------------------
+  # ---- the three contexts ------------------------------------------------
   tar_target(ctx_model,  { barg_model_src
                            barg_context_model(scraper_xlsx, site_xlsx) }),
   tar_target(ctx_report, { barg_report_src
                            barg_context_report(scraper_xlsx, site_xlsx) }),
+  tar_target(ctx_sbc,    { sbc_src
+                           barg_context_sbc(scraper_xlsx, site_xlsx) }),
 
   # ---- the eleven fits and their diagnostics -----------------------------
   fits,
@@ -122,6 +150,20 @@ list(
                     noland = fit_noland),
                ppc_stat_tbl, sens_long,
                ndraws = NDRAWS, stat_ndraws = STAT_NDRAWS, dir = FIGDIR),
+             format = "file"),
+
+  # ---- posterior SBC of the reference fit ---------------------------------
+  # The one computational check the convergence diagnostics cannot supply: it
+  # asks whether the posterior is calibrated, not whether the sampler explored
+  # it.  fit_ref supplies both the parameter vectors treated as ground truth
+  # and the simulated datasets; nothing else here reads it.
+  tar_target(sbc_batch_id, seq_len(N_SBC_BATCH)),
+  tar_target(sbc_ranks_b,
+             barg_sbc_batch(ctx_sbc, fit_ref, sbc_batch_id, N_SBC, N_SBC_BATCH),
+             pattern = map(sbc_batch_id), iteration = "list"),
+  tar_target(sbc_ranks, dplyr::bind_rows(sbc_ranks_b)),
+  tar_target(sbc_unif,  barg_sbc_uniformity(sbc_ranks)),
+  tar_target(sbc_fig,   barg_sbc_figure(ctx_report, sbc_ranks, dir = FIGDIR),
              format = "file"),
 
   # ---- the frequentist half ----------------------------------------------

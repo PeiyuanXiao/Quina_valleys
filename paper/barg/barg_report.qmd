@@ -92,7 +92,8 @@ suppressPackageStartupMessages({
 
 TAR_STORE <- here::here("_targets")
 
-tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs, barg_diag_tbl),
+tar_load(c(ctx_report, barg_mf, ppc_stat_tbl, barg_figs, barg_diag_tbl,
+           sbc_ranks, sbc_unif, sbc_fig),
          store = TAR_STORE)
 
 list2env(as.list(ctx_report, all.names = TRUE), envir = globalenv())
@@ -276,6 +277,44 @@ p0_ref   <- zoi_ref * (1 - coi_ref)
 n0_exp   <- median(p0_ref) * n_spec
 ```
 
+```{r}
+#| label: sbc-readout
+#| echo: false
+# One row per refit, for the convergence statement.  sbc_ranks holds 28 rows
+# per refit with the per-refit columns repeated across them, so this reduces by
+# sim rather than by distinct(): distinct() over the whole set would silently
+# return more than one row per refit if any of those columns ever stopped being
+# constant within a refit, and inflate the refit count with it.
+sbc_fits <- sbc_ranks |>
+  group_by(sim) |>
+  summarise(max_rhat = first(max_rhat), min_ess = first(min_ess),
+            divergent = first(divergent), .groups = "drop")
+sbc_n     <- nrow(sbc_fits)
+sbc_L     <- sbc_ranks$L[1]
+sbc_env   <- sbc_ranks |> distinct(chains, iter, cmdstanr, cmdstan, brms)
+sbc_rhat_max <- max(sbc_fits$max_rhat)
+sbc_ess_min  <- min(sbc_fits$min_ess)
+sbc_div_fits <- sum(sbc_fits$divergent > 0)
+
+sbc_unif <- sbc_unif |>
+  mutate(Quantity = ifelse(kind == "icc",
+                           sprintf("%s ICC", rlab(Response)),
+                           sprintf("%s ~ %s", rlab(Response), plab(Predictor))))
+sbc_band    <- sbc_unif$band[1]
+sbc_nbin    <- sbc_unif$chisq_df[1] + 1L
+sbc_out     <- sbc_unif |> filter(outside) |> arrange(desc(sup))
+sbc_worst   <- sbc_unif |> arrange(desc(sup)) |> slice(1)
+# expected crossings if every posterior were calibrated: the band is a 5% test
+# and there are 28 of them
+sbc_exp_out <- 0.05 * nrow(sbc_unif)
+# the chi-square is read against a Bonferroni threshold, because 28 tests at
+# the nominal level would be expected to produce a small p somewhere
+sbc_chisq_bad <- sbc_unif |>
+  filter(chisq_p < 0.05 / nrow(sbc_unif)) |> arrange(chisq_p)
+
+sbc_list <- function(d) paste(d$Quantity, collapse = "; ")
+```
+
 ```{=html}
 <style>
 .barg { background:#F3F5F7; border-left:3px solid #6BA8CE; padding:.45em .8em;
@@ -302,12 +341,15 @@ Gelman, Vehtari, McElreath, et al. (2026) describe how model
 development should proceed before there is a final analysis to report: fit a model,
 check how well it performs, find the problems, change the model, and go round
 again. They argue that a real analytical problem is better understood by
-comparing several plausible models than by relying on one. We follow Gelman, Vehtari, McElreath, et al. (2026) in presenting the estimand and the design before any model appears (@sec-design), so
-that the resolution of both research questions is fixed in the open rather
-than inferred from wide intervals later; setting out all eleven
-fits together with the reason each exists (@sec-model-series), including the two that record a
-defect the analysis found in itself; and stating which computational check
-this report has not performed, why, and what a follow-up should do instead  (@sec-sbc).
+comparing several plausible models than by relying on one. We follow them in
+three further respects. First, we state what the study is trying to estimate,
+and the design that has to deliver it, before any model appears (@sec-design),
+so that what the two research questions can and cannot settle is fixed in the
+open rather than inferred from wide intervals later. Second, we set out all
+eleven fits together with the reason each exists (@sec-model-series), including
+the two that record a defect the analysis found in itself. Third, we check the
+calibration of the reference posterior, which no convergence diagnostic can
+establish (@sec-sbc).
 
 This supplement follows the order in which the analysis was
 conducted, from @sec-design to @sec-reproducibility, and puts the reporting
@@ -318,9 +360,9 @@ checklist without interrupting the narrative. We introduce the technical vocabul
 
 We looked at `r n_spec` surface-collected Quina scrapers from `r n_loc` localities in two
 basins, Binchuan and Huangping. Seven attributes were recorded from each
-specimen: its thickness, its overall size, its GIUR, the retouched share of
-its perimeter, its total scar count, its edge angle, and the number of retouch
-generations recorded on it. Three further attributes describe the locality: which basin it lies in, how high it sits above the
+specimen: its thickness, its overall size, its geometric index of unifacial
+reduction (GIUR), the retouched share of its perimeter, its total scar count,
+its edge angle, and the number of retouch generations recorded on it. Three further attributes describe the locality: which basin it lies in, how high it sits above the
 channel, and how far it is from the channel. Each locality attribute is the same for every
 specimen collected from that locality.
 
@@ -474,7 +516,7 @@ Cf. BARG Preamble A.
 
 Four considerations led us to a Bayesian treatment. The seven measures on a Quina
 scraper are not on one scale -- thickness and overall size are positive and
-right-skewed, the geometric index of unifacial reduction (GIUR) and the
+right-skewed, GIUR and the
 retouched share of the perimeter are proportions ranging 0-1, the
 scar count is a count, and the edge angle and the number of retouch generations
 are treated as unbounded (@sec-data). This requires a single multivariate model that gives each
@@ -576,6 +618,15 @@ about the *joint* uncertainty of the thickness slope and the size slope, and
 any treatment of those two responses as independent evidence. The observed
 correlation between their locality intercepts (@sec-cor) is therefore partly
 mechanical.
+
+`RG` is the mean number of retouch generations across up to three edges per
+specimen, so values occur in thirds rather than integers. Because averaging
+removes the integer support required by Poisson or negative binomial
+likelihoods, we used a Gaussian likelihood. An ordinal likelihood could model
+the discreteness, but would introduce thresholds and prevent `RG` from sharing
+the common link-scale ICC, standardised slope, and ROPE used for the seven
+jointly modelled responses. We therefore retained the Gaussian likelihood and
+assessed its implications with @sec-post-pred and `ref_rg_ln`.
 
 Two filters were applied before fitting. A specimen must have all seven
 measurements, and its locality must have a recorded basin, height and
@@ -689,10 +740,11 @@ perimeter. There is therefore no zero inflation at all to model: the fitted
 determine almost completely, and the zero-inflation half of the family is
 supported by nothing. The family is effectively a one-inflated beta.
 
-### S6, the One-Inflated Refit {#sec-oneinflated} <!-- BM: what is S6? Can we give a little definition? -->
+### S6: Fixing coi at 1, the One-Inflated Refit {#sec-oneinflated}
 
-The paragraph above describes a defect <!-- BM: due to what? --> rather than a design choice, and S6 acts
-on it. Setting `coi` to `constant(1)` in `barg_priors.R` gives the family the
+S6 is one of the six model variants in @sec-model-series, modifying only `coi` by fixing it at 1 rather than estimating it. The reference model uses `zero_one_inflated_beta` because GIUR and retouched perimeter are proportions with boundary accumulation; however, both responses contain no zeros, so `coi` is effectively 1. Estimating it under a `beta(1, 1)` prior therefore reflects a mismatch between the generality of the distribution family and the observed data, rather than a data or coding error. S6 corrects this specification.
+
+Setting `coi` to `constant(1)` in `barg_priors.R` gives the family the
 one-inflated beta shape the data actually show: mass at 1, none at 0, and the
 zero-inflation half deleted instead of estimated. brms implements the constant
 by moving `coi_GIUR` and `coi_RLI` out of the Stan `parameters` block into
@@ -914,12 +966,7 @@ movement in a result can be attributed to a named choice.
 | `s5` | correlation prior `lkj(2)` | 21 correlations from 26 clusters are weakly identified | @sec-cor, @sec-5c |
 | `s6` | `coi` fixed at 1 | a defect in the zero-one-inflated beta, found while reading the fitted parameters | the slopes and ICCs agree with the reference to within a few percent of a posterior SD (@sec-oneinflated) |
 
-Two of these entries record a defect the analysis found in itself: `s1` the
-unscaled slope prior that says something different about each response
-(@sec-priors), and `s6` a `coi` parameter estimating the frequency of an
-outcome that cannot occur (@sec-oneinflated). Neither defect showed up in the
-research question, in the data or in the convergence diagnostics. <!-- BM: I think we need a bit more context about this defect --> Both
-surfaced from comparing the fitted parameters with what the sample contains.
+Two entries in the table record a specification defect, and neither defect was detected by standard diagnostics. `s1` is one of them in its own right: a single `normal(0, 1)` slope prior that takes no account of the link-scale SDs differing across the seven responses, which shows up as clear prior dominance for the edge-angle slopes (@tbl-ppsd). The other defect is in the reference fit, where `coi` is estimated for a zero outcome that does not occur in the sample; `s6` is the variant that corrects it, by fixing `coi` at 1 (@sec-oneinflated). Neither is a data or coding error; both are mismatches between the model specification and the data. Convergence and calibration diagnostics assess whether the fitted model is functioning properly, not whether its specification matches the intended one, so both issues emerged only by comparing fitted parameters with the characteristics of the observed data.
 
 Fitting eleven models rather than one opens a familiar risk: a reader cannot tell from the finished document how many
 further specifications were tried and set aside, and a set of fits chosen after
@@ -989,11 +1036,26 @@ predictor by one unit shifts the response by less than a tenth of that
 response's total spread. Expressing the bound in link-scale SD units is what
 lets one number serve seven responses on three link scales (@tbl-prior-rope).
 
-There are two qualifications to this. First is that 0.1 is a convention, there are no
-archaeological arguments for it. Nobody
-has established how large a difference in edge angle or scar count a lithic
-analyst would need before calling it a real difference in technological
-behaviour. <!-- BM: this is where Eerkens and Bettinger on the Weber fraction would be good to cite --> 
+There are two qualifications to this. The first is that 0.1 is a convention. No
+study has established how large a difference in edge angle or in scar count a
+lithic analyst would need before calling it a real difference in technological
+behaviour, and none of the seven measures has a published threshold of that
+kind to borrow.
+
+One empirical anchor does exist, and it belongs beside the convention even
+though it is not the same quantity. Eerkens and Bettinger (2001) argue that
+human discrimination of continuous magnitudes follows a Weber fraction of
+roughly 1.7% expressed as a coefficient of variation — the floor below which a
+difference cannot be reliably perceived, and so cannot be reliably reproduced,
+by the knapper. That bound is on relative dispersion rather than on a
+regression slope, so it does not convert into a ROPE half-width, and this
+report does not treat it as one. What it does fix is the direction of the
+error. An effect smaller than a knapper could detect cannot be a deliberate
+difference in behaviour, and 0.1 of a response's link-scale SD is far wider
+than a threshold of that order. The convention is therefore permissive rather
+than strict: it risks calling negligible an effect a knapper could have
+perceived, not the reverse. Every decision it supports is one that survives a
+generously wide bound.
 
 Second, BARG asks for ROPE limits fixed by
 theoretical and practical considerations *before the results are seen*, and
@@ -1288,7 +1350,7 @@ further limits arise from the model rather than from the sample.
    `r paste(firm$Resp, collapse = " and ")` keep the same decision
    under all seven priors`r if (nrow(flips) > 0) sprintf(" while %s changes only because its 2.5%% limit is already touching the bound", paste(unique(flip_detail$Resp), collapse = " and ")) else ""`.
 
-3. Retouch generations are discrete and modelled as continuous <!-- BM: why? -->
+3. Retouch generations are discrete and modelled as continuous
    (@sec-post-pred), and GMsize contains Thickness (@sec-data) while the model
    assumes independent residuals across responses.
 
@@ -1363,14 +1425,19 @@ simulated from the fitted model and reproduces no individual specimen.
 Rscript -e "targets::tar_make()"
 ```
 
-That command starts the pipeline that fits the eleven models, derives the
-quantities, draws the figures and renders this document and the two manuscript
-documents, in dependency order.
+That command starts the pipeline that fits the eleven models, runs the
+`r sbc_n` calibration refits of @sec-sbc, derives the quantities, draws the
+figures and renders this document and the two manuscript documents, in
+dependency order.
 
 Only the fitting is expensive, and it runs once. Every later `tar_make()`
 compares the stored hash of each target against its inputs and rebuilds only
 what has changed: edit a prior in `barg_priors.R` and the eleven fits are
-refitted; edit a figure in `barg_figures.R` and no fit is touched.
+refitted; edit a figure in `barg_figures.R` and no fit is touched. The
+calibration refits are dealt into `r max(sbc_ranks$batch)` branches, so an
+interrupted run resumes at the last completed branch, and they read the
+reference fit rather than the report context, so editing a figure cannot
+invalidate them either.
 
 `targets::tar_visnetwork()` shows the graph and what in it is out of date, and
 `targets::tar_make(names = "fit_ref")` builds one target and its dependencies
@@ -1557,10 +1624,18 @@ kt(data.frame(
   caption = sprintf("Computational settings. Chains, iterations, warmup, seed, sampler settings, brms and CmdStan are identical for all eleven runs, %s. The backend is locked to cmdstanr: an rstan fit of the same model is not bit-for-bit reproducible against a cmdstanr fit, and the CmdStan version pins the C++ that sessionInfo() does not capture.", if (length(r_all) == 1) "as is the R version the R row names" else sprintf("while the R row lists the %d distinct R versions in the cache, which was assembled over more than one session", length(r_all))))
 ```
 
-All results in this report come from the full run recorded above:
-`r mf$chains` chains of `r format(mf$iter, big.mark = ",")` iterations and
+Every estimate, interval and decision in this report comes from the full run
+recorded above: `r mf$chains` chains of
+`r format(mf$iter, big.mark = ",")` iterations and
 `r format(mf$ndraws, big.mark = ",")` post-warmup draws, rather than from a
-reduced pipeline test.
+reduced pipeline test. The one set of numbers drawn from shorter runs is the
+calibration check of @sec-sbc, whose `r sbc_n` refits use
+`r sbc_env$chains` chains of `r format(sbc_env$iter, big.mark = ",")` because a
+rank needs far fewer draws than a three-decimal quantile. Those refits also
+compile the Stan program afresh under cmdstanr `r sbc_env$cmdstanr`, rather
+than reusing the one stored in the reference fit, which was built under a
+version whose interface has since changed; the brms and CmdStan versions that
+write and run that program are the ones in the table above.
 
 ## Chain Convergence {#sec-convergence}
 
@@ -1800,51 +1875,78 @@ endorses for a typical quantity here, and it is what the summaries in
 @sec-summary and @tbl-sens-full use. Buying one further digit would mean
 halving the Monte Carlo error, which needs four times the iterations.
 
-## What This Report Does Not Check: Calibration {#sec-sbc}
+## Calibration of the Posterior: Posterior SBC {#sec-sbc}
 
-Convergence diagnostics establish that the sampler explored the posterior of
-the model that was coded. They cannot establish that the coded model is the
-one intended, nor that the posterior it returns is calibrated. Simulation-based
-calibration checking (Modrák, Moon, Kim, et al. 2025) is the tool for that: draw
-parameters from the prior, simulate a dataset from them, refit, and check that
-the rank of each drawn parameter within its own posterior is uniform across
-many repetitions. This report does not perform it, and the honest account has
-two parts, of which only the second is a real defence.
+Everything else in this appendix is evidence about the sampler; this section is
+the one check that speaks to the posterior itself. `r sbc_n` parameter vectors
+were drawn from the reference posterior, each was used to simulate a complete
+set of the seven responses for the same design, and the model was refit
+conditioning on the observed and the simulated rows together
+(`r 2 * n_spec` rows), so that the reference posterior serves as the prior of
+the check (Säilynoja, Schmitt, Bürkner and Vehtari 2026). If the model's
+uncertainty is honest, the value that generated a dataset should be no likelier
+to sit near the middle of the posterior refitted to that dataset than near
+either edge: over many simulations its position should be spread evenly.
+`paper/barg/barg_sbc.R` carries the construction, the reason the posterior
+version of the check is used here rather than the classical one, and the
+arithmetic behind the band below.
 
-The first part is cost, and it is a weaker excuse than it looks. One fit of
-this model takes about `r fmt(median(mf$minutes, na.rm = TRUE), 0)` minutes on
-the machine that produced this document, taking the median over the eleven
-runs (@sec-reproducibility), so the few hundred refits a calibration check needs
-come to roughly
-`r fmt(median(mf$minutes, na.rm = TRUE) * 300 / (60 * 24), 1)` days of
-continuous computation, and less than that in parallel. That is affordable. <!-- BM: so just do it? -->
-Gelman, Vehtari, McElreath, et al. (2026, sec. 14.3) add that a handful of
-replications beats none, because ranks at the extremes of the range reveal
-gross problems even in small numbers. Cost alone therefore does not justify
-omitting the check.
+The `r nrow(sbc_unif)` quantities under test are the ones the two research
+questions rest on: the `r sum(sbc_unif$kind == "slope")` landscape slopes
+behind Q2 and the `r sum(sbc_unif$kind == "icc")` locality ICCs behind Q1. For
+each of them, @fig-sbc plots how far the `r sbc_n` observed positions depart
+from an even spread, across the whole range of positions at once. The shaded
+band is how far an evenly spread set of `r sbc_n` positions would stray 95% of
+the time; it is wide because the curve is judged at every position
+simultaneously, rather than at one position picked in advance, and at
+`r sbc_n` simulations it reaches ±`r fmt(sbc_band, 3)`.
+`r if (nrow(sbc_out) == 0) "No quantity leaves it." else sprintf("%d of the %d quantities %s it: %s.", nrow(sbc_out), nrow(sbc_unif), if (nrow(sbc_out) == 1) "leaves" else "leave", sbc_list(sbc_out))`
+The largest departure over all `r nrow(sbc_unif)` is
+`r fmt(sbc_worst$sup, 3)`, for `r sbc_worst$Quantity`; if every posterior were
+honest, `r fmt(sbc_exp_out, 1)` of the `r nrow(sbc_unif)` would still be
+expected to leave the band by chance alone.
 
-The second part is specific to this model.
-Calibration checking draws its parameters from the prior, so it checks the
-model where the prior puts its mass. The intercept priors here are
-deliberately wide, spanning 6 to 100 mm of thickness and 26 to 104 degrees of
-edge angle before the data are seen (@tbl-intercept-prior), which
-is what @sec-prior-pred asks of them. Datasets simulated from those priors
-would include assemblages no lithic analyst would recognise, and calibration
-verified over that range says little about the much narrower region the
-posterior actually occupies. Gelman, Vehtari, McElreath, et al. (2026, sec.
-14.3) identify exactly this tension between weakly informative priors and
-calibration checking, and point to posterior SBC (Säilynoja, Schmitt, Bürkner
-and Vehtari 2026), which conditions the simulation on the observed data and so
-checks calibration where the answers live. They recommend it in particular for
-assessing the size of any bias when convergence diagnostics show only faint
-signs of trouble, which is the position of the
-`r sum(mf$diagnostics$divergent > 0)` runs in @tbl-diag-all with a handful of
-divergent transitions.
+@tbl-sbc applies a chi-square test to the same positions, sorting them into
+`r sbc_nbin` equal bins and comparing the counts with what an even spread would
+give. This catches a pile-up at both ends of the range, which the first measure
+can miss because such a pile-up leaves the middle of the curve close to where
+it belongs.
+`r if (nrow(sbc_chisq_bad) == 0) sprintf("No quantity fails it at the Bonferroni-corrected threshold of %s, the 5%% level divided by the %d quantities tested at once.", fmt(0.05 / nrow(sbc_unif), 4), nrow(sbc_unif)) else sprintf("%d %s at the Bonferroni-corrected threshold of %s, the 5%% level divided by the %d quantities tested at once: %s.", nrow(sbc_chisq_bad), if (nrow(sbc_chisq_bad) == 1) "quantity fails" else "quantities fail", fmt(0.05 / nrow(sbc_unif), 4), nrow(sbc_unif), sbc_list(sbc_chisq_bad))`
 
-Posterior SBC on the reference fit is therefore the computational check this
-analysis most clearly still owes, and a reader should treat the evidence in
-this appendix as evidence about the sampler rather than about the calibration
-of the model.
+Across the `r sbc_n` refits the largest $\hat R$ is `r fmt(sbc_rhat_max, 3)`,
+the smallest bulk effective sample size `r round(sbc_ess_min)`, and
+`r if (sbc_div_fits == 0) "none produced a divergent transition" else sprintf("%d produced at least one divergent transition", sbc_div_fits)`.
+Every refit is reported as it came: dropping those that had not converged would
+make a calibration failure look like a clean result.
+
+```{r}
+#| label: fig-sbc
+#| fig-cap: "Posterior SBC. For each quantity, how far the observed positions of the generating values within their refitted posteriors depart from an even spread, plotted across the whole range of positions. The shaded band, dashed at its edge, is how far an even spread would stray 95% of the time when judged at every position at once. Three slope columns and one ICC column, one row per response, the same layout as @fig-main. A curve that stays inside the band is a quantity whose posterior covers its own generating value at the rate it claims; a curve drawn in colour leaves the band somewhere."
+SHOW("sbc_ecdf.png")
+```
+
+```{r}
+#| label: tbl-sbc
+sbc_unif |>
+  arrange(desc(sup)) |>
+  transmute(Quantity,
+            `largest departure` = sup,
+            `95% band` = band,
+            `outside the band` = ifelse(outside, "yes", "no"),
+            `chi-square` = chisq,
+            `chi-square p` = chisq_p) |>
+  kt(caption = sprintf("Posterior SBC over %d simulations, one row per quantity, ordered by how far its observed positions depart from an even spread. The band is the departure an even spread would stay within 95%% of the time when the whole range of positions is judged at once; it is obtained by simulating even spreads over the same %d possible positions the observed ones fall on, rather than from a large-sample formula, because the positions are discrete. The chi-square sorts the positions into %d equal bins and compares the counts with what an even spread would give, on %d degrees of freedom.", sbc_n, sbc_L + 1L, sbc_nbin, sbc_unif$chisq_df[1]), digits = 4)
+```
+
+The check reaches the coded model and no further. Both limitations recorded in
+@sec-resolution-limits — GMsize contains Thickness while the residuals are
+modelled as independent, and retouch generations is discrete — are inherited by
+the simulated datasets, so they lie outside this check rather than having
+passed it. What it does establish is that over the range of values the
+reference posterior occupies, each of the `r nrow(sbc_unif)` quantities the two
+research questions turn on recovers its own generating value at the rate its
+intervals claim, to within the `r fmt(sbc_band, 3)` this many simulations can
+resolve.
 
 # Appendix D. Posterior Predictive Checks {#sec-post-pred}
 
@@ -2183,7 +2285,7 @@ reader following the argument will have passed every row already.
 | **2.A.** Software, versions and settings | R, brms, backend and CmdStan versions, chains, iterations, warmup, seed, `adapt_delta` and `max_treedepth`, for all eleven runs | @sec-software, @tbl-software |
 | **2.B.** MCMC chain convergence | R-hat, divergent transitions and treedepth saturation, for the reference fit and for all eleven runs, with rank plots of the chains behind the reference fit | @sec-convergence, @tbl-diag-all, @fig-mcmc-rank |
 | **2.C.** MCMC chain resolution | Bulk and tail effective sample size for every parameter and every derived ICC, plotted in @fig-convergence and tabulated with the Monte Carlo standard error of each quantile the report quotes; the locality offsets and correlations omitted from the printed table are in the archive; an audit of how many decimal places that error supports | @sec-resolution, @sec-digits, @tbl-convergence, @fig-convergence |
-| **2.D.** Accuracy of any approximation used in place of exact sampling | Not applicable: every posterior in this document is a full MCMC sample, with no variational, Laplace or INLA approximation anywhere | Not applicable |
+| **2.D.** Accuracy of any approximation used in place of exact sampling | Not applicable in the sense the item intends: every posterior in this document is a full MCMC sample, with no variational, Laplace or INLA approximation anywhere. The accuracy of the MCMC sample itself as an approximation to the exact posterior is checked separately, by posterior simulation-based calibration on the reference fit | Not applicable; @sec-sbc, @fig-sbc, @tbl-sbc |
 | **3.A.** Posterior predictive check | Full predictive distributions, a check of the within-basin medians, and test statistics fixed in advance | @sec-post-pred, @sec-ppc-stats, @tbl-ppc-stats |
 | **3.B.** Summary of the posterior of every parameter | Posterior median and 95% equal-tailed interval, with mode and 95% HDI alongside, for the 21 slopes, the seven locality SDs and ICCs, and the 21 correlations | @sec-posterior-summary, @sec-icc, @sec-cor |
 | **3.C.** Bayes factors and posterior model probabilities | Not applicable: no model comparison is performed, so no marginal likelihood, no bridge sampling and no Bayes factor appears anywhere in this document | Not applicable (@sec-goals) |
@@ -2208,15 +2310,21 @@ one, and a reader auditing BARG coverage will not find rows for them.
 that the resolution of both research questions is fixed in the open rather
 than inferred from wide intervals later. @sec-model-series sets out all eleven
 fits together with the reason each exists, including the two that record a
-defect the analysis found in itself. @sec-sbc says which computational check
-this report has not performed, why, and what a follow-up should do instead.
-None of the three is required by Kruschke (2021), and each is standard in
-Gelman, Vehtari, McElreath, et al. (2026).
+defect the analysis found in itself. @sec-sbc checks that the reference
+posterior is calibrated, which no item on the checklist asks for and no
+convergence diagnostic can supply — and which this report needs, because both
+of the defects it found in itself were invisible to every diagnostic it
+reports. None of the three is required by Kruschke (2021), and each is
+standard in Gelman, Vehtari, McElreath, et al. (2026).
 
 # References
 
 Bürkner, P.-C. (2017). brms: An R package for Bayesian multilevel models
 using Stan. *Journal of Statistical Software*, 80(1), 1--28.
+
+Eerkens, J. W., & Bettinger, R. L. (2001). Techniques for assessing
+standardization in artifact assemblages: can we scale material variability?
+*American Antiquity*, 66(3), 493--504.
 
 Gelman, A., Vehtari, A., & McElreath, R., with Simpson, D., Margossian, C. C.,
 Yao, Y., Kennedy, L., Gabry, J., Bürkner, P.-C., Modrák, M., & Leos Barajas,

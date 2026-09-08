@@ -41,3 +41,13 @@ barg_context_report <- function(scraper_xlsx, site_xlsx)
   barg_context(scraper_xlsx, site_xlsx,
                c("barg_data.R", "barg_priors.R", "barg_quantities.R",
                  "barg_theme.R", "barg_main_figure.R", "barg_figures.R"))
+
+# A third context, for the posterior SBC refits of barg_sbc.R.  It is the model
+# context plus barg_quantities.R, because the check ranks the seven ICCs as
+# well as the 21 slopes and so needs icc_draws(); it deliberately stops short
+# of the theme and the figure code, so that editing a figure cannot invalidate
+# a run of a hundred refits.  The figure that draws the result takes
+# ctx_report instead.
+barg_context_sbc <- function(scraper_xlsx, site_xlsx)
+  barg_context(scraper_xlsx, site_xlsx,
+               c("barg_data.R", "barg_priors.R", "barg_quantities.R"))
