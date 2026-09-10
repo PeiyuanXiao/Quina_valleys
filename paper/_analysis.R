@@ -433,8 +433,8 @@ sens_perm_nonq_p   <- max(pwgetE("SC_Quina vs LT_Ordinary", "p_adjusted"),
                           pwgetE("LT_Quina vs LT_Ordinary", "p_adjusted"))
 
 # ---- equivalence in ratio form (locality-level cluster bootstrap) ----
-# rho = |mean(SC_Q) - mean(LT_Q)| / |mean(LT_Q) - mean(LT_nonQ)|; the multivariate
-# rho uses centroid distances in the six-variable z-scored space (amat).
+# DR = |mean(SC_Q) - mean(LT_Q)| / |mean(LT_Q) - mean(LT_nonQ)|; the multivariate
+# DR uses centroid distances in the six-variable z-scored space (amat).
 eq_gi  <- split(seq_len(nrow(complete_data)), complete_data$Group)
 eq_M   <- as.matrix(complete_data[, variables])
 eq_Z   <- amat
@@ -451,34 +451,34 @@ eq_cm <- function(X, i) colMeans(X[i, , drop = FALSE])
 
 eq_m_sc <- colMeans(eq_Msc); eq_m_lq <- colMeans(eq_Mlq); eq_m_lo <- colMeans(eq_Mlo)
 eq_num0 <- abs(eq_m_sc - eq_m_lq); eq_den0 <- abs(eq_m_lq - eq_m_lo)
-eq_rho0 <- eq_num0 / eq_den0
+eq_dr0 <- eq_num0 / eq_den0
 
 eq_zc_sc <- colMeans(eq_Zsc); eq_zc_lq <- colMeans(eq_Zlq); eq_zc_lo <- colMeans(eq_Zlo)
 eq_num0_m <- eq_eu(eq_zc_sc, eq_zc_lq); eq_den0_m <- eq_eu(eq_zc_lq, eq_zc_lo)
-eq_rho0_m <- eq_num0_m / eq_den0_m
+eq_dr0_m <- eq_num0_m / eq_den0_m
 
 eq_K <- length(variables)
 set.seed(2226)
-eq_rho_b <- matrix(NA_real_, B_BOOT, eq_K + 1)
+eq_dr_b <- matrix(NA_real_, B_BOOT, eq_K + 1)
 for (b in seq_len(B_BOOT)) {
   i_sc <- unlist(eq_loc_rows[sample.int(eq_n_loc, eq_n_loc, replace = TRUE)], use.names = FALSE)
   i_lq <- sample.int(eq_n_lq, eq_n_lq, replace = TRUE)
   i_lo <- sample.int(eq_n_lo, eq_n_lo, replace = TRUE)
   msc <- eq_cm(eq_Msc, i_sc); mlq <- eq_cm(eq_Mlq, i_lq); mlo <- eq_cm(eq_Mlo, i_lo)
-  eq_rho_b[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
+  eq_dr_b[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
   zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
-  eq_rho_b[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
+  eq_dr_b[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
 }
 
 eq_qq <- function(x, p) unname(quantile(x, p, na.rm = TRUE))
-eq_UB95 <- apply(eq_rho_b, 2, eq_qq, 0.95)
+eq_UB95 <- apply(eq_dr_b, 2, eq_qq, 0.95)
 eq_UB95_multi <- eq_UB95[eq_K + 1]
 eq_UB95_pct   <- round(eq_UB95_multi * 100)
 
 # p-value curve bootstrap (higher R for finer resolution)
 R_PC <- 20000
 set.seed(2226)
-eq_rho_pc <- matrix(NA_real_, R_PC, eq_K + 1)
+eq_dr_pc <- matrix(NA_real_, R_PC, eq_K + 1)
 # the same replicate's raw difference, so its interval can be set beside TOSTER's (Table S8)
 eq_diff_pc <- matrix(NA_real_, R_PC, eq_K, dimnames = list(NULL, variables))
 for (b in seq_len(R_PC)) {
@@ -487,9 +487,9 @@ for (b in seq_len(R_PC)) {
   i_lo <- sample.int(eq_n_lo, eq_n_lo, replace = TRUE)
   msc <- eq_cm(eq_Msc, i_sc); mlq <- eq_cm(eq_Mlq, i_lq); mlo <- eq_cm(eq_Mlo, i_lo)
   eq_diff_pc[b, ] <- msc - mlq
-  eq_rho_pc[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
+  eq_dr_pc[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
   zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
-  eq_rho_pc[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
+  eq_dr_pc[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
 }
 # the 90% interval, the one a TOST at alpha = 0.05 inverts
 eq_diff0    <- eq_m_sc - eq_m_lq
@@ -499,11 +499,11 @@ eq_pc_lev <- c(unname(variable_labels[variables]), "Multivariate (centroid)")
 eq_dgrid  <- seq(0, 1.2, by = 0.005)
 eq_pcurve <- do.call(rbind, lapply(seq_len(eq_K + 1), function(j)
   data.frame(Measure = eq_pc_lev[j], Delta = eq_dgrid,
-             p = vapply(eq_dgrid, function(d) mean(eq_rho_pc[, j] >= d), numeric(1)))))
+             p = vapply(eq_dgrid, function(d) mean(eq_dr_pc[, j] >= d), numeric(1)))))
 eq_pcurve$Measure <- factor(eq_pcurve$Measure, levels = eq_pc_lev)
 
-eq_pc_d05 <- apply(eq_rho_pc, 2, eq_qq, 0.95)
-eq_pc_p1  <- apply(eq_rho_pc, 2, function(x) mean(x >= 1))
+eq_pc_d05 <- apply(eq_dr_pc, 2, eq_qq, 0.95)
+eq_pc_p1  <- apply(eq_dr_pc, 2, function(x) mean(x >= 1))
 
 eq_pooled_sd <- function(a, b) {
   na <- length(a); nb <- length(b)

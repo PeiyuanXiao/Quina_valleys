@@ -793,11 +793,11 @@ jk_dens + jk_forest + jk_B +
 
 ```{r}
 #| label: fig-pvalue-curve
-#| fig-cap: "Equivalence *p*-value curves for the difference between the surface and Longtan Quina groups. (A) Multivariate centroid distance in the six-variable z-scored space. (B) Six individual attributes on a common ρ scale. (C) The same attributes rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, the value of the established Quina–non-Quina contrast."
+#| fig-cap: "Equivalence *p*-value curves for the difference between the surface and Longtan Quina groups. (A) Multivariate centroid distance in the six-variable z-scored space. (B) Six individual attributes on a common *DR* scale. (C) The same attributes rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, the value of the established Quina–non-Quina contrast."
 #| fig-width: 5.9
 #| fig-height: 7.8
 
-# curves read off `eq_pcurve` from _analysis.R; rho is non-negative, so all are one-sided
+# curves read off `eq_pcurve` from _analysis.R; DR is non-negative, so all are one-sided
 INK <- "#202124"; GREY <- "#5A5F66"; TXT <- "#303238"
 PAL <- c("#E07C90", "#6BA8CE", "#E6C25C", "#9B87C4", "#6FB98E", "#E69F00")
 MULTI_LAB <- "Multivariate (centroid)"
@@ -839,7 +839,7 @@ pc_base <- function(dfc, dfx, vline_y) {
                        expand = expansion(mult = c(0.01, 0.02))) +
     scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25),
                        expand = expansion(mult = c(0.01, 0.02))) +
-    labs(x = expression("Equivalence bound " * Delta ~ "(units of " * rho * ")"),
+    labs(x = expression("Equivalence bound " * Delta ~ "(units of " * italic(DR) * ")"),
          y = "Equivalence test p-value") +
     curve_theme
 }
@@ -850,7 +850,7 @@ pc_A <- pc_base(pcurve[pcurve$Measure == MULTI_LAB, ],
   scale_colour_manual(values = pc_cols, guide = "none") +
   annotate("text", x = pc_d05[[MULTI_LAB]], y = 0.05, hjust = -0.18,
            vjust = -0.9, size = 2.4, colour = INK, parse = TRUE,
-           label = sprintf("Delta == %s ~ rho", f(pc_d05[[MULTI_LAB]], 3))) +
+           label = sprintf("Delta == %s ~ italic(DR)", f(pc_d05[[MULTI_LAB]], 3))) +
   labs(x = NULL, tag = "A")
 
 # ---- panel B: the six single variables ----
@@ -872,7 +872,7 @@ pc_B <- pc_base(pcurve[pcurve$Measure %in% uni, ],
         legend.margin = margin(2, 4, 2, 2))
 
 # ---- panel C: the same six curves on their own original-unit axes ----
-# rho and the original unit differ by a constant factor, so these are the panel B
+# DR and the original unit differ by a constant factor, so these are the panel B
 # curves with the x axis rescaled; nothing is recomputed.
 den_by_lab <- setNames(unname(eq_den0), unname(variable_labels[names(eq_den0)]))
 ccurve <- do.call(rbind, lapply(uni, function(m) {
@@ -928,7 +928,7 @@ pc_A / pc_B / pc_C +
 #| label: si-toster
 #| include: false
 
-# The same bound in both: Delta is the rho bound of @fig-pvalue-curve carried back
+# The same bound in both: Delta is the DR bound of @fig-pvalue-curve carried back
 # into each measure's own units. What differs is the unit of resampling, and so
 # the width of the interval the test inverts.
 tost_bound <- setNames(unname(eq_pc_d05[seq_along(variables)]) *
