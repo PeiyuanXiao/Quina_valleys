@@ -57,7 +57,7 @@ site_land <- .sites |>
 
 .need <- c(variables, "GMsize", "Distance", "Height")
 drop_log <- data.frame(
-  step = c("specimens in the surface Quina sheet",
+  step = c("specimens in the surface-collected Quina sheet",
            "matched to a locality in Site_information.xlsx",
            "complete on the seven measures",
            "complete on height, distance and basin"),

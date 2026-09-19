@@ -133,7 +133,7 @@ usedA_basin_v <- ad3(usedA_basin); usedA_river_v <- ad3(usedA_river)
 cobbleLoc_v    <- ad3(cobbleLoc);    cobbleRiver_v  <- ad3(cobbleRiver)
 
 # composition by valley: shared by the manuscript figure and the supplementary table
-layer_levels <- c("River cobbles", "Surface Quina scrapers")
+layer_levels <- c("River cobbles", "Surface-collected Quina scrapers")
 site_key_fig <- sites |>
   transmute(Site_ID = trimws(as.character(Code)),
             river_ID = factor(trimws(river_ID), levels = river_levels))

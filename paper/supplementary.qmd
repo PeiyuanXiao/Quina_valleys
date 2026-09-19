@@ -4,6 +4,7 @@ subtitle: "The Quina Landscape: a regional Middle Palaeolithic technological sys
 author:
   - Pei-Yuan Xiao:
       correspondence: "yes"
+      email: xiaopeiyuan@itpcas.ac.cn
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA
@@ -17,6 +18,7 @@ author:
         - YPICRA
   - Davide Delpiano:
       correspondence: "no"
+      orcid: 0000-0001-8950-1466
       institute:
         - FERRARA
   - Marco Peresani:
@@ -51,8 +53,10 @@ author:
   - Hao Li:
       correspondence: "yes"
       email: lihao@itpcas.ac.cn
+      orcid: 0009-0008-1504-9401
       institute:
         - ALPHA
+        - MOE
 # <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
@@ -63,6 +67,7 @@ institute:
   - IGAG: Consiglio Nazionale delle Ricerche—Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
   - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
   - DCRMI: Dali Bai Autonomous Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
+  - MOE: MOE Key Laboratory of Western China's Environmental System, Center for Excellence in Archaeological Science and Cultural Heritage, Lanzhou University, Lanzhou, China
 date: now
 date-format: long
 format:
@@ -140,7 +145,7 @@ brms_treedepth <- brms_diag_ref$max_treedepth
 brms_max_rhat  <- brms_diag_ref$max_rhat
 brms_min_ess   <- min(brms_diag_ref$min_ess_bulk, brms_diag_ref$min_ess_tail)
 group_colors <- c(SC_Quina = "#E07C90", LT_Quina = "#E6C25C", LT_Ordinary = "#6BA8CE")
-group_labels <- c(SC_Quina = "Surface Quina", LT_Quina = "Longtan Quina",
+group_labels <- c(SC_Quina = "Surface-collected Quina", LT_Quina = "Longtan Quina",
                   LT_Ordinary = "Longtan non-Quina")
 basin_colors   <- c(Binchuan = "#6BA8CE", Huangping = "#E07C90")
 grad_low       <- "#6BA8CE"
@@ -268,7 +273,7 @@ The first part describes the computational environment and the parameter setting
 
 # Part 1: Computational environment and settings
 
-Every value reported here comes from the same data, the same analysis run and the same fixed random seed (2226) as its counterpart in the main text. The data and code needed to reproduce this document are deposited with the research compendium at OSF.
+Every value reported here comes from the same data, the same analysis run and the same fixed random seed (2226) as its counterpart in the main text. The data and code needed to reproduce this document are deposited with the research compendium at OSF (<https://doi.org/10.17605/OSF.IO/PGWY2>).
 
 All analyses were conducted in `r R.version.string` [@R-base], with the packages given in @tbl-software.
 
@@ -346,7 +351,7 @@ knitr::kable(retouch_products_tbl, align = c("l", "r", "r", "r", "r"),
 
 ```{r}
 #| label: fig-categorical-attributes
-#| fig-cap: "Categorical attributes of the surface Quina scrapers: the proportion of the dorsal face covered by cortex, the position of that cortex, the platform type, and the direction from which retouch was struck. Each bar gives the percentage of the specimens recorded for that attribute, with the count and the percentage printed at its end."
+#| fig-cap: "Categorical attributes of the surface-collected Quina scrapers: the proportion of the dorsal face covered by cortex, the position of that cortex, the platform type, and the direction from which retouch was struck. Each bar gives the percentage of the specimens recorded for that attribute, with the count and the percentage printed at its end."
 #| fig-width: 5.9
 #| fig-height: 4.9
 
@@ -660,7 +665,7 @@ knitr::kable(pca_out, row.names = FALSE, align = c("l", rep("r", 6)),
 
 # Drawn from `jack` and `permA`, both computed in _analysis.R. Nothing is re-run.
 INK <- "#202124"; GREY <- "#5A5F66"
-CMP <- c("Surface Quina\nvs Longtan Quina", "Surface Quina\nvs Longtan non-Quina")
+CMP <- c("Surface-collected Quina\nvs Longtan Quina", "Surface-collected Quina\nvs Longtan non-Quina")
 SIG_COLS <- c("p ≤ 0.05" = "#E07C90", "p > 0.05" = "#6BA8CE")
 
 # ---- panel A: one row per iteration ----
@@ -793,7 +798,7 @@ jk_dens + jk_forest + jk_B +
 
 ```{r}
 #| label: fig-pvalue-curve
-#| fig-cap: "Equivalence *p*-value curves for the difference between the surface and Longtan Quina groups. (A) Multivariate centroid distance in the six-variable z-scored space. (B) Six individual attributes on a common *DR* scale. (C) The same attributes rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, the value of the established Quina–non-Quina contrast."
+#| fig-cap: "Equivalence *p*-value curves for the difference between the surface-collected and Longtan Quina groups. (A) Multivariate centroid distance in the six-variable z-scored space. (B) Six individual attributes on a common *DR* scale. (C) The same attributes rescaled to their own units. The dashed line marks α = 0.05, the open circle the equivalence threshold, and the solid line Δ = 1, the value of the established Quina–non-Quina contrast."
 #| fig-width: 5.9
 #| fig-height: 7.8
 
@@ -964,7 +969,7 @@ icc_of <- function(r) 100 * brms_icc$Median[brms_icc$Response == r]
 
 ```{r}
 #| label: tbl-toster
-#| tbl-cap: "Specimen-level equivalence tests of surface and Longtan Quina groups alongside the locality-level analysis."
+#| tbl-cap: "Specimen-level equivalence tests of surface-collected and Longtan Quina groups alongside the locality-level analysis."
 
 tost_dig <- c(Thickness = 2, Retouch_length_index = 3, Ave_GIUR = 3,
               N_Scar = 2, Ave_RG = 2, Edge_Angle = 2)
@@ -1002,7 +1007,7 @@ knitr::kable(tost_out, row.names = FALSE,
 
 This section documents the raw materials available on the river gravel bars and their representation in the surface assemblages. Two figures give the field setting: @fig-sample-points shows where the cobbles were sampled, and @fig-thin-section illustrates the petrography of the trachyte.
 
-The analytical results follow. @tbl-composition reports the raw material composition of the surveyed cobbles and of the surface Quina scrapers for each valley, and @tbl-electivity quantifies their relationship as an index of selection. @fig-electivity-sensitivity recalculates that index after omitting each sampling point and each valley in turn, which shows how far it depends on the sampling scheme. @tbl-rawmat-permanova tests for differences in raw material composition among sampling points, valleys and basins, and @tbl-clast-size reports the sizes of the surveyed cobbles by lithology.
+The analytical results follow. @tbl-composition reports the raw material composition of the surveyed cobbles and of the surface-collected Quina scrapers for each valley, and @tbl-electivity quantifies their relationship as an index of selection. @fig-electivity-sensitivity recalculates that index after omitting each sampling point and each valley in turn, which shows how far it depends on the sampling scheme. @tbl-rawmat-permanova tests for differences in raw material composition among sampling points, valleys and basins, and @tbl-clast-size reports the sizes of the surveyed cobbles by lithology.
 
 The last three tables are the field record of the same cobbles. @tbl-cobble-dimensions, @tbl-cobble-roundness and @tbl-cobble-shape give the three measured axes, the roundness scored on the Powers scale, and the shape category assigned in the field.
 
@@ -1215,7 +1220,7 @@ rawmat_out <- bind_rows(
   head_row(sprintf("Available river cobbles (*n* = %d)", n_cobble)),
   perm_row("~ sampling point", cobbleLoc,   pd_cobbleLoc),
   perm_row("~ valley",         cobbleRiver, pd_cobbleRiver),
-  head_row(sprintf("Surface Quina scrapers (*n* = %d)", nrow(scA))),
+  head_row(sprintf("Surface-collected Quina scrapers (*n* = %d)", nrow(scA))),
   perm_row("~ basin",  usedA_basin, pd_usedA_basin),
   perm_row("~ valley", usedA_river, pd_usedA_river))
 
@@ -1439,10 +1444,10 @@ wds_out <- bind_rows(
   wrow("Available river cobbles ~ valley", gsz(cobbles$river_ID),
        cobbleRiver$F[1], cobbleRiver$`Pr(>F)`[1],
        pd_cobbleRiver[["F"]], pd_cobbleRiver[["p"]], wds_cobbleRiver),
-  wrow("Surface Quina scrapers ~ basin", gsz(A_meta$basin),
+  wrow("Surface-collected Quina scrapers ~ basin", gsz(A_meta$basin),
        usedA_basin$F[1], usedA_basin$`Pr(>F)`[1],
        pd_usedA_basin[["F"]], pd_usedA_basin[["p"]], wds_usedA_basin),
-  wrow("Surface Quina scrapers ~ valley", gsz(A_meta$river_ID),
+  wrow("Surface-collected Quina scrapers ~ valley", gsz(A_meta$river_ID),
        usedA_river$F[1], usedA_river$`Pr(>F)`[1],
        pd_usedA_river[["F"]], pd_usedA_river[["p"]], wds_usedA_river),
   whead("Cobble form, Aitchison"),

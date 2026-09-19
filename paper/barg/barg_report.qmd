@@ -4,6 +4,7 @@ subtitle: "Landscape-scaled technological structure in surface-collected Quina s
 author:
   - Pei-Yuan Xiao:
       correspondence: "yes"
+      email: xiaopeiyuan@itpcas.ac.cn
       orcid: 0009-0000-9733-5875
       institute:
         - ALPHA
@@ -17,6 +18,7 @@ author:
         - YPICRA
   - Davide Delpiano:
       correspondence: "no"
+      orcid: 0000-0001-8950-1466
       institute:
         - FERRARA
   - Marco Peresani:
@@ -51,8 +53,10 @@ author:
   - Hao Li:
       correspondence: "yes"
       email: lihao@itpcas.ac.cn
+      orcid: 0009-0008-1504-9401
       institute:
         - ALPHA
+        - MOE
 # <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
@@ -63,6 +67,7 @@ institute:
   - IGAG: Consiglio Nazionale delle Ricerche—Institute of Environmental Geology and Geoengineering, Laboratory of Palynology and Palaeoecology, Research Group on Vegetation, Climate and Human Stratigraphy, Milan, Italy
   - BCRMI: Binchuan Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
   - DCRMI: Dali Bai Autonomous Cultural Relics Management Institute, Dali Bai Autonomous Prefecture, Yunnan, China
+  - MOE: MOE Key Laboratory of Western China's Environmental System, Center for Excellence in Archaeological Science and Cultural Heritage, Lanzhou University, Lanzhou, China
 date: now
 format:
   html:
@@ -1408,8 +1413,8 @@ supplementary information, leaving the slope prior at `normal(0, 1)`, which is
 specification S1 of @sec-sensitivity. None of the files above uses it, and
 none of them modifies it.
 
-**Archive DOI:** `<10.17605/OSF.IO/XXXXXX>`, to be minted on OSF or Zenodo at
-submission. The deposit will contain the four source files above, the
+**Archive DOI:** [10.17605/OSF.IO/PGWY2](https://doi.org/10.17605/OSF.IO/PGWY2).
+The deposit will contain the four source files above, the
 `paper/barg/` scripts, the `_targets/` store with the fits, and the rendered
 HTML.
 

@@ -3,19 +3,23 @@ Title: The Quina Landscape: A Regional Middle Palaeolithic Technological
     System on the Southeastern Margin of the Tibetan Plateau
 Version: 0.1.0
 Authors@R: c(
-    person("Peiyuan", "Xiao", email = "pyxiao@uw.edu",
+    person("Peiyuan", "Xiao", email = "xiaopeiyuan@itpcas.ac.cn",
            role = c("aut", "cre"), comment = c(ORCID = "0009-0000-9733-5875")),
-    person("Qijun", "Ruan", role = "aut",
+    person("Qijun", "Ruan", email = "ruanqijun000@163.com", role = "aut",
            comment = c(ORCID = "0009-0000-2143-5335")),
-    person("Davide", "Delpiano", role = "aut"),
+    person("Davide", "Delpiano", role = "aut",
+           comment = c(ORCID = "0000-0001-8950-1466")),
     person("Marco", "Peresani", role = "aut",
            comment = c(ORCID = "0000-0001-6562-6336")),
     person("Zhenxiu", "Jia", role = "aut",
            comment = c(ORCID = "0000-0002-7514-4514")),
     person("Lijing", "Yang", role = "aut"),
+    person("Ming", "Zhang", role = "aut"),
+    person("Jian", "Sun", role = "aut"),
     person("Ben", "Marwick", email = "bmarwick@uw.edu", role = "aut",
            comment = c(ORCID = "0000-0001-7879-4531")),
-    person("Hao", "Li", email = "lihao@itpcas.ac.cn", role = "aut"))
+    person("Hao", "Li", email = "lihao@itpcas.ac.cn", role = "aut",
+           comment = c(ORCID = "0009-0008-1504-9401")))
 Description: Research compendium for the manuscript. Holds the data, the
     analysis code and the Quarto sources for the manuscript, the supplementary
     material and the Supplementary Bayesian Report. This is not an R package
@@ -25,6 +29,8 @@ Description: Research compendium for the manuscript. Holds the data, the
     targets::tar_make(); the package versions it was built under are pinned in
     renv.lock.
 License: CC BY 4.0
+URL: https://doi.org/10.17605/OSF.IO/PGWY2,
+    https://github.com/PeiyuanXiao/Quina_valleys
 Encoding: UTF-8
 Depends:
     R (>= 4.6.0)
