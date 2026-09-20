@@ -1892,7 +1892,10 @@ arithmetic behind the band below.
 
 The `r nrow(sbc_unif)` quantities under test are the ones the two research
 questions rest on: the `r sum(sbc_unif$kind == "slope")` landscape slopes
-behind Q2 and the `r sum(sbc_unif$kind == "icc")` locality ICCs behind Q1. For
+behind Q2 and the `r sum(sbc_unif$kind == "icc")` locality ICCs behind Q1.
+Which quantities are put under test governs what the check is able to
+detect (Modrák, Moon, Kim, et al. 2025), so these were fixed by the two
+questions rather than chosen after the result was seen. For
 each of them, @fig-sbc plots how far the `r sbc_n` observed positions depart
 from an even spread, across the whole range of positions at once. The shaded
 band is how far an evenly spread set of `r sbc_n` positions would stray 95% of

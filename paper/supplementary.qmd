@@ -195,6 +195,18 @@ si_ttl   <- grepl("^  title = ", si_lines)
 si_lines[si_ttl] <- sub("^(  title = \\{)([^{:]+)(:)", "\\1{\\2}\\3",
                         si_lines[si_ttl])
 si_lines[si_ttl] <- gsub(" ([A-Z])([ ,}])", " {\\1}\\2", si_lines[si_ttl])
+# The rule above only reaches single capitals, so "with {S}" survives but
+# "using Stan" does not: pandoc sentence-cases an English title and would
+# print "using stan". Each multi-letter proper noun needs the same braces.
+# Unwrapping first keeps the pass idempotent across renders.
+for (w in c("Stan", "Excel", "Welch", "Bayesian", "ANOVA")) {
+  si_lines[si_ttl] <- gsub(paste0("{", w, "}"), w, si_lines[si_ttl], fixed = TRUE)
+  si_lines[si_ttl] <- gsub(paste0("\\b", w, "\\b"), paste0("{", w, "}"),
+                           si_lines[si_ttl])
+}
+# write_bib() spells MASS's edition out as {Fourth}, which the CSL renders
+# "Fourth. ed."; a numeral lets it print "4th ed." instead.
+si_lines <- sub("^(  edition = \\{)Fourth(\\},?)$", "\\14\\2", si_lines)
 writeLines(si_lines, si_bib)
 n_fmt <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
 ```
@@ -267,7 +279,7 @@ ct_cells <- function(tb, label = NULL) {
 
 This document accompanies the main text and reports the complete statistical output behind the results given there, together with the diagnostic and robustness analyses that support their interpretation. It has three parts.
 
-The first part describes the computational environment and the parameter settings, so that every reported value can be reproduced exactly. The second part presents the tables and figures in the order in which the main text discusses the results, grouped into four sections: the techno-typological characterisation of the retouch products; the technological consistency of the surface collections with the excavated assemblage from Longtan; the organisation of raw material use; and the landscape structure of technological variation. A short guide opens each section, and every table and figure caption is self-contained, so that the materials can be read without the main text at hand. The third part is a single sensitivity analysis that spans all four sections, repeating every PERMANOVA reported here and in the main text with a statistic that allows the compared groups to differ in dispersion.
+The first part describes the computational environment and the parameter settings, so that every reported value can be reproduced exactly. The second part presents the tables and figures in the order in which the main text discusses the results, grouped into five sections: the techno-typological characterisation of the retouch products; the technological consistency of the surface collections with the excavated assemblage from Longtan; the organisation of raw material use; the landscape structure of technological variation; and the survey record of the localities not analysed. A short guide opens each section, and every table and figure caption is self-contained, so that the materials can be read without the main text at hand. The third part is a single sensitivity analysis that spans all four sections, repeating every PERMANOVA reported here and in the main text with a statistic that allows the compared groups to differ in dispersion.
 
 \newpage
 
@@ -290,7 +302,7 @@ knitr::kable(si_pkg_tbl, row.names = FALSE, align = c("l", "l", "l", "l"),
 
 We set the random seed (2226) once at the start of the analysis file and reset it immediately before each permutation, Monte Carlo and bootstrap procedure. Every reported result therefore reproduces exactly, whatever the order in which the analyses run.
 
-Three resampling settings govern the results reported in Part 2. All permutation tests, PERMANOVA and PERMDISP among them, use `r n_fmt(PERM)` permutations. Percentile confidence intervals use `r n_fmt(B_BOOT)` bootstrap replicates. The main text reports such intervals for two quantities: the between-group ratios of the coefficient of variation and the Fano factor, and Cohen's *d* for the difference between scraper edge angle and the exterior platform angle of the resharpening flakes. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation uses `r n_fmt(MSLR_NR)` Monte Carlo iterations. We save the state of the random-number generator before each of these tests and restore it afterwards, so the bootstrap confidence intervals do not depend on how many Krishnamoorthy–Lee tests ran before them, or in what order. We adjust every family of multiple comparisons by the Bonferroni method.
+Three resampling settings govern the results reported in Part 2. All permutation tests, PERMANOVA and PERMDISP among them, use `r n_fmt(PERM)` permutations. Percentile confidence intervals use `r n_fmt(B_BOOT)` bootstrap replicates. The main text reports such intervals for the between-group ratios of the coefficient of variation and the Fano factor. The Krishnamoorthy–Lee modified signed likelihood ratio test for equality of coefficients of variation uses `r n_fmt(MSLR_NR)` Monte Carlo iterations. We save the state of the random-number generator before each of these tests and restore it afterwards, so the bootstrap confidence intervals do not depend on how many Krishnamoorthy–Lee tests ran before them, or in what order. We adjust every family of multiple comparisons by the Bonferroni method.
 
 \newpage
 
