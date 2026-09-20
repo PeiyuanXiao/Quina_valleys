@@ -57,7 +57,6 @@ author:
       institute:
         - ALPHA
         - MOE
-# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
   - UCAS: University of Chinese Academy of Sciences, Beijing, China
@@ -635,7 +634,8 @@ assessed its implications with @sec-post-pred and `ref_rg_ln`.
 
 Two filters were applied before fitting. A specimen must have all seven
 measurements, and its locality must have a recorded basin, height and
-distance.
+distance. @tbl-localities gives the localities and specimens that remain in
+each basin.
 
 ```{r}
 #| label: tbl-dropped
@@ -777,6 +777,7 @@ separates, and the slopes, `phi`, the locality SDs and the locality correlation
 matrix come from the interior observations alone whatever value `coi` takes.
 S6 therefore checks that this reasoning, and the code that implements it, are
 both right, rather than whether the answers survive a different `coi`.
+@tbl-s6-identity shows the five slopes on which the two fits disagree most.
 
 ```{r}
 #| label: tbl-s6-identity
@@ -880,7 +881,8 @@ Every class receives an explicit prior with justification, following BARG Step 1
 
 The intercept priors are set from what we have called
 plausible for a retouched flake tool before seeing these specific `r n_spec` pieces,
-mapped through the link. Each is far wider than the observed spread.
+mapped through the link. Each is far wider than the observed spread
+(@tbl-intercept-prior).
 
 ```{r}
 #| label: tbl-intercept-prior
@@ -1096,7 +1098,7 @@ Their posterior medians are
 of the link-scale variance in those measures sits between localities rather
 than within them. The remaining `r nrow(undec)` are undecided: their intervals
 run from near zero to values that would be substantial, and our model design does
-not separate the two.
+not separate the two (@tbl-icc-decision).
 
 ```{r}
 #| label: tbl-icc-decision
@@ -1110,7 +1112,7 @@ icc_ref |>
 ```
 
 Q1 is the only part of the analysis that returns a decisive answer, and how far
-it survives the prior is set out in detail below (@tbl-sens-verdict).
+it survives the prior is set out in @sec-prior-dependence.
 
 `r if (nrow(firm) > 0) sprintf("For %s the decision is 'locality variation present' under every one of the seven priors.", paste(firm$Resp, collapse = " and ")) else ""`
 `r if (nrow(flips) > 0) sprintf("For %s it is not: the 2.5%% limit sits so close to the 0.05 bound that %s pushes it just below, and the verdict becomes undecided (2.5%% limit %s under %s, against %s under the reference). The median barely moves (%s against %s), so the decision turns on a boundary rather than on a change in the estimate.", paste(unique(flip_detail$Resp), collapse = " and "), paste(unique(flip_detail$Spec), collapse = " and "), fmt(flip_detail$lo[1], 3), flip_detail$Spec[1], fmt(icc_sens$lo[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3), fmt(flip_detail$Median[1], 3), fmt(icc_sens$Median[icc_sens$Resp == flip_detail$Resp[1] & icc_sens$Spec == "REF"], 3)) else "No ICC decision changes under any of the seven priors."`
@@ -1267,8 +1269,8 @@ bx_dif |>
   kt(caption = "The 14 basin contrasts: the Huangping gradient slope minus the Binchuan one, standardised by the link-scale SD of the response so that the ROPE is the same band used everywhere else in this report.")
 ```
 
-Of the `r nrow(bx_dif)` contrasts, `r nrow(bx_rej)` clears the ROPE and
-`r sum(bx_dif$Verdict == "undecided")` are undecided.
+Of the `r nrow(bx_dif)` contrasts in @tbl-basinx-diff, `r nrow(bx_rej)` clears
+the ROPE and `r sum(bx_dif$Verdict == "undecided")` are undecided.
 `r if (nrow(bx_rej) > 0) sprintf("The one that clears it is %s with %s, and its interval reaches %s at the near end. One result out of %d comparisons, with a limit that close to zero, is what chance produces.", paste(sprintf("%s with %s", rlab(bx_rej$Response), tolower(ifelse(bx_rej$Gradient == "zHeight", "height", "distance"))), collapse = "; "), "the gradient", fmt(min(abs(bx_rej$CrI_lo)), 2), nrow(bx_dif)) else "None clears it."`
 Taken one at a time, then, the contrasts do not establish that the basins
 differ.
@@ -1392,7 +1394,7 @@ specification; the caption of @tbl-software gives the reason.
 | `paper/barg/barg_context.R` | assembles the environments the pipeline runs the above in |
 | `paper/barg/barg_theme.R` | the figure style, copied from the manuscript pipeline |
 | `paper/barg/barg_figures.R` | every figure |
-| `paper/barg/barg_dummy_data.R` | the synthetic dataset described below |
+| `paper/barg/barg_dummy_data.R` | builds a synthetic dataset with the same columns, types, ranges, locality structure and missingness as the real one, for running the scripts without the measurements |
 | `paper/barg/barg_report.qmd` | this document |
 | `_targets.R` | the pipeline: what depends on what, and what is rebuilt when |
 | `_targets/` | the store, with the eleven fits and the pipeline metadata |
@@ -1457,42 +1459,39 @@ produced this document, a median of
 `r fmt(median(mf$minutes, na.rm = TRUE), 1)`,
 `r if (length(r_all) == 1) sprintf("all of them under R version %s", r_all) else sprintf("across %d R versions (%s), the cache having been assembled over more than one session", length(r_all), paste(r_all, collapse = ", "))`.
 
-## Session Information
-
-```{r}
-#| label: session
-#| attr-output: "style='max-height:420px;overflow:auto;'"
-cat("CmdStan version:", mf$cmdstan, "\n")
-cat("Fits produced at:", format(mf$fitted_at, "%Y-%m-%d %H:%M:%S %Z"), "\n\n")
-sessionInfo()
-```
+The run that produced this document was made on
+`r format(mf$fitted_at, "%Y-%m-%d")` with brms `r mf$brms` and CmdStan
+`r mf$cmdstan`. We pin the environment rather than transcribe it: `renv.lock`
+records the resolved version of every package the project uses, and the
+`Dockerfile` builds an image from it, so the run is reproduced from the lockfile
+rather than by matching a printed listing. @tbl-software gives the versions and
+the sampler settings the reported results depend on, the seed among them.
 
 ---
 
 # Appendix A. Priors in Full {#sec-priors-full}
 
 @sec-priors states the prior and the argument for scaling the slope prior to
-each response. This appendix gives the complete record: every row
-`prior_summary()` returns, the rows it still labels `default` and why the
-sampler never reaches them, the generated Stan prior block, and the brms
-defaults that the explicit specification replaced.
+each response. This appendix gives the rows `prior_summary()` still labels
+`default` and why the sampler never reaches them (@tbl-prior-default-rows), the
+generated Stan prior block, and the brms defaults that the explicit
+specification replaced. The full `prior_summary()` output is deposited with the
+archive rather than printed here.
 
 ```{r}
-#| label: tbl-prior-summary
+#| label: prior-summary-compute
+#| echo: false
 ps <- as.data.frame(prior_summary(fit_ref))[
   , c("prior", "class", "coef", "group", "resp", "dpar", "lb", "ub", "source")]
-n_inherit <- sum(ps$prior == "")
-n_flat    <- sum(ps$prior == "" & ps$coef == "")
-ps |>
-  filter(prior != "") |>
-  arrange(class, resp) |>
-  select(-source) |>
-  kt(caption = "prior_summary(fit_ref), every non-empty row.")
+n_inherit  <- sum(ps$prior == "")
+n_flat     <- sum(ps$prior == "" & ps$coef == "")
+n_nonempty <- sum(ps$prior != "")
 ```
 
-`r n_inherit` further rows have an empty `prior` field. Every one of them
-names a specific `coef` and inherits the prior of its class; they are omitted
-above. Rows that specify no `coef` and are still empty, meaning genuinely flat
+Of the rows `prior_summary()` returns, `r n_nonempty` carry an explicit prior
+and `r n_inherit` have an empty `prior` field; each of the latter names a
+specific `coef` and inherits the prior of its class. Rows that specify no
+`coef` and are still empty, meaning genuinely flat
 priors, number `r n_flat`. That is the condition `sample_prior = "only"`
 imposes, and it is why the prior predictive draws of @sec-prior-pred exist at
 all: with a flat prior anywhere, brms cannot sample from the prior. The prior
@@ -1538,8 +1537,8 @@ cat(paste(trimws(lines[min(lp):last]), collapse = "\n"))
 
 Leaving a class at its default means inheriting a prior without reporting it,
 and two of the defaults here are read off the data rather than set
-independently of it. They are listed so that the cost of the explicit
-specification in @sec-priors is visible.
+independently of it. They are listed in @tbl-default-priors so that the cost of
+the explicit specification in @sec-priors is visible.
 
 ```{r}
 #| label: tbl-default-priors
@@ -1566,9 +1565,9 @@ gp |>
 Cf. BARG Step 1.E.
 :::
 
-The reference prior was refitted with `sample_prior = "only"`, so the draws
-below come from the prior alone with the data unseen. The question is not
-whether the simulated data look like the observed data. They should not; if
+The reference prior was refitted with `sample_prior = "only"`, so the draws in
+@fig-prior-pred come from the prior alone with the data unseen. The question is
+not whether the simulated data look like the observed data. They should not; if
 they did, the prior would be doing the data's work. The question is whether
 they are physically possible: no negative thicknesses, edge angles inside the
 range a goniometer can return, GIUR inside its definitional bounds, scar
@@ -1773,24 +1772,30 @@ full_tbl <- bind_rows(
 
 is_offset <- startsWith(full_tbl$Parameter, "r_Locality__")
 is_cor    <- startsWith(full_tbl$Parameter, "cor_Locality__")
-shown_tbl <- full_tbl[!is_offset & !is_cor, ]
+# brms keeps both the centred intercept of the Stan program (Intercept_<resp>)
+# and the one transformed back to the scale the data were measured on
+# (b_<resp>_Intercept). Only the second can be read without stating what the
+# centring was, so the first is left out.
+is_cint   <- startsWith(full_tbl$Parameter, "Intercept_")
+shown_tbl <- full_tbl[!is_offset & !is_cor & !is_cint, ]
 ```
 
 The table below prints the `r nrow(shown_tbl)` quantities this report quotes
 or discusses. The `r nrow(full_tbl)` quantities of the full model also include
 `r sum(is_offset)` locality offsets and `r sum(is_cor)` locality-intercept
-correlations, which @fig-caterpillar and @tbl-cor already give; printing them
-again here would bury the rows a reader needs in a table of
-`r nrow(full_tbl)`. The summaries below the table are computed over all
-`r nrow(full_tbl)`, and the archive contains the complete version.
+correlations, which @fig-caterpillar and @fig-cor already give, and
+`r sum(is_cint)` centred intercepts that the sampler carries but that cannot be
+read without stating the centring; printing them again here would bury the rows
+a reader needs in a table of `r nrow(full_tbl)`. The summaries below the table
+are computed over all `r nrow(full_tbl)`, and the archive contains the complete
+version.
 
 ```{r}
 #| label: tbl-convergence
-#| tbl-cap: "Convergence and resolution for the slopes, the intercepts, the auxiliary parameters and the locality SDs, and for the seven derived ICCs. Median and equal-tailed limits are given with their Monte Carlo standard errors; mode and HDI limits are given alongside, following the reference BARG document. The locality offsets and the locality-intercept correlations are left out of the printed table: @fig-caterpillar draws the offsets, @tbl-cor gives the correlations with their own diagnostics, and the complete table is deposited with the archive (@sec-reproducibility)."
+#| tbl-cap: "Convergence and resolution for the slopes, the intercepts, the auxiliary parameters and the locality SDs, and for the seven derived ICCs. Median and equal-tailed limits are given with their Monte Carlo standard errors. The locality offsets and the locality-intercept correlations are left out of the printed table: @fig-caterpillar draws the offsets and @fig-cor the correlations, and the complete table is deposited with the archive (@sec-reproducibility)."
 shown_tbl |>
   transmute(Parameter,
             `median` = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
-            `mode` = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
             `MCSE 2.5%` = MCSE_lo, `MCSE median` = MCSE_med, `MCSE 97.5%` = MCSE_hi,
             `Rhat` = rhat, `ESS bulk` = round(ess_bulk), `ESS tail` = round(ess_tail)) |>
   kt(caption = NULL, digits = 4)
@@ -1957,6 +1962,11 @@ Cf. BARG Step 3.A. Kruschke (2021) treats this check as a precondition for
 reporting parameter estimates at all.
 :::
 
+The reference fit is compared with the data it was fitted to: @fig-post-pred
+sets the marginal distribution of each response against its posterior
+predictive replicates, and @fig-ppc-basin repeats the comparison for the
+within-basin medians.
+
 ```{r}
 #| label: fig-post-pred
 #| fig-cap: "Posterior predictive distributions (grey, 100 draws) against the observed distribution (dark), one panel per response."
@@ -1977,17 +1987,6 @@ SHOW("ppc_group_basin.png")
 SHOW("ppc_stats.png")
 ```
 
-```{r}
-#| label: tbl-ppc-stats
-ppc_stat_tbl |>
-  mutate(Response = rlab(Response),
-         inside = observed >= rep_lo & observed <= rep_hi,
-         verdict = ifelse(inside, "reproduced", "NOT reproduced")) |>
-  transmute(Response, Statistic, observed,
-            `replicated median` = rep_median, `2.5%` = rep_lo, `97.5%` = rep_hi,
-            verdict) |>
-  kt(caption = "Observed test statistics against their posterior predictive distributions.")
-```
 
 ```{r}
 #| label: ppc-readout
@@ -2072,20 +2071,19 @@ Cf. BARG Step 3.B.
 Every interval in this report is a 95% equal-tailed (percentile) credible
 interval, running from the 2.5th to the 97.5th posterior percentile, and every
 point summary in the text is the posterior median. That is the quantile-based
-convention. The density-based pair, the posterior mode and the 95%
-highest-density interval, appears alongside it in @tbl-convergence and
-@tbl-coef-full, following the reference BARG document, so that a reader who
-prefers that pair need recompute nothing. @sec-digits says how many of the
-printed decimal places the simulation supports.
+convention. @sec-digits says how many of the printed decimal places the
+simulation supports.
 :::
+
+@tbl-coef-full gives the 21 slopes in full, and @fig-prior-post sets each
+slope's posterior against the prior it started from, so that the slopes on
+which the data said little can be read off directly.
 
 ```{r}
 #| label: tbl-coef-full
-#| tbl-cap: "The 21 landscape slopes in full, each with the decision it supports beside the estimate, the interval and the ROPE mass that decision rests on. `median`, `2.5%`, `97.5%` are on the link scale; `std` columns divide by the link-scale SD of the response, which is the axis the 0.1 ROPE is defined on; `response scale` translates the median to a percentage change per unit of the predictor (log and logit links) or leaves it in the response's own units (identity link). 'Direction certainty' is max(P(beta > 0), P(beta < 0)): 0.5 means the posterior is split evenly about zero, 1.0 that the sign is certain. The last column is the smallest ROPE half-width at which the 95% interval would have fitted entirely inside, in the response's own units (@sec-min-rope)."
+#| tbl-cap: "The 21 landscape slopes in full, each with the decision it supports beside the estimate, the interval and the ROPE mass that decision rests on. `std` columns are the link-scale estimate divided by the link-scale SD of the response, which is the axis the 0.1 ROPE is defined on; `response scale` translates the median to a percentage change per unit of the predictor (log and logit links) or leaves it in the response's own units (identity link). 'Direction certainty' is max(P(beta > 0), P(beta < 0)): 0.5 means the posterior is split evenly about zero, 1.0 that the sign is certain. The last column is the smallest ROPE half-width at which the 95% interval would have fitted entirely inside, in the response's own units (@sec-min-rope)."
 cf |>
   transmute(Response = rlab(Response), Predictor = plab(Predictor), Link,
-            median = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
-            mode = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
             `std median` = Std_median, `std 2.5%` = Std_lo, `std 97.5%` = Std_hi,
             `% in ROPE` = fmt(pct_in_ROPE, 1),
             `direction certainty` = fmt(Dir_certainty, 3),
@@ -2119,20 +2117,10 @@ $\log(1 + 1/\mu + 1/\text{shape})$ evaluated at the intercept for the
 negative binomial; and, for the two zero-one-inflated beta responses,
 $\psi'(\mu\phi) + \psi'((1-\mu)\phi)$, the logit-scale variance of the beta
 component. For those two the ICC therefore describes the beta component alone
-and ignores the inflation (@sec-likelihood).
+and ignores the inflation (@sec-likelihood). @tbl-icc-decision gives the ICC for
+every response, and @tbl-convergence its locality SD and the diagnostics for the
+derived quantity.
 
-```{r}
-#| label: tbl-icc
-icc_ref |>
-  transmute(Response = rlab(Response), Family = unname(fam_lab[Family]),
-            `locality SD` = sd_median, `SD 2.5%` = sd_lo, `SD 97.5%` = sd_hi,
-            `ICC median` = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
-            `ICC mode` = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
-            `P(ICC > 0.05)` = P_gt_rope, Rhat = rhat,
-            `ESS bulk` = round(ess_bulk), Verdict) |>
-  arrange(desc(`ICC median`)) |>
-  kt(caption = "Locality SD and intraclass correlation, with diagnostics for the derived quantity.", digits = 3)
-```
 
 ## The 21 Locality-Intercept Correlations {#sec-cor}
 
@@ -2148,16 +2136,6 @@ The 21 parameters are explored here to provide additional context to our model.
 SHOW("correlation_matrix.png")
 ```
 
-```{r}
-#| label: tbl-cor
-cor_tb |>
-  transmute(`Response A` = rlab(A), `Response B` = rlab(B),
-            median = Median, `2.5%` = CrI_lo, `97.5%` = CrI_hi,
-            mode = Mode, `HDI lo` = HDI_lo, `HDI hi` = HDI_hi,
-            `P(rho > 0)` = P_positive, Rhat = rhat, `ESS bulk` = round(ess_bulk)) |>
-  arrange(desc(abs(median))) |>
-  kt(caption = "All 21 correlations among the locality intercepts, ordered by absolute posterior median. With 26 clusters these are weakly identified; the LKJ(1) prior is uniform over correlation matrices and S5 varies it.", digits = 3)
-```
 
 ```{r}
 #| label: fig-caterpillar
@@ -2242,24 +2220,6 @@ sens_long |>
   kt(caption = NULL)
 ```
 
-## Do the Conclusions Change Between Fits?? {#sec-5e} 
-
-::: {.barg}
-Cf. BARG Step 5.E. Some movement is inevitable, so the criterion is whether
-the numbers moved enough, relative to the width of the posterior interval and
-relative to the ROPE, to change a conclusion.
-:::
-
-@sec-prior-dependence gives the summary and quotes the largest movement of a
-posterior median across the seven priors. The table here gives the detail
-behind the decisions: what each quantity is judged to be under each prior.
-@tbl-sens-full above supplies the estimates those judgements come from.
-
-```{r}
-#| label: tbl-sens-verdict
-kt(changed |> select(-n_distinct_dec),
-   caption = "The decision each quantity receives under each prior.")
-```
 
 ---
 
@@ -2288,7 +2248,7 @@ reader following the argument will have passed every row already.
 | **2.B.** MCMC chain convergence | R-hat, divergent transitions and treedepth saturation, for the reference fit and for all eleven runs, with rank plots of the chains behind the reference fit | @sec-convergence, @tbl-diag-all, @fig-mcmc-rank |
 | **2.C.** MCMC chain resolution | Bulk and tail effective sample size for every parameter and every derived ICC, plotted in @fig-convergence and tabulated with the Monte Carlo standard error of each quantile the report quotes; the locality offsets and correlations omitted from the printed table are in the archive; an audit of how many decimal places that error supports | @sec-resolution, @sec-digits, @tbl-convergence, @fig-convergence |
 | **2.D.** Accuracy of any approximation used in place of exact sampling | Not applicable in the sense the item intends: every posterior in this document is a full MCMC sample, with no variational, Laplace or INLA approximation anywhere. The accuracy of the MCMC sample itself as an approximation to the exact posterior is checked separately, by posterior simulation-based calibration on the reference fit | Not applicable; @sec-sbc, @fig-sbc, @tbl-sbc |
-| **3.A.** Posterior predictive check | Full predictive distributions, a check of the within-basin medians, and test statistics fixed in advance | @sec-post-pred, @sec-ppc-stats, @tbl-ppc-stats |
+| **3.A.** Posterior predictive check | Full predictive distributions, a check of the within-basin medians, and test statistics fixed in advance | @sec-post-pred, @sec-ppc-stats, @fig-ppc-stats |
 | **3.B.** Summary of the posterior of every parameter | Posterior median and 95% equal-tailed interval, with mode and 95% HDI alongside, for the 21 slopes, the seven locality SDs and ICCs, and the 21 correlations | @sec-posterior-summary, @sec-icc, @sec-cor |
 | **3.C.** Bayes factors and posterior model probabilities | Not applicable: no model comparison is performed, so no marginal likelihood, no bridge sampling and no Bayes factor appears anywhere in this document | Not applicable (@sec-goals) |
 | **4.A.** The decision procedure and its rule | Kruschke's (2018) three-way decision (reject, accept, undecided) against a region of practical equivalence | @sec-decision-rule |
@@ -2300,8 +2260,8 @@ reader following the argument will have passed every row already.
 | **5.B.** Sensitivity to a genuinely informed prior drawn from previous research | Not applicable: no published posterior or meta-analytic estimate exists for any of these seven measures in Quina assemblages, so no informed prior can be built; the gap is discussed where the priors are set out | Not applicable (@sec-priors) |
 | **5.C.** Variations of the default priors | Six fits, each differing from the reference in exactly one prior, with every ICC and every slope reported under all seven specifications; the eleven fits and the purpose of each are set out together | @sec-model-series, @sec-5c, @tbl-sens-full |
 | **5.D.** Sensitivity of the Bayes factor to the prior | Not applicable: no Bayes factor is computed. The item is singled out in the guideline because Bayes factors are prior-dependent in a way posterior estimates are not, which is part of why this analysis is framed as estimation | Not applicable (@sec-goals) |
-| **5.E.** Whether the conclusions change | The decision each quantity receives under each of the seven priors, and the largest movement of a posterior median relative to that quantity's own interval width; and, for the one structural question the design can pose, whether the landscape slopes differ between the two basins | @sec-prior-dependence, @sec-basinx, @sec-5e |
-| **6.** Reproducibility of data, code and computational environment | Software versions, the file list, the archive DOI, a synthetic dataset for the case where the specimens cannot be released, run instructions and `sessionInfo()` | @sec-reproducibility |
+| **5.E.** Whether the conclusions change | Which quantities receive a different decision under any of the seven priors, named one by one, and the largest movement of a posterior median relative to that quantity's own interval width; and, for the one structural question the design can pose, whether the landscape slopes differ between the two basins | @sec-prior-dependence, @sec-basinx |
+| **6.** Reproducibility of data, code and computational environment | Software versions, the file list, the archive DOI, a synthetic dataset for the case where the specimens cannot be released, run instructions, and the lockfile and container image that pin the environment | @sec-reproducibility |
 
 
 ## What the Checklist Does Not Ask For
