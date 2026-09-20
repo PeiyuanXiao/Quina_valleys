@@ -1,47 +1,29 @@
 ## terra_map_2D_regional.R — the Figure 1 plan map (panel B of figures/study_area.png)
 ## re-drawn over a WIDER frame that reaches north to the Jinsha River (金沙江).
 ##
-## Cartographically this is paper/map/terra_map_2D.R: the same relief model, the
-## same hypsometric wash, the same accumulation-thinned drainage, the same symbol
-## grammar, theme, type sizes and export geometry. Only three things differ, and
-## each is forced by the larger frame:
-##   * its own cache. setup.R downloads the DEM for the site extent + 8 km only
-##     (100.318-100.630 E, 25.746-26.120 N), which stops ~6 km short of the
-##     Jinsha, so this script builds and caches its own regional layers next to
-##     the existing ones (data/cache/*_regional.*). setup.R is NOT required.
-##   * the hydrology is solved on a frame buffered well beyond the display window
-##     (north to 27.1 N), and by BREACHING rather than filling depressions.
-##     Two separate reasons:
-##       - flow accumulation only counts cells inside the grid it is solved on, so
-##         a network solved on the display frame alone would have the Jinsha
-##         entering with near-zero upstream area and drawn as a hairline. The
-##         buffer lets the trunk arrive already carrying its catchment.
-##       - setup.R's wbt_fill_depressions() cannot be used on a frame this size.
-##         The Jinsha leaves through the EAST edge (1105 m) and WhiteboxTools'
-##         fill raises that outlet cell instead of treating it as one, so the
-##         whole gorge ponds to a flat 1221 m and D8 then drains the entire
-##         raster NORTHWARD - accumulation ends up decreasing downstream and the
-##         trunk is drawn thinner the further it goes. wbt_breach_depressions()
-##         (unconstrained; the least-cost variant needs a search distance longer
-##         than the 70 km pond) carves the outlet instead and routes correctly.
-##         Verified: raised cells drop from 75,422 to 0 on the same crop.
-##   * graticule at 0.1 deg instead of 0.05 (the frame is 2.4x the area, so the
-##     0.05 labels would collide). River names stay off, as in terra_map_2D.R.
+## Cartographically this is terra_map_2D.R — same relief model, wash, drainage,
+## symbol grammar, theme and export geometry — with three differences forced by
+## the larger frame:
+##   * its own cache (data/cache/*_regional.*), because setup.R's DEM stops
+##     ~6 km short of the Jinsha.  setup.R is NOT required.
+##   * the hydrology is solved on a frame buffered north to 27.1 N, and by
+##     BREACHING rather than filling depressions.  Accumulation counts only
+##     cells inside its own grid, so without the buffer the Jinsha would arrive
+##     carrying no catchment and draw as a hairline; and wbt_fill_depressions()
+##     raises the east outlet (1105 m) instead of treating it as one, ponding
+##     the gorge to a flat 1221 m and draining the whole raster northward.
+##   * graticule at 0.1 deg instead of 0.05, or the labels collide.
 ##
-## Frame:   display 100.27-100.77 E, 25.74-26.30 N  (~50 x 62 km). The west edge
-##          stops at 100.27 on purpose: Erhai's shoreline ends at ~100.25, and a
-##          sliver of it at the frame edge would read as an artefact. The top at
-##          26.30 clears the whole east-flowing reach of the Jinsha, which runs
-##          between 26.16 and 26.22 N across this window.
-##          compute 100.10-101.00 E, 25.62-27.10 N  (hydrology only)
+## Frame:   display 100.27-100.77 E, 25.74-26.30 N (~50 x 62 km); the west edge
+##          stops short of Erhai's shoreline, which would read as an artefact
+##          at the frame edge, and the top clears the east-flowing reach of the
+##          Jinsha.  Hydrology is computed on 100.10-101.00 E, 25.62-27.10 N.
 ##
 ## Output:  output/figures/fig01_panels/panel_B_map_regional_jinsha.(png|pdf)
-##          at 150 x 148 mm / 600 dpi, i.e. the native geometry of terra_map_2D.R,
-##          so every point size on the sheet is literally the same as that script's.
+##          at 150 x 148 mm / 600 dpi, the native geometry of terra_map_2D.R.
 ##
-## First run downloads a ~1.3 deg^2 SRTM DEM and solves the drainage with
-## WhiteboxTools (several minutes, ~200 tiles). Everything is cached; re-runs are
-## cheap. To rebuild a layer, delete its file from data/cache/ and run again.
+## The first run downloads a ~1.3 deg^2 SRTM DEM and solves the drainage with
+## WhiteboxTools (several minutes).  Everything after that is cached.
 
 library(sf)
 library(dplyr)
@@ -430,7 +412,7 @@ p <- p +
   scale_x_continuous(breaks = lon_breaks) +
   scale_y_continuous(breaks = lat_breaks)
 
-## ---- titles + theme (house style of scripts/figures/*.R) ------------------
+## ---- titles + theme -------------------------------------------------------
 ttl <- list(title = "Quina sites of the Binchuan and Huangping basins",
             subtitle = "Regional frame: the study valleys and the Jinsha River to the north",
             caption = paste0(
@@ -468,7 +450,7 @@ p <- p +
                                      lineheight = 1.15, margin = margin(t = 4)),
     plot.margin       = margin(5, 5, 4, 4))
 
-## ---- export (150 mm wide @ 600 dpi, as in scripts/figures/*.R) ------------
+## ---- export: 150 mm wide @ 600 dpi ----------------------------------------
 FIG_W_MM <- 150
 FIG_H_MM <- 148
 FIG_DPI  <- 600

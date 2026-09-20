@@ -1,19 +1,11 @@
-# ==========================================================================
-# barg_data.R -- the analysis frame, the response families, and the constants
-# shared by barg_models.R, barg_report.qmd and the figure code.
-#
-# Sourced, never run on its own.  It reads only the two Excel files and
-# defines objects; it writes nothing and fits nothing.
+# The specimen-level analysis frame, the response families and the constants
+# shared by barg_models.R, barg_report.qmd and the figure code.  Sourced, not
+# run: it reads the two Excel files and defines objects, writing nothing.
 #
 #   mod_dat    165 surface Quina scrapers in 26 localities, complete cases
 #   resp_fam   response -> family
 #   link_sd    SD of each response on its own link scale (the ROPE unit)
 #   drop_log   an audit of what the complete-case filter removed
-#
-# This is the only specimen-level frame in the project: paper/_analysis.R
-# builds the locality frame (site_df) and stops there, and both documents read
-# the landscape model from the cache this pipeline writes.
-# ==========================================================================
 suppressPackageStartupMessages({
   library(here); library(readxl); library(dplyr)
 })
@@ -22,9 +14,8 @@ SEED    <- 2226
 ROPE_SD <- 0.1          # ROPE half-width, in SD of the response on its link scale
 ICC_ROPE <- 0.05        # a locality share below this is treated as negligible
 
-# The two source spreadsheets.  barg_context.R sets these before sourcing, so
-# that _targets.R can track them with format = "file" and rebuild when they
-# change; the defaults keep the file sourceable on its own as before.
+# barg_context.R sets these before sourcing so that _targets.R can track the
+# files by content; the defaults keep this script sourceable on its own.
 if (!exists("SCRAPER_XLSX"))
   SCRAPER_XLSX <- here("data", "Quina_scraper_surface.xlsx")
 if (!exists("SITE_XLSX"))
@@ -45,9 +36,8 @@ site_land <- .sites |>
             Height   = as.numeric(h_river_m))
 
 # ---- specimen-level frame -------------------------------------------------
-# GMsize is the geometric mean of the three linear dimensions,
-#   GMsize = (Length * Width * Thickness)^(1/3),
-# so it is not independent of the Thickness response.  See the report.
+# GMsize = (Length * Width * Thickness)^(1/3), so it is not independent of the
+# Thickness response.  See the report.
 .raw <- read_excel(SCRAPER_XLSX, "Quina scraper") |>
   mutate(Locality = trimws(as.character(Site_ID)),
          across(all_of(c(variables, "Length", "Width")), as.numeric),

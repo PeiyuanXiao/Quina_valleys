@@ -28,7 +28,7 @@ Description: Research compendium for the manuscript. Holds the data, the
     place. The pipeline is declared in _targets.R and built with
     targets::tar_make(); the package versions it was built under are pinned in
     renv.lock.
-License: CC BY 4.0
+License: file LICENSE.md
 URL: https://doi.org/10.17605/OSF.IO/PGWY2,
     https://github.com/PeiyuanXiao/Quina_valleys
 Encoding: UTF-8

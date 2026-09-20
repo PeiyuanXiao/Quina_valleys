@@ -1,17 +1,12 @@
-# ==========================================================================
-# barg_quantities.R -- every number the report prints, derived from cached
-# fits.  Sourced by barg_report.qmd and by barg_figures.R.  Fits nothing.
-#
-# Requires barg_data.R to have been sourced first.
-# ==========================================================================
+# Every number the report prints, derived from the cached fits.  Requires
+# barg_data.R first; fits nothing.
 suppressPackageStartupMessages({
   library(dplyr); library(tidyr); library(posterior)
 })
 
 # ---- interval and point-summary helpers ----------------------------------
-# The report is quantile-based throughout (median + 95% equal-tailed
-# interval).  The density-based pair (mode + 95% HDI) is carried alongside
-# because the reference BARG document reports both and the extra cost is nil.
+# Quantile-based throughout (median + 95% equal-tailed interval); the mode and
+# HDI are carried alongside because the BARG reference reports both.
 eti <- function(x, p = c(0.025, 0.975)) unname(quantile(x, p))
 
 hdi <- function(x, mass = 0.95) {
@@ -81,13 +76,10 @@ icc_draws <- function(dr, r, fam) {
   vloc / (vloc + resid_var(dr, r, fam))
 }
 
-# ==========================================================================
-# 1.  coefficient table
-# ==========================================================================
-# Response-scale translation.  On a log link a slope is a multiplicative
-# factor, reported as a percentage change per unit of the predictor; on a
-# logit link it is an odds ratio for the beta component; on the identity
-# link it is already in the response's own units.
+# ---- 1. coefficient table ------------------------------------------------
+# On a log link a slope is a multiplicative factor, reported as a percentage
+# change per unit of the predictor; on a logit link an odds ratio for the beta
+# component; on the identity link the response's own units.
 to_response_scale <- function(b, fam) {
   switch(fam,
     lognormal   = (exp(b) - 1) * 100,
@@ -130,9 +122,7 @@ coef_table <- function(fit, which_preds = preds) {
   }))))
 }
 
-# ==========================================================================
-# 2.  ICC table, with diagnostics for the derived quantity (BARG 2.B / 2.C)
-# ==========================================================================
+# ---- 2. ICC table, with diagnostics for the derived quantity (BARG 2.B/C) --
 icc_table <- function(fit) {
   dr <- posterior::as_draws_df(fit)
   bind_rows(lapply(resps, function(r) {
@@ -150,9 +140,7 @@ icc_table <- function(fit) {
   }))
 }
 
-# ==========================================================================
-# 3.  the 21 locality-intercept correlations (BARG 1.B / 3.B)
-# ==========================================================================
+# ---- 3. the 21 locality-intercept correlations (BARG 1.B / 3.B) ----------
 cor_table <- function(fit) {
   dr <- posterior::as_draws_df(fit)
   sm <- posterior::summarise_draws(dr, "rhat", "ess_bulk", "ess_tail")
@@ -167,9 +155,7 @@ cor_table <- function(fit) {
   }))
 }
 
-# ==========================================================================
-# 4.  the ROPE curve: posterior mass inside a ROPE, as its half-width varies
-# ==========================================================================
+# ---- 4. the ROPE curve: mass inside a ROPE as its half-width varies ------
 rope_curve <- function(fit, grid = seq(0, 0.6, by = 0.005)) {
   dr <- posterior::as_draws_df(fit)
   bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
@@ -181,11 +167,9 @@ rope_curve <- function(fit, grid = seq(0, 0.6, by = 0.005)) {
   }))))
 }
 
-# ==========================================================================
-# 5.  prior / posterior width, the diagnostic behind the prior correction
-# ==========================================================================
-# prior_sd is taken from the sample_prior = "only" fit where one is supplied,
-# and otherwise from the analytic SD of the normal slope prior.
+# ---- 5. prior / posterior width ------------------------------------------
+# prior_sd comes from the sample_prior = "only" fit where one is supplied, and
+# otherwise from the analytic SD of the normal slope prior.
 prior_post_sd <- function(fit, prior_fit = NULL, b_sd = link_sd) {
   dr <- posterior::as_draws_df(fit)
   pr <- if (!is.null(prior_fit)) posterior::as_draws_df(prior_fit) else NULL
@@ -201,9 +185,7 @@ prior_post_sd <- function(fit, prior_fit = NULL, b_sd = link_sd) {
 # analytic share of a normal(0, s) slope prior that falls inside its own ROPE
 prior_in_rope <- function(s) 100 * (2 * pnorm(ROPE_SD * link_sd / s) - 1)
 
-# ==========================================================================
-# 6.  posterior-predictive test statistics (BARG 3.A)
-# ==========================================================================
+# ---- 6. posterior-predictive test statistics (BARG 3.A) ------------------
 ppc_stat <- function(fit, resp, stat, nd = 1000, label = "") {
   y    <- fit$data[[resp]]
   yrep <- brms::posterior_predict(fit, resp = resp, ndraws = nd)
@@ -216,18 +198,12 @@ ppc_stat <- function(fit, resp, stat, nd = 1000, label = "") {
              p_upper = mean(rep >= obs), row.names = NULL)
 }
 
-# ==========================================================================
-# 7.  the basin x gradient extension (ref_basinx)
-# ==========================================================================
-# The reference model fits one height slope and one distance slope shared by
-# both basins; ref_basinx fits one of each per basin.  Binchuan is the
-# reference level of the factor, so the plain `zHeight` coefficient IS the
+# ---- 7. the basin x gradient extension (ref_basinx) ----------------------
+# Binchuan is the reference level, so the plain `zHeight` coefficient IS the
 # Binchuan slope and the interaction is the Huangping-minus-Binchuan
 # difference.  The Huangping slope is their sum, formed draw by draw so that
-# it carries the covariance of the two rather than adding their intervals.
-#
-# Everything is divided by link_sd, the same standardised axis the reference
-# slopes are reported on, so the ROPE is the same +/- ROPE_SD band.
+# it carries the covariance.  Everything is divided by link_sd, the axis the
+# reference slopes are reported on, so the ROPE is the same +/- ROPE_SD band.
 basin_slopes <- function(fit) {
   dr <- posterior::as_draws_df(fit)
   one <- function(x, r, g, what) {
@@ -248,9 +224,8 @@ basin_slopes <- function(fit) {
     }))))
 }
 
-# P(every Huangping slope on one gradient is positive), computed jointly.
-# Fourteen medians that all lean one way look like strong evidence; the joint
-# probability is the honest version of that reading, and it is much smaller.
+# P(every Huangping slope on one gradient is positive), computed jointly: the
+# honest reading of seven medians that all lean the same way.
 basin_joint_positive <- function(fit, gradient = "zHeight") {
   dr <- posterior::as_draws_df(fit)
   M <- vapply(resps, function(r)

@@ -1,16 +1,13 @@
 ## setup.R — everything the Figure 1 panel scripts read: the packages, the clean
 ## site table, and the cached spatial layers (DEM and hillshade, the channel
 ## network, the administrative boundaries for the location inset).
-## Run order:  setup.R  ->  terra_map_2D.R (A) / terra_map_3D.R (B) /
+## Run order:  setup.R  ->  terra_map_2D.R (A) / terra_map_3D_hyps.R (B) /
 ##                          traverse_profile_figure.R (C)  ->  fig01_export_panels.R
 ##
 ## Every download and every derived layer is written to data/cache/ and skipped
 ## when it is already there, so this script is cheap to re-run and the panel
 ## scripts then need no network at all. To rebuild one layer, delete its file
 ## from data/cache/ and run this again.
-##
-## data/cache/dem.tif is also read from outside this folder, by
-## scripts/figures/liandong_section_figure.R.
 ##
 ## Rivers come from whichever source is available, in this order of preference —
 ## the same order terra_map_2D.R reads them in:
@@ -57,11 +54,9 @@ rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp")
 stream_threshold <- 1500
 
 ## ---- 1. sites (Site_information.xlsx = source of truth) ------------------
-## The 27 Quina-bearing localities, all of which are analysed. The xlsx
-## `geomorph` column was previously corrupted (mojibake) and has been repaired
-## in-file to the canonical T2/T3/T4/hilltop tokens; headers carry trailing
-## spaces so are trimmed on read, and `basin` is stored as "<name> basin", so
-## the " basin" suffix is stripped.
+## The 27 Quina-bearing localities, all of which are analysed. Headers carry
+## trailing spaces so are trimmed on read, and `basin` is stored as
+## "<name> basin", so the " basin" suffix is stripped.
 sites <- readxl::read_excel(site_xlsx)
 names(sites) <- trimws(names(sites))
 sites <- sites |>

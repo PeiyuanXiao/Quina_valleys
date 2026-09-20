@@ -1,22 +1,13 @@
-# ==========================================================================
-# barg_priors.R -- the prior specifications for every fit in the BARG report.
+# The prior specifications for every fit.  Requires barg_data.R first.
 #
-# Sourced into the model and report contexts by barg_context.R; the report
-# specifications without refitting anything).  Requires barg_data.R first.
-#
-# Every class that appears in get_prior() is given an explicit prior.  None
-# is left at a brms default, both because BARG Step 1.C asks for the prior to
-# be reported in full and because sample_prior = "only" needs every prior to
-# be proper.
-# ==========================================================================
+# Every class that appears in get_prior() is given an explicit prior, none
+# left at a brms default: BARG Step 1.C asks for the prior in full, and
+# sample_prior = "only" needs every prior to be proper.
 suppressPackageStartupMessages(library(brms))
 
-# --------------------------------------------------------------------------
-# Intercept priors.  Set from the measurement scales, not from the sample:
-# the range an archaeologist would have called possible for a retouched
-# flake tool before seeing these 165 pieces, mapped through the link.
-# Each is deliberately far wider than the observed spread of the response.
-# --------------------------------------------------------------------------
+# Intercept priors, set from the measurement scales rather than the sample:
+# the range an archaeologist would have called possible for a retouched flake
+# tool before seeing these 165 pieces, mapped through the link.
 intercept_prior <- c(
   Thickness = "normal(3.2, 0.7)",   # log mm; 95% ~ 6-100 mm
   GMsize    = "normal(3.7, 0.6)",   # log mm; 95% ~ 12-134 mm
@@ -26,12 +17,11 @@ intercept_prior <- c(
   EdgeAngle = "normal(65, 20)",     # degrees; 95% ~ 26-104, abrupt retouch is >= 60-65
   RG        = "normal(3, 2)")       # generations; the recording protocol counts 1-5
 
-# Auxiliary-parameter priors.  sigma is scaled to the link-scale SD of its
-# own response, for the same reason the slopes are: a half-t with scale 2 is
-# a different statement about edge angle (SD 8.1 degrees) than about log
-# thickness (SD 0.30).  phi and shape are given proper gamma priors; the brms
-# defaults gamma(0.01, 0.01) and inv_gamma(0.4, 0.3) put mass arbitrarily
-# close to zero, which makes the prior predictive distribution degenerate.
+# sigma is scaled to the link-scale SD of its own response, for the same
+# reason the slopes are: a half-t with scale 2 says something different about
+# edge angle (SD 8.1 degrees) than about log thickness (SD 0.30).  phi and
+# shape take proper gammas; the brms defaults put mass arbitrarily close to
+# zero and make the prior predictive distribution degenerate.
 aux_prior <- function(r, coi = "beta(1, 1)") {
   s <- sprintf("student_t(3, 0, %.6f)", link_sd[[r]])
   switch(resp_fam[[r]],
@@ -43,14 +33,9 @@ aux_prior <- function(r, coi = "beta(1, 1)") {
                     set_prior(coi,             class = "coi", resp = r)))
 }
 
-# --------------------------------------------------------------------------
-# build_prior(b, sd, cor, coi): assemble a full prior from four interchangeable
-# pieces.  `b` and `sd` are functions of the response name returning a
-# brms prior string; `cor` is a single string for the 7 x 7 LKJ; `coi` is a
-# single string for the conditional-one-inflation probability of the two
-# zero-one-inflated beta responses, and is the only piece that touches a
-# parameter no decision in the report depends on.
-# --------------------------------------------------------------------------
+# A full prior from four interchangeable pieces: `b` and `sd` are functions of
+# the response name, `cor` a string for the 7 x 7 LKJ, `coi` a string for the
+# conditional one-inflation probability of the two zoib responses.
 build_prior <- function(b, sd, cor = "lkj(1)", coi = "beta(1, 1)") {
   do.call(c, c(
     lapply(resps, function(r) c(
@@ -88,15 +73,11 @@ prior_specs <- list(
   S5  = list(prior = build_prior(b_link,  sd_t3,   "lkj(2)"),
              label = "cor: lkj(2)",
              note  = "26 clusters and 21 correlations; lkj(2) shrinks towards zero"),
-  # S6 differs from the others in kind.  S1 to S5 change how much the data are
-  # allowed to say about a quantity the report decides on; S6 removes a
-  # parameter the data cannot inform at all.  GIUR and the retouched perimeter
-  # have no zeros, so `coi` -- the probability that an inflated value is a one
-  # rather than a zero -- is estimating a proportion whose denominator is
-  # entirely ones.  Fixing it at 1 makes the family the one-inflated beta the
-  # data actually describe, and it removes the zero-inflation half that nothing
-  # supports.  See the demonstration in the report: because the zoib likelihood
-  # factorises, this cannot move any slope, phi or ICC.
+  # S6 differs in kind: S1-S5 change how much the data may say, S6 removes a
+  # parameter the data cannot inform.  GIUR and the retouched perimeter have
+  # no zeros, so fixing coi at 1 gives the one-inflated beta the data actually
+  # describe.  The zoib likelihood factorises, so this moves no slope, phi or
+  # ICC; the report demonstrates it.
   S6  = list(prior = build_prior(b_link,  sd_t3,   "lkj(1)", coi = "constant(1)"),
              label = "coi: constant(1)",
              note  = "one-inflated beta; there are no zeros for coi to describe"))

@@ -1,22 +1,13 @@
-# ==========================================================================
-# barg_figures.R -- every figure in paper/barg/barg_report.qmd.
+# Every figure in barg_report.qmd.  The fits arrive as arguments from
+# _targets.R, and each entry point returns the paths it wrote so that the
+# figure target can declare them with format = "file".
 #
-# Sourced into the report context by barg_context.R, so that resp_lab,
-# fig_theme, PAL and the rest of the drawing constants resolve without being
-# passed in.  Nothing here reads a cache or fits anything: the fits arrive as
-# arguments from _targets.R, and each entry point returns the paths it wrote
-# so that the figure target can declare them with format = "file".
-#
-#   barg_ppc_stats()  the targeted posterior predictive statistics (BARG 3.A),
-#                     a table the report prints and this file also plots
+#   barg_ppc_stats()  the targeted posterior predictive statistics (BARG 3.A)
 #   barg_figures()    every PNG, written to paper/barg/figures/ at 300 dpi
 #
-# The main figure is the two-panel display the manuscript carries as its
-# Figure 9. It is defined in barg_main_figure.R, which the manuscript's own
-# context loads too, so the PNG written here and the figure the manuscript
-# draws for itself come from one definition. Everything else here is
-# supplementary.
-# ==========================================================================
+# The main figure is defined in barg_main_figure.R, which the manuscript's
+# context loads too, so the PNG written here and the manuscript's Figure 9
+# come from one definition.
 suppressPackageStartupMessages({
   library(brms); library(posterior); library(dplyr)
   library(tidyr); library(ggplot2); library(patchwork); library(bayesplot)
@@ -49,13 +40,10 @@ barg_ppc_stats <- function(fit_ref, nd = 1000) {
 }
 
 # ---- sensitivity draws, one fit at a time --------------------------------
-# The overlaid ECDFs compare seven fits. Reducing each to the quantities the
-# figures need in its own target keeps exactly one large brmsfit in memory at
-# a time -- eleven full fits do not fit in 16 GB together -- and caches the
-# reduction, so redrawing the panels never reopens a fit.
-#
-# Draws are thinned for the ECDF: a step function of 20000 points is
-# indistinguishable from one of 4000 and the figure files are far smaller.
+# Reducing each fit in its own target keeps exactly one large brmsfit in
+# memory at a time -- seven do not fit in 16 GB together -- and caches the
+# reduction, so redrawing never reopens a fit.  Draws are thinned for the
+# ECDF: a step function of 20000 points is indistinguishable from one of 4000.
 barg_sens_one <- function(fit, spec, thin = 5) {
   key_slopes <- bind_rows(
     expand.grid(Response = "EdgeAngle", Predictor = preds, stringsAsFactors = FALSE),
@@ -80,17 +68,12 @@ barg_sens_one <- function(fit, spec, thin = 5) {
   bind_rows(icc, sl)
 }
 
-# ==========================================================================
-# barg_figures(fits, ppc_stat_tbl, sens_long, ...)
-#
-# fits          named list holding ref, prior_ref and noland -- and only those
-#               three, so that this target never holds more than three large
-#               brmsfit objects at once
+# fits          ref, prior_ref and noland -- and only those three, so that
+#               this target never holds more than three brmsfits at once
 # ppc_stat_tbl  the table barg_ppc_stats() returns
 # sens_long     the seven reductions barg_sens_one() returns, stacked
 # ndraws        overlay draws in the predictive checks
 # stat_ndraws   predictive draws behind the grouped-statistic checks
-# ==========================================================================
 barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
                          stat_ndraws = 1000, dir = FIGDIR) {
 
@@ -102,17 +85,13 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
 
   bayesplot::color_scheme_set(c(rep("#BFC4CB", 3), rep(INK, 3)))
 
-  # ========================================================================
-  # MAIN FIGURE
-  # ========================================================================
+  # ---- main figure -------------------------------------------------------
   keep_fig(save_fig("barg_main.png",
                     barg_main_figure(fit_ref, fit_prior, fit_noland),
                     BARG_MAIN_SIZE[["width"]], BARG_MAIN_SIZE[["height"]],
                     dir = dir))
 
-  # ========================================================================
-  # PREDICTIVE CHECKS
-  # ========================================================================
+  # ---- predictive checks -------------------------------------------------
   # Display windows for the prior predictive check: the range a lithic analyst
   # would call physically possible, not the range of the sample.
   prior_window <- list(Thickness = c(0, 150), GMsize = c(0, 200), GIUR = c(0, 1),
@@ -130,12 +109,10 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
     p
   }
 
-  # The prior predictive draws span orders of magnitude on the log-link
-  # responses and pile up on the boundaries of the two proportions, which makes
-  # a density overlay unreadable and, for the proportions, misleading.  The
-  # empirical cumulative distribution handles heavy tails, point masses and
-  # bounded support in one display, and it is the same quantile-based view the
-  # rest of the report uses.
+  # The prior predictive draws span orders of magnitude and pile up on the
+  # boundaries of the two proportions, which makes a density overlay
+  # unreadable.  The ECDF handles heavy tails, point masses and bounded
+  # support in one display.
   keep_fig(save_fig("ppc_prior.png",
            wrap_plots(lapply(resps, function(r)
                         ppc_panel(fit_prior, r, prior_window[[r]],
@@ -188,9 +165,7 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
                                                                   hjust = 0))
   keep_fig(save_fig("ppc_stats.png", p_stats, 8.5, 4.6, dir = dir))
 
-  # ========================================================================
-  # PRIOR AGAINST POSTERIOR, for every slope
-  # ========================================================================
+  # ---- prior against posterior, for every slope --------------------------
   dr_post  <- posterior::as_draws_df(fit_ref)
   dr_prior <- posterior::as_draws_df(fit_prior)
   pp_long <- bind_rows(lapply(resps, function(r) bind_rows(lapply(preds, function(pp) {
@@ -219,9 +194,7 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
           panel.spacing = unit(3, "pt"))
   keep_fig(save_fig("prior_posterior.png", p_pp, 7.5, 8.0, dir = dir))
 
-  # ========================================================================
-  # ROPE CURVES
-  # ========================================================================
+  # ---- ROPE curves -------------------------------------------------------
   rc <- rope_curve(fit_ref) |> mutate(Resp = resp_f(Response), Pred = pred_f(Predictor))
   p_rope <- ggplot(rc, aes(half, pct, colour = Resp)) +
     geom_vline(xintercept = ROPE_SD, linetype = "dashed", linewidth = 0.3, colour = GREY) +
@@ -242,13 +215,10 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
           plot.caption = element_text(size = 7, colour = GREY, hjust = 0))
   keep_fig(save_fig("rope_curves.png", p_rope, 7.5, 3.4, dir = dir))
 
-  # ========================================================================
-  # LOCALITY INTERCEPTS
-  # ========================================================================
-  # Localities are in one fixed order in every panel -- largest assemblage at
-  # the top -- so that the panels can be read against each other and so that the
-  # effect of partial pooling is visible: the further down the axis, the fewer
-  # specimens, the harder the offset is shrunk and the wider its interval.
+  # ---- locality intercepts -----------------------------------------------
+  # One fixed order in every panel, largest assemblage at the top, so that the
+  # panels read against each other and partial pooling is visible: further
+  # down the axis, fewer specimens, harder shrinkage, wider intervals.
   n_by_loc <- sort(table(mod_dat$Locality), decreasing = TRUE)
   loc_lev  <- rev(names(n_by_loc))
 
@@ -275,14 +245,10 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
                       plot.caption = element_text(size = 7, colour = GREY, hjust = 0))
   keep_fig(save_fig("locality_intercepts.png", p_cat, 9.5, 6.0, dir = dir))
 
-  # ========================================================================
-  # CORRELATION MATRIX
-  # ========================================================================
+  # ---- correlation matrix ------------------------------------------------
   ct <- cor_table(fit_ref)
-  # Only the lower triangle is drawn: the matrix is symmetric and its 21
-  # estimated parameters are exactly the off-diagonal entries.  Each pair is
-  # placed by the position of its two responses in the standard response order,
-  # the later one on the vertical axis.
+  # Only the lower triangle: the matrix is symmetric and its 21 estimated
+  # parameters are exactly the off-diagonal entries.
   cm <- ct |>
     mutate(row = pmax(match(A, resps), match(B, resps)),
            col = pmin(match(A, resps), match(B, resps))) |>
@@ -315,9 +281,7 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
           plot.caption = element_text(size = 7, colour = GREY, hjust = 0))
   keep_fig(save_fig("correlation_matrix.png", p_cor, 6.4, 4.4, dir = dir))
 
-  # ========================================================================
-  # CONVERGENCE
-  # ========================================================================
+  # ---- convergence -------------------------------------------------------
   sm <- posterior::summarise_draws(dr_post, "rhat", "ess_bulk", "ess_tail")
   sm <- sm[!is.na(sm$rhat) & !startsWith(sm$variable, "lp"), ]
   icc_d <- icc_table(fit_ref)
@@ -360,11 +324,9 @@ barg_figures <- function(fits, ppc_stat_tbl, sens_long, ndraws = 100,
              theme(plot.caption = element_text(size = 7, colour = GREY, hjust = 0)),
            7.5, 2.8, dir = dir))
 
-  # ========================================================================
-  # SENSITIVITY: OVERLAID CUMULATIVE DISTRIBUTIONS
-  # ========================================================================
-  # sens_long arrives already reduced, one target per fit, so no large brmsfit
-  # is opened here at all.
+  # ---- sensitivity: overlaid cumulative distributions --------------------
+  # sens_long arrives already reduced, one target per fit, so no brmsfit is
+  # opened here.
   icc_ecdf <- sens_long[sens_long$kind == "icc", ] |>
     mutate(Spec = factor(Spec, levels = SENS_LEVELS), Resp = resp_f(Response))
   p_se_icc <- ggplot(icc_ecdf, aes(x, colour = Spec)) +

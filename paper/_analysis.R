@@ -3,9 +3,8 @@
 # WdStar is not on CRAN: remotes::install_github("alekseyenko/WdStar").
 # The Bayesian landscape model is NOT fitted here; see paper/barg/barg_models.R
 
-# The package list lives in _packages.R, because the two documents need the
-# same packages attached in their own render sessions and must not keep a
-# second copy of the list.
+# The package list lives in _packages.R: the two documents need the same
+# packages attached in their own render sessions.
 source(here::here("paper", "_packages.R"))
 
 
@@ -259,8 +258,7 @@ ea_cor["p", ] <- p.adjust(ea_cor["p", ], "bonferroni")
 ea_giur <- ea_cor[, 1]; ea_rli <- ea_cor[, 2]; ea_rg <- ea_cor[, 3]
 
 # ---- 5. Resharpening flakes: platform descriptives ----
-# The flake EPA vs scraper edge-angle comparison was dropped 2026-08-26. EPA is
-# still recorded and tabulated, but no longer tested against anything.
+# EPA is recorded and tabulated, but not tested against the scraper edge angles.
 pd_rf <- as.numeric(rfl$Platform_depth)
 rf_pd_mean <- mean(pd_rf, na.rm = TRUE); rf_pd_sd <- sd(pd_rf, na.rm = TRUE)
 # rf_n is the flakes with a measurable EPA, 56 of the 58

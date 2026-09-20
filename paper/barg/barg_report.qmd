@@ -1413,16 +1413,10 @@ supplementary information, leaving the slope prior at `normal(0, 1)`, which is
 specification S1 of @sec-sensitivity. None of the files above uses it, and
 none of them modifies it.
 
-**Archive DOI:** [10.17605/OSF.IO/PGWY2](https://doi.org/10.17605/OSF.IO/PGWY2).
+**Online repository:** [10.17605/OSF.IO/PGWY2](https://doi.org/10.17605/OSF.IO/PGWY2).
 The deposit will contain the four source files above, the
 `paper/barg/` scripts, the `_targets/` store with the fits, and the rendered
 HTML.
-
-If the specimen data cannot be released, `paper/barg/barg_dummy_data.R`
-generates a synthetic dataset with the same columns, types, ranges, locality
-structure and missingness pattern as the real one, so that a reader can verify
-that the scripts run end to end without access to the measurements. It is
-simulated from the fitted model and reproduces no individual specimen.
 
 ## Run the Analysis
 

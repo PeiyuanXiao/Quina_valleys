@@ -1,20 +1,12 @@
-# ==========================================================================
-# barg_dummy_data.R -- a synthetic dataset with the same structure as the
-# real one, for readers who need to verify that the pipeline runs without
-# having access to the specimen measurements.
+# A synthetic dataset with the same structure as the real one, for verifying
+# that the pipeline runs without the specimen measurements.  Reads the fit_ref
+# target, writes paper/barg/dummy_data.csv; run from the project root with
+# Rscript paper/barg/barg_dummy_data.R.
 #
-# Reads:   the fit_ref target of the targets store (the fitted reference model)
-# Writes:  paper/barg/dummy_data.csv
-#
-# Run from the project root:  Rscript paper/barg/barg_dummy_data.R
-#
-# The responses are one posterior predictive draw from the fitted model, so
-# they carry the right ranges, the right locality structure and the right
-# dependence between measures, and reproduce no individual specimen.  The
-# locality attributes (basin, height, distance) are jittered so that the real
-# find spots cannot be recovered from the file.  Nothing in the report is
-# computed from this file; it exists only so that the scripts can be run.
-# ==========================================================================
+# The responses are one posterior predictive draw, so they carry the right
+# ranges, locality structure and dependence while reproducing no individual
+# specimen; the locality attributes are jittered.  Nothing in the report is
+# computed from this file.
 suppressPackageStartupMessages({
   library(here); library(brms); library(dplyr)
 })

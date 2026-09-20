@@ -13,12 +13,11 @@
 #   |  C  traverse profile           |  legend   |
 #   +--------------------------------+-----------+
 #
-# THE POINT OF THIS SCRIPT is that each panel is rendered AT ITS FINAL PLACED
-# SIZE. In the draft the map was made at 150 mm and scaled down to ~81 mm in
-# Illustrator, so its type ended up at roughly 3.8 pt while the profile -- placed
-# near its native width -- kept ~5.7 pt. Rendering at the placed size instead
-# means the point sizes below are exactly what appears on the page, and the two
-# panels match. Place these files at 100% and never rescale them.
+# The point of the script is that each panel is rendered AT ITS FINAL PLACED
+# SIZE, so the point sizes below are what appears on the page and the panels
+# match: a map drawn at 150 mm and scaled to 81 mm in Illustrator ends up with
+# type at ~3.8 pt beside the profile's ~5.7 pt. Place these files at 100% and
+# never rescale them.
 #
 # Sizes assume a 180 mm (double-column) figure. If your final width differs,
 # scale TARGET_* proportionally and re-run rather than resizing in Illustrator.
@@ -31,8 +30,8 @@
 #   panel_C_profile            146 x  54 mm, no legend
 #
 # Panel B does not come through here: it is a path-traced raster that
-# terra_map_3D.R writes straight to output/maps/terrain_3d.png. The locator
-# globe is likewise written into this folder by locator_globe_figure.R.
+# terra_map_3D_hyps.R writes straight to output/maps/. The locator globe is
+# likewise written into this folder by locator_globe_figure.R.
 
 required <- c("ggplot2", "sf", "here")
 missing <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
@@ -46,11 +45,10 @@ out_dir  <- file.path(proj_dir, "output", "figures", "fig01_panels")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 FIG_DPI <- 600
-## Panel A now carries the shared legend, so it is ~23 mm wider than before; the
-## map itself still lands at about the same size as in the draft layout.
+## Panel A carries the shared legend, which is why it is wider than the map.
 MAP_W <- 104; MAP_H <- 100     # mm, panel A (map + legend) as placed
-## mm, panel C as placed. The width is what the layout fixes; the height follows
-## from PRF_ASPECT. It was 146 x 54 (2.70:1) up to now.
+## mm, panel C as placed: the layout fixes the width, the height follows from
+## PRF_ASPECT.
 PRF_ASPECT <- 3.0
 PRF_W <- 146; PRF_H <- PRF_W / PRF_ASPECT
 
@@ -64,8 +62,6 @@ save_both <- function(p, name, w, h) {
 
 # ---- rebuild the two ggplot panels -----------------------------------------
 message("building panels ...")
-## these two live in paper/map/ — the folder was called scripts/figure1/ before
-## the restructure, and this script was left pointing at the old path
 script_dir <- file.path(proj_dir, "paper", "map")
 ## An argument switches the plan map to the landscape ramp and suffixes every
 ## file this script writes, so the originals are never overwritten.
@@ -85,18 +81,17 @@ if (north) sfx <- paste0(sfx, "_north")
 hl <- if (length(args) >= 3 && nzchar(args[3])) args[3] else NA_character_
 
 ## arg 4 "bare": strip graticule, axis text, ticks and legend. The panel then has
-## almost no fixed furniture left, so the export is re-sized to the panel itself
-## rather than to the 104 x 100 mm slot, which would otherwise letterbox it with
-## the width the legend used to occupy.
+## almost no fixed furniture left, so the export is re-sized to the panel
+## itself rather than to the 104 x 100 mm slot, which would letterbox it with
+## the width the legend occupies.
 bare <- length(args) >= 4 && identical(args[4], "bare")
 if (bare) sfx <- paste0(sfx, "_bare")
 
 env_a <- new.env()
 assign("PALETTE_MODE", pal, envir = env_a)
-## The west edge was pulled in to 100.345 by hand, so this frame no longer
-## preserves the original panel aspect the way the first "north" frame did: it
-## is 0.3597 deg wide against 0.5043 tall, which is a 1.560 panel. The bare
-## export below solves its height from that, so nothing is letterboxed.
+## The west edge is pulled in by hand, so this frame does not preserve the
+## panel aspect the way the "north" frame does: 0.3597 deg wide against 0.5043
+## tall, a 1.560 panel. The bare export below solves its height from that.
 if (north) assign("MAP_EXT", c(xmin = 100.325000, xmax = 100.684685,
                                ymin = 25.745700,  ymax = 26.250000), envir = env_a)
 if (!is.na(hl)) assign("HIGHLIGHT_CODE", hl, envir = env_a)
@@ -114,9 +109,7 @@ sys.source(file.path(script_dir, "terra_map_2D.R"), envir = env_a)
 env_c <- new.env()
 sys.source(file.path(script_dir, "traverse_profile_figure.R"), envir = env_c)
 
-# ==============================================================================
-# Panel A -- plan map at 81 mm
-# ==============================================================================
+# ---- Panel A: plan map at 81 mm ---------------------------------------------
 # At 81 mm the panel is ~69 mm across, so the 0.05-degree longitude labels
 # collide and the 2.0-size site codes crowd; both are dialled back here. The
 # axis/legend point sizes are NOT changed -- they are already correct once the
@@ -186,8 +179,7 @@ save_both(p_map, paste0("panel_A_map", sfx), MAP_W, MAP_H)
 
 # ---- same map, with the panel C traverse drawn on it ------------------------
 # Panel C is a profile along a route; without the route on the map the reader
-# cannot tell where that profile runs. This is the single most useful addition
-# to the draft layout.
+# cannot tell where that profile runs.
 route <- env_c$route_sites
 ## as an sf data frame, not a bare sfc: a spliced-in layer (below) never goes
 ## through ggplot_add(), and layer_data() chokes on a raw sfc
@@ -220,9 +212,7 @@ p_map_route$layers <- c(p_map_route$layers, site_layers)
 
 save_both(p_map_route, paste0("panel_A_map_with_route", sfx), MAP_W, MAP_H)
 
-# ==============================================================================
-# Panel C -- traverse profile at 146 x 54 mm
-# ==============================================================================
+# ---- Panel C: traverse profile ----------------------------------------------
 # The height drops from 78 to 54 mm, so the site labels need less headroom or
 # they run into the transect brackets.
 p_prof <- env_c$p + theme(legend.position = "none")

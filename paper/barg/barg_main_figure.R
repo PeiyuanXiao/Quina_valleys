@@ -1,36 +1,23 @@
-# ==========================================================================
-# barg_main_figure.R -- the two-panel landscape figure, built from the cached
-# fits and returned as a plot object rather than written to disk.
+# The two-panel landscape figure, returned as a plot object:
 #
-#   A  the intercept correlation ratio for each response, with and without
-#      the landscape terms  (Q1: is there anything to explain?)
+#   A  the ICC for each response, with and without the landscape terms
+#      (Q1: is there anything to explain?)
 #   B  the twenty-one landscape slopes on one standardised axis
 #      (Q2: do the landscape terms explain it?)
 #
 # Two callers draw it from this one definition, so that the report and the
-# manuscript cannot drift apart:
-#   paper/barg/barg_figures.R  saves it as barg_main.png for the BARG report
-#   paper/manuscript.qmd       draws it inline as Figure 9
-#
-# Sourcing:  the file defines functions and nothing else, so it goes into the
-# report context barg_context.R builds, where barg_data.R, barg_quantities.R
-# and barg_theme.R are already in scope.  A private environment is needed
-# rather than the caller's, because barg_data.R defines objects (mod_dat,
-# ROPE_SD, variables, squeeze) whose names paper/_analysis.R also uses for its
-# own versions of the same things:
+# manuscript cannot drift apart: barg_figures.R saves it as barg_main.png,
+# manuscript.qmd draws it inline as Figure 9.  Both go through the report
+# context:
 #
 #   ctx <- barg_context_report(scraper_xlsx, site_xlsx)
 #   ctx$barg_main_figure(fit_ref, fit_prior, fit_noland)
-#
-# Nothing here reads a cache or fits anything.  The three fits are arguments,
-# supplied by _targets.R; run tar_make() to build them.
-# ==========================================================================
 suppressPackageStartupMessages({
   library(dplyr); library(ggplot2); library(patchwork); library(posterior)
 })
-# The cached fits are brmsfit objects. Loading the brms namespace registers the
-# methods posterior::as_draws_df() dispatches on, without attaching brms and
-# masking anything in the environment of whoever is drawing the figure.
+# Loading the brms namespace registers the methods posterior::as_draws_df()
+# dispatches on, without attaching brms and masking anything in the caller's
+# environment.
 if (!requireNamespace("brms", quietly = TRUE))
   stop("brms is needed to read the cached fits", call. = FALSE)
 
@@ -43,14 +30,11 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
 
   pred_f <- function(x) factor(unname(pred_short[x]), levels = unname(pred_short))
 
-  # One size for every strip in the figure.  Below the theme's 8.5, because the
-  # three facets of B are only about 1.3 in wide and the longest predictor name
-  # is clipped at the theme size.
+  # Below the theme's 8.5: the three facets of B are only about 1.3 in wide
+  # and the longest predictor name is clipped at the theme size.
   STRIP_PT <- 7.6
 
   # ---- A: the locality share of the variance, with and without the terms --
-  # The two models differ by the three landscape terms and by nothing else, so
-  # the legend names them as that one contrast rather than by model type.
   M_WITH <- "With landscape terms"; M_WITHOUT <- "Without landscape terms"
 
   icc_ref <- icc_table(fit_ref)   |> mutate(Model = M_WITH)
@@ -65,8 +49,8 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
            Decided = CrI_lo > ICC_ROPE,
            Panel = "Between-locality variation")
 
-  # The panel is faceted on a constant, purely so that it carries the same grey
-  # strip as the three facets of B and the two panels align along their tops.
+  # Faceted on a constant, so that it carries the same grey strip as B and the
+  # two panels align along their tops.
   p_a <- ggplot(icc_both, aes(Median, Resp)) +
     annotate("rect", xmin = 0, xmax = ICC_ROPE, ymin = -Inf, ymax = Inf,
              fill = "#DCDDE0", alpha = 0.55) +
@@ -109,10 +93,9 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
 
   xlim_b <- max(abs(c(cf_ref$Std_lo, cf_ref$Std_hi))) * 1.06
 
-  # The colour is the sign of the posterior median and nothing more, so the
-  # legend says median.  Its keys are the levels the panel actually draws: the
-  # grey key appears only in a run where some slope is prior-dominated, which
-  # the reference fit has none of.
+  # The colour is the sign of the posterior median and nothing more.  The grey
+  # key appears only where some slope is prior-dominated; the reference fit
+  # has none.
   SIGN_LAB <- c(positive = "Positive median", negative = "Negative median",
                 `prior-dominated` = "Prior-dominated")
   sign_lev <- levels(droplevels(cf_ref$Sign))
@@ -151,6 +134,6 @@ barg_main_figure <- function(fit_ref, fit_prior, fit_noland) {
   p_a + p_b + plot_layout(widths = c(1, 1.6))
 }
 
-# The size the figure is drawn at, in inches: the report saves the PNG at this
-# size and the manuscript chunk sets fig-width / fig-height to match.
+# Inches: the report saves the PNG at this size and the manuscript chunk sets
+# fig-width / fig-height to match.
 BARG_MAIN_SIZE <- c(width = 7.5, height = 3.4)

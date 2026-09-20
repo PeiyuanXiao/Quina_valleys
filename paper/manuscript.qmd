@@ -56,7 +56,6 @@ author:
       institute:
         - ALPHA
         - MOE
-# <!-- TODO: update the author list, ORCIDs and affiliations for THIS paper -->
 institute:
   - ALPHA: Alpine Paleoecology and Human Adaptation Group (ALPHA Group), State Key Laboratory of Tibetan Plateau Earth System, Environment and Resources, Institute of Tibetan Plateau Research, Chinese Academy of Sciences, Beijing, China
   - UCAS: University of Chinese Academy of Sciences, Beijing, China

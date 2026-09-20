@@ -39,6 +39,17 @@ paper/barg/dummy_data.csv
 paper/barg/fits/
 paper/barg/fits_quick/
 
+# Rendered documents. tar_make() writes them and the CI workflow uploads them
+# as a build artifact; the versions that go with the paper belong in the
+# GitHub release and the OSF deposit. Tracking them cost 1.1 GB of history in
+# 54 committed revisions of two Word files.
+paper/**/*.docx
+paper/barg/barg_report.html
+
+# Co-author review copies and reading material kept beside the project
+Bayesian-Workflow.pdf
+writing_skill.md
+
 # Scratch directory of exploratory analyses; nothing in the manuscript or the
 # supplementary material reads it.
 analysis/

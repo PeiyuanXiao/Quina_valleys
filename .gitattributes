@@ -1,6 +1,4 @@
-# The Supplementary Bayesian Report is a Quarto render: 9.5 MB of HTML with
-# every figure and font embedded as base64. It is a deliverable and stays
-# tracked, but it is not source code -- without this it is 97% of what GitHub
-# reports as the language composition of the compendium, and it turns every
-# re-render into an unreadable diff.
+# The rendered documents are no longer tracked (see .gitignore); the rule is
+# kept so that a copy added back by hand is still marked as generated rather
+# than counted as the language composition of the compendium.
 paper/barg/barg_report.html linguist-generated=true

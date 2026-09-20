@@ -4,7 +4,7 @@
 
 <hr />
 
-[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
+[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) [![Licenses: MIT + CC BY 4.0 + CC0](https://img.shields.io/badge/Licenses-MIT%20%2B%20CC--BY--4.0%20%2B%20CC0-lightgrey.svg)](LICENSE.md) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
 
 This repository contains the data and code for our manuscript, **in preparation**:
 
@@ -125,6 +125,14 @@ The store `_targets/` is git-ignored and comes to about 460 MB, most of it the e
 
 ------------------------------------------------------------------------
 
-### 📄 License
+### ⚖️ Licenses
 
-Code and data in this repository are intended for release under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
+**Text and figures:**
+[CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/)
+
+**Code:** [MIT](https://opensource.org/licenses/MIT)
+
+**Data:** [CC-0](http://creativecommons.org/publicdomain/zero/1.0/),
+attribution requested upon reuse
+
+[`LICENSE.md`](LICENSE.md) says which files each one covers, and lists the few third-party files that keep their own licenses.

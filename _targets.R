@@ -1,23 +1,9 @@
-# ==========================================================================
-# _targets.R -- the whole compendium as one pipeline.
+# The whole compendium as one pipeline: eleven fits, every derived quantity
+# and figure, and the three rendered documents.
 #
-#   tar_make()          builds whatever is out of date and renders the three
-#                       documents.  That is the only command a reader needs.
-#   tar_visnetwork()    shows the graph and what is stale.
-#   tar_make(names = c("fit_ref"))   builds one target and its dependencies.
-#
-# What targets replaces: paper/barg/barg_fits.R used to keep its own cache in
-# paper/barg/fits/, invalidated on file existence alone -- editing a prior or
-# the data left the stale fit in place and the report re-rendered from it.
-# Here the fits are hashed against the two Excel files and the code that makes
-# them, so a change refits exactly what the change touched and nothing else.
-# There is one pipeline and no reduced mode: the BARG_QUICK / BARG_NOREFIT
-# environment variables, the fits_quick/ directory and the short-lived "quick"
-# targets project are all gone.  A reduced run was worth having when a rebuild
-# meant refitting everything by hand; now targets rebuilds only what changed,
-# so the honest full run is also usually the fast one, and a mode that skips
-# rendering cannot catch the errors that only rendering exposes.
-# ==========================================================================
+#   tar_make()                       build whatever is out of date
+#   tar_visnetwork()                 the graph, and what in it is stale
+#   tar_make(names = c("fit_ref"))   one target and its dependencies
 library(targets)
 library(tarchetypes)
 
@@ -47,23 +33,12 @@ THIN        <- 5L
 FIGDIR      <- here::here("paper", "barg", "figures")
 
 # ---- posterior SBC -------------------------------------------------------
-# N_SBC simulations, each one refit of the reference model to a dataset the
-# reference posterior generated, dealt round-robin into N_SBC_BATCH branches.
-# The batches exist for two reasons: one Stan compilation is amortised over the
-# simulations inside a batch, and an interrupted run resumes at the last
-# completed batch rather than at the beginning.  Round-robin dealing means a
-# partial result is still spread over the whole reference posterior rather than
-# over its first tenth.
-#
-# 100 simulations put the simultaneous 95% band on the rank ECDF at about
-# 0.135, which is the resolution of the check: a miscalibration smaller than
-# that would not show.  Each refit costs about two minutes against about three
-# for a reference fit -- a rank needs only 4,000 draws where the three-decimal
-# quantiles of the report need 20,000, but each refit conditions on 330 rows
-# rather than 165, because posterior SBC requires the observed data in the
-# refit alongside the simulated data (see barg_sbc.R).  Raising N buys
-# resolution slowly: the cost is linear in N while the band shrinks only as
-# 1/sqrt(N), so doubling to 200 would cost twice as much for a band of 0.095.
+# N_SBC refits of the reference model, dealt round-robin into N_SBC_BATCH
+# branches: one Stan compilation is amortised over a batch, an interrupted run
+# resumes at the last completed batch, and a partial result still spans the
+# whole reference posterior.  100 simulations put the simultaneous 95% band on
+# the rank ECDF at about 0.135, the resolution of the check; the band shrinks
+# only as 1/sqrt(N) while the cost is linear in N.
 N_SBC       <- 100L
 N_SBC_BATCH <- 10L
 
@@ -153,10 +128,9 @@ list(
              format = "file"),
 
   # ---- posterior SBC of the reference fit ---------------------------------
-  # The one computational check the convergence diagnostics cannot supply: it
-  # asks whether the posterior is calibrated, not whether the sampler explored
-  # it.  fit_ref supplies both the parameter vectors treated as ground truth
-  # and the simulated datasets; nothing else here reads it.
+  # Asks whether the posterior is calibrated, which the convergence
+  # diagnostics cannot: fit_ref supplies both the parameter vectors treated as
+  # ground truth and the simulated datasets.
   tar_target(sbc_batch_id, seq_len(N_SBC_BATCH)),
   tar_target(sbc_ranks_b,
              barg_sbc_batch(ctx_sbc, fit_ref, sbc_batch_id, N_SBC, N_SBC_BATCH),

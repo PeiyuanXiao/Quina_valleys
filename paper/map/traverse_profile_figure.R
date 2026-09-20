@@ -7,9 +7,8 @@
 # The route is a polyline through the sites, ordered within each river transect
 # by position along that valley's own principal axis, NOT by latitude: the
 # Liandong reach runs partly E-W, so ordering by latitude scrambles the
-# along-valley sequence (that was the flaw in the earlier profile this figure
-# replaced). The three transects are then chained end to end, oriented so that
-# the connectors between them are as short as they can be.
+# along-valley sequence. The three transects are then chained end to end,
+# oriented so that the connectors between them are as short as possible.
 #
 # Transect sequence: Binchuan basin -> Liandong -> Huangping basin, i.e.
 # Sangyuan valley -> Liandong valley -> Caifeng valley. The names in the table
@@ -21,10 +20,9 @@
 #
 # Elevation is sampled from the SRTM DEM every 30 m along the route, so each
 # site plots at its own ground surface rather than being projected onto some
-# unrelated section line. This is the reason for a traverse rather than the
-# cross-valley swath of scripts/figures/liandong_section_figure.R: a swath shows the
-# DISTRIBUTION of surface heights at a given offset, so sites necessarily float
-# below the median line and need explaining. Here they sit on the ground.
+# unrelated section line. This is the reason for a traverse rather than a
+# cross-valley swath, which shows the DISTRIBUTION of surface heights at a given
+# offset, so that sites float below the median line and need explaining.
 #
 # Sites are plotted at the table's elev_m, with a hairline dropping to the DEM
 # surface beneath them. Plotting them at the DEM elevation instead would put

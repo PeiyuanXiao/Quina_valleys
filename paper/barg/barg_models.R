@@ -1,32 +1,19 @@
-# ==========================================================================
-# barg_models.R -- the model specifications, the sampler call and the
-# per-fit diagnostics behind paper/barg/barg_report.qmd.
-#
-# This file fits nothing on its own and writes nothing.  _targets.R calls
-# barg_fit_one() once per specification and stores the result; targets
-# decides what is stale by hashing the data files and this code, so there is
-# no cache to keep by hand and no fit to delete to force a refit.  It replaces
-# the former barg_fits.R, whose fit_cached() invalidated on file existence
-# alone and so silently reused a fit after its priors or its data had changed.
-#
+# The model specifications, the sampler call and the per-fit diagnostics.
 # Eleven runs, all on the same 165 specimens, with the same seed and backend:
 #
 #   ref        reference prior, the model the report estimates from
-#   noland     ~ 1 + (1 |p| Locality); no landscape terms.  Its ICC answers
-#              Q1 without the landscape terms competing for the same variance
+#   noland     ~ 1 + (1 |p| Locality); its ICC answers Q1 without the
+#              landscape terms competing for the same variance
 #   prior_ref  sample_prior = "only" under the reference prior (BARG 1.E)
-#   s1 .. s6   one-at-a-time prior changes (BARG Step 5).  s6 is the odd one:
-#              it fixes coi at 1 rather than widening a prior, making the two
-#              zero-one-inflated beta responses one-inflated (they have no zeros)
+#   s1 .. s6   one-at-a-time prior changes (BARG Step 5); s6 fixes coi at 1
+#              rather than widening a prior
 #   ref_rg_ln  RG refitted as lognormal, the fallback if the gaussian
 #              posterior predictive check fails (BARG 3.A)
-#   ref_basinx one height slope and one distance slope per basin instead of
-#              one of each shared by both: the test of whether the landscape
-#              effects are uniform or basin-dependent (BARG Step 5)
+#   ref_basinx one height and one distance slope per basin: the test of
+#              whether the landscape effects are basin-dependent (BARG 5)
 #
-# The backend is locked: a fit produced by rstan is not bit-for-bit the same
-# as one produced by cmdstanr, and the report quotes a CmdStan version.
-# ==========================================================================
+# The backend is locked because a fit produced by rstan is not bit-for-bit the
+# same as one produced by cmdstanr, and the report quotes a CmdStan version.
 
 BARG_BACKEND <- "cmdstanr"
 
@@ -36,13 +23,12 @@ BARG_SPECS <- c("ref", "prior_ref", "noland",
 
 RHS_FULL  <- "Basin + zHeight + zDistance + (1 |p| Locality)"
 RHS_NULL  <- "1 + (1 |p| Locality)"
-# One gradient slope per basin.  A slope that varies by LOCALITY is not
-# identified -- all three predictors are locality attributes, so within a
-# locality the predictor never moves and the random slope is collinear with
-# the random intercept.  The basin is the finest level at which the question
-# can be put, because height and distance do vary across the localities inside
-# each basin.  Two basins carry no variance to estimate, so this is a fixed
-# interaction rather than (zHeight | Basin).
+# One gradient slope per basin.  A slope varying by LOCALITY is not identified
+# -- all three predictors are locality attributes, so within a locality the
+# predictor never moves and the random slope is collinear with the random
+# intercept.  The basin is the finest level at which the question can be put.
+# Two basins carry no variance, so this is a fixed interaction rather than
+# (zHeight | Basin).
 RHS_INTER <- "Basin * zHeight + Basin * zDistance + (1 |p| Locality)"
 
 barg_fam_of <- function(f)
@@ -105,10 +91,8 @@ barg_spec <- function(ctx, spec) {
 }
 
 # ---- the sampler ---------------------------------------------------------
-# The elapsed time is stamped on the fit because the report tabulates it.
-# Nothing else is stamped: targets records the R version, the seed and the
-# completion time of every target, so the provenance the old manifest had to
-# reconstruct by hand is now read from tar_meta().
+# The elapsed time is stamped on the fit because the report tabulates it; the
+# rest of the provenance is read from tar_meta().
 barg_fit_one <- function(ctx, spec, chains = 4L, iter = 10000L, cores = 4L) {
   s  <- barg_spec(ctx, spec)
   t0 <- Sys.time()
@@ -140,10 +124,7 @@ barg_diagnostics <- function(fit, spec = attr(fit, "barg_name")) {
 }
 
 # ---- the manifest --------------------------------------------------------
-# Same shape as the manifest barg_fits.R used to write, so barg_report.qmd and
-# paper/supplementary.qmd read it unchanged.  What has gone is the machinery
-# that reconciled fits made in different sessions under different R versions:
-# one tar_make() produces every fit in one run, so r_version, brms and cmdstan
+# One tar_make() produces every fit in one run, so r_version, brms and cmdstan
 # are single values and env_by_fit is uniform by construction.
 barg_manifest <- function(diagnostics, seed, chains, iter, cores) {
   env1 <- c(r_version = R.version.string,

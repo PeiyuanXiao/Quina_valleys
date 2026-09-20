@@ -14,9 +14,9 @@
 ##     to it: trunk rivers read, hillslope rills disappear;
 ##   * symbols -- fill = basin (the manuscript pink/blue, darkened for legibility
 ##     on terrain), shape = geomorphic position (the same mapping as
-##     scripts/figures/traverse_profile_figure.R, so that panels A and C of
-##     Figure 1 share one legend), one fixed size for every site;
-##   * theme, type sizes and export geometry copied from scripts/figures/*.R
+##     traverse_profile_figure.R, so that panels A and C of Figure 1 share one
+##     legend), one fixed size for every site;
+##   * theme, type sizes and export geometry as elsewhere in the project
 ##     (theme_minimal(9), #202124 panel border, 150 mm wide @ 600 dpi).
 ##
 ## Rivers/lakes: loaded from whichever of these exists (in this order), both
@@ -51,14 +51,14 @@ rivers_local_path <- NA_character_   # e.g. here::here("data_raw", "rivers.shp")
 ## ---- palette mode --------------------------------------------------------
 ## Declared before the cartographic parameters because hyps_strength below
 ## depends on it. A caller assigns PALETTE_MODE in the environment it sources
-## this script into; unset, everything behaves exactly as it always did.
+## this script into.
 palette_mode <- if (exists("PALETTE_MODE", inherits = FALSE)) PALETTE_MODE else "sheet"
 
 ## ---- optional frame override ---------------------------------------------
-## Unset, the map is drawn on data/cache/dem.tif, which is the site extent + 8 km
-## and is what every earlier version of this panel used. A caller can widen it by
-## assigning MAP_EXT (xmin, xmax, ymin, ymax) before sourcing — used to pull the
-## north edge up to the Jinsha. Any frame larger than dem.tif is served from the
+## Unset, the map is drawn on data/cache/dem.tif, the site extent + 8 km. A
+## caller can widen it by assigning MAP_EXT (xmin, xmax, ymin, ymax) before
+## sourcing — used to pull the north edge up to the Jinsha. Any frame larger
+## than dem.tif is served from the
 ## regional cache that terra_map_2D_regional.R built for exactly this ground:
 ## dem_regional.tif and its breached-and-routed channels reach 27.11 N.
 map_ext <- if (exists("MAP_EXT", inherits = FALSE)) MAP_EXT else NULL
@@ -79,17 +79,16 @@ highlight_ring_show <- FALSE
 highlight_ring      <- "#EFB537"
 
 ## ---- bare-map options ----------------------------------------------------
-## Unset, both are TRUE and the sheet is drawn exactly as before. A caller can
-## strip the reference furniture — graticule, axis text, ticks, legend — for a
+## Unset, both are TRUE and the full sheet is drawn. A caller can strip the
+## reference furniture — graticule, axis text, ticks, legend — for a
 ## panel that is placed inside a composite figure where those are carried
 ## elsewhere or not wanted at all. The scale bar and north arrow are NOT part of
 ## this: they are the only things left that give the panel a scale.
 show_graticule <- if (exists("SHOW_GRID", inherits = FALSE)) SHOW_GRID else TRUE
 show_legend    <- if (exists("SHOW_LEGEND", inherits = FALSE)) SHOW_LEGEND else TRUE
 
-## Symbol and label size. The defaults are the values this sheet has always used;
-## a caller raises them when the panel is placed larger, or when the frame is
-## narrow enough that the old sizes read as specks.
+## Symbol and label size. A caller raises them when the panel is placed larger,
+## or when the frame is narrow enough that the defaults read as specks.
 site_size  <- if (exists("SITE_SIZE",  inherits = FALSE)) SITE_SIZE  else 2.2
 site_stroke <- if (exists("SITE_STROKE", inherits = FALSE)) SITE_STROKE else 0.45
 label_size <- if (exists("LABEL_SIZE", inherits = FALSE)) LABEL_SIZE else 2.0
@@ -128,16 +127,11 @@ grat_step     <- 0.05             # graticule / axis-break spacing (degrees)
 ## symbols keep the strongest contrast on the page.
 ## the top stop is deliberately NOT near-white: the relief shading needs
 ## headroom above it, or the summits render as a featureless white blob
-## TWO RAMPS. The default is unchanged, so nothing that sourced this script
-## before sees any difference; a caller that wants the landscape ramp assigns
-## PALETTE_MODE <- "landscape" in the environment before sourcing.
-##
-## "landscape" reverses the sense of the tint — pale grey-yellow low, green high
-## — because that is what is actually on the ground here: these are dry-hot
-## valleys whose floors at 1300-1500 m are sparsely vegetated tan, and it is the
-## flanking ranges that carry the forest. It is the same ramp the 3-D block uses
-## (paper/map/terra_map_3D_hyps.R), on the same elevation anchors, so the two
-## panels agree about what a colour means.
+## Two ramps.  A caller that wants the landscape ramp assigns
+## PALETTE_MODE <- "landscape" before sourcing.  It reverses the sense of the
+## tint — pale grey-yellow low, green high — which is what is on the ground in
+## these dry-hot valleys, and is the ramp terra_map_3D_hyps.R uses, on the same
+## elevation anchors, so the two panels agree about what a colour means.
 
 hyps_cols_sheet <- c("#7E8E74", "#93A184", "#A9B195", "#BFBCA4",
                      "#D1C9B3", "#DCD4C1", "#E6DECB")
@@ -510,7 +504,7 @@ p <- p +
   scale_x_continuous(breaks = if (show_graticule) lon_breaks else NULL) +
   scale_y_continuous(breaks = if (show_graticule) lat_breaks else NULL)
 
-## ---- titles + theme (house style of scripts/figures/*.R) ------------------
+## ---- titles + theme -------------------------------------------------------
 ttl <- list(title = "Quina sites of the Binchuan and Huangping basins",
             subtitle = "Shaded relief and drainage rendered from the SRTM DEM",
             caption = paste0(
@@ -552,7 +546,7 @@ p <- p +
                                      lineheight = 1.15, margin = margin(t = 4)),
     plot.margin       = margin(5, 5, 4, 4))
 
-## ---- export (150 mm wide @ 600 dpi, as in scripts/figures/*.R) ------------
+## ---- export: 150 mm wide @ 600 dpi ----------------------------------------
 FIG_W_MM <- 150
 FIG_H_MM <- 148   # no title/caption: just the panel + axis text
 FIG_DPI  <- 600

@@ -1,8 +1,5 @@
-# ==========================================================================
-# barg_theme.R -- the manuscript figure style, copied verbatim from the
-# fig_theme the manuscript uses, so that every figure in the BARG report sits
-# beside the manuscript's own figures without a visible seam.
-# ==========================================================================
+# The manuscript's figure style, copied verbatim, so that the report's figures
+# sit beside the manuscript's own without a visible seam.
 suppressPackageStartupMessages(library(ggplot2))
 
 fig_theme <- theme_minimal(base_size = 9) +
@@ -24,21 +21,16 @@ fig_theme <- theme_minimal(base_size = 9) +
 PAL  <- c("#E07C90", "#6BA8CE", "#E6C25C", "#9B87C4", "#6FB98E", "#E69F00")
 INK  <- "#202124"; GREY <- "#5A5F66"; TXT <- "#303238"
 POS  <- "#E07C90"; NEG <- "#6BA8CE"; MID <- "#F4F4F5"
-# a desaturated slate for estimates that carry no sign: lighter than INK, so
-# that a column of filled points does not read as heavier than the coloured
-# ones beside it
-SLATE <- "#3F5871"
+SLATE <- "#3F5871"   # for estimates that carry no sign
 
-# the seven prior specifications, in a fixed order and with fixed colours, so
-# that every sensitivity display reads the same way
+# fixed order and colours, so that every sensitivity display reads the same way
 SENS_LEVELS <- c("REF", "S1", "S2", "S3", "S4", "S5", "S6")
 SENS_COLS   <- setNames(c(INK, PAL[1], PAL[2], PAL[3], PAL[5], PAL[4], PAL[6]), SENS_LEVELS)
 
 FIGDIR <- here::here("paper", "barg", "figures")
 
-# save_fig() returns the path it wrote, so that the figure target in _targets.R
-# can declare its output with format = "file" and rebuild the figures when a
-# fit or the drawing code changes.
+# Returns the path it wrote, so that the figure target in _targets.R can
+# declare its output with format = "file".
 save_fig <- function(name, plot, width, height, dir = FIGDIR) {
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   f <- file.path(dir, name)

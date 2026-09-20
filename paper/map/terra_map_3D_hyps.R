@@ -1,76 +1,20 @@
-## terra_map_3D_hyps.R — the Figure 1 block model, re-coloured to sit in the same
-## colour family as the 2-D relief sheets.
+## terra_map_3D_hyps.R — the Figure 1 block model (panel B).
 ##
-## This is paper/map/terra_map_3D.R with the SURFACE COLOUR changed and nothing
-## else. Camera, DEM, frame, vertical exaggeration, slab, lighting, sample counts
-## and site spheres are all exactly as that script leaves them, so the block is
-## the same block from the same angle; only what it is painted with differs.
-## terra_map_3D.R is untouched and still writes output/maps/terrain_3d.png.
+## The surface is painted with the same hypsometric ramp as the 2-D relief
+## sheets, so that a given elevation is a given colour on both panels: the ramp
+## is anchored to the REGIONAL sheet's elevation limits rather than stretched
+## to this block's own range, and carries a warm offset (`warm_mix`) so that
+## the block stays recognisably warmer than the plan map above it.
 ##
-## WHAT WAS WRONG
-## Measured over the terrain pixels of the two renders:
+## The ramp is an albedo map only.  The analytical hillshade of the 2-D scripts
+## is deliberately not baked in: under a path-traced render lit from the same
+## sun the two shadow sets would compound.  All modelling comes from ray_shade,
+## ambient_shade and the path tracer's own lights.
 ##
-##                    hue median   hue IQR   sat median   light median
-##   2-D relief sheet     77.5 deg  60-91 deg     13.7 %        63.1 %
-##   3-D block (desert)   29.4 deg  28-31 deg     29.4 %        43.1 %
+##   Rscript paper/map/terra_map_3D_hyps.R [variant] [warm_mix] [albedo_gain]
 ##
-## A 48-degree hue gap and twice the saturation, but the number that explains it
-## is the hue IQR: 3 degrees. rayshader's `desert` texture is sphere_shade(),
-## which colours by ASPECT, so the block is one hue modulated in value and its
-## colour carries no elevation at all. The 2-D sheets colour by ELEVATION. The
-## two panels were not two shades of the same map, they were two different
-## encodings, and no amount of hue-tweaking the desert texture would have fixed
-## that.
-##
-## WHAT THIS DOES
-## plot_3d()'s first argument is any RGB array, so the surface is painted with
-## the 2-D sheets' own hypsometric ramp instead. The division of labour is the
-## point:
-##
-##   colour  <- elevation        (what the 2-D sheets do)
-##   shading <- geometry         (what ray tracing does, and does better)
-##
-## so the ANALYTICAL hillshade of the 2-D scripts is deliberately NOT baked in.
-## Baking it would put a plan-view hillshade under a path-traced render lit from
-## the same sun and the two shadow sets would compound into mud. Here the ramp is
-## an albedo map and every bit of modelling comes from ray_shade, ambient_shade
-## and the path tracer's own lights.
-##
-## Two deliberate departures from a plain colour match:
-##
-##   * THE RAMP IS ANCHORED TO THE REGIONAL SHEET'S ELEVATION LIMITS, not
-##     stretched to this block's own range. The block spans 1229-3259 m and the
-##     regional sheet 1203-3686 m; stretched to its own range the block would
-##     paint 1500 m in the colour the regional sheet uses for 1900 m, and the two
-##     figures would disagree about what a colour means. Anchored, a given
-##     elevation is a given colour on both, which is the strongest form of
-##     "organic combination" available here — the wash becomes a shared key.
-##
-##   * A WARM OFFSET of `warm_mix` toward the old desert mean (#967B5E). Matching
-##     the 2-D sheets exactly would flatten the block into the same grey-green as
-##     the map above it and lose the physical-model reading. The offset keeps it
-##     recognisably warmer while staying in the same family.
-##
-## THE SETTLED CONFIGURATION (these are the defaults below; a run with no
-## arguments reproduces it at publication resolution):
-##
-##   palette_mode  green      green throughout, yellow-green only in the bottom
-##                            two stops, lightness compressed to 69-46 % so the
-##                            wash stays a ground colour and does not model
-##   relief_mix    0.15       a light touch of height-above-drainage, enough to
-##                            keep the yellow-green in the basin floors
-##   key 700 / shadow 0.35 / aspect 0.15
-##                            the relief is carried by the light, as it was under
-##                            rayshader's own `desert` texture
-##   albedo_gain   0.62       the renderer lifts a surface about 25 points, so
-##                            the albedo is given darker than it should print
-##   slab_m 0, slab #171614   the base as thin as the geometry allows, and dark
-##
-## Measured over the block's terrain: hue 88.4 deg, saturation 14.8 %, lightness
-## 60.0 %, contrast 33.5 (the original desert render: 28.4 / 24.8 / 37.3 / 32.9).
-##
-## Variants explored on the way are in output/maps/terrain_3d_hyps_*.png; the
-## argument list at the top of the file re-runs any of them as a fast preview.
+## A variant tag names the output and forces a fast preview; no arguments
+## renders the settled publication pass, whose defaults are set below.
 ##
 ## Output: output/maps/terrain_3d_hyps[_<variant>].png
 
@@ -87,22 +31,14 @@ output_dir <- file.path(proj_dir, "output", "maps")
 cache_dir  <- file.path(proj_dir, "data", "cache")
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-## ---- what to render (terra_map_3D.R, unchanged) ---------------------------
-## Rscript paper/map/terra_map_3D_hyps.R [variant] [warm_mix] [albedo_gain]
-## A variant tag names the output and forces the fast preview; no arguments
-## renders the settled publication pass.
+## ---- what to render -------------------------------------------------------
 args    <- commandArgs(trailingOnly = TRUE)
 variant <- if (length(args) >= 1) args[1] else ""
 preview <- nzchar(variant)
-## Base slab depth, in METRES below the lowest DEM cell.
-##
-## NOT in scene units, which is what terra_map_3D.R believes it is passing. That
-## script computes min(elmat)/zscale - slab_units and hands it to plot_3d, whose
-## numeric branch then divides by zscale AGAIN, so the base ends up roughly
-## 1200 m of exaggerated relief below where the comment intends — which is the
-## whole reason the slab is as tall as the mountains standing on it. Passing
-## metres puts it where it is asked to go. At 0 the base sits exactly on the
-## lowest cell in the frame, which is as thin as it can be made without the
+## Base slab depth, in METRES below the lowest DEM cell, NOT in scene units:
+## plot_3d's numeric branch divides by zscale itself, so a value in scene units
+## ends up roughly 1200 m of exaggerated relief too low.  At 0 the base sits on
+## the lowest cell in the frame, which is as thin as it can be made without the
 ## terrain breaking through the bottom of the block; what is left of the dark
 ## band after that is not decoration but the real side walls, whose height is
 ## simply the edge of the DEM standing above its own lowest point.
@@ -115,7 +51,7 @@ out_h     <- if (preview) 1125 else 2657
 site_radius_m <- 260
 halo_radius_m <- 420
 
-## ---- camera (terra_map_3D.R, unchanged) -----------------------------------
+## ---- camera ---------------------------------------------------------------
 cam_theta <- 45
 cam_phi   <- 38
 cam_zoom  <- 0.80
@@ -124,56 +60,24 @@ z_exag    <- 3.0
 sun_az    <- 315
 sun_alt   <- 45
 
-## ==========================================================================
-## THE COLOUR MODEL — the only thing that differs from terra_map_3D.R
-## ==========================================================================
-## The 8-stop widened ramp of the regional 2-D sheets (terra_map_2D_SE_tibet.R
-## and terra_map_2D_regional_locator.R), not the 7-stop local one: the block has
-## to sit beside the regional sheet, and it is the regional sheet's meaning of
+## ---- the colour model ------------------------------------------------------
+## The 8-stop widened ramp of the regional 2-D sheet, not the 7-stop local one:
+## the block sits beside the regional sheet, and it is that sheet's meaning of
 ## each colour that is being borrowed.
-## TWO RAMPS.
-##
-## "sheet" is the regional 2-D sheet's own: dark green low, cream high. It is a
-## conventional hypsometric tint, and its job on those maps is to separate 3.5 km
-## of relief across a 200 km frame.
-##
-## "landscape" reverses the sense of it — pale grey-yellow low, green high — and
-## on THIS block that is the truer picture. These are dry-hot valleys: the Jinsha
-## tributary floors at 1300-1500 m are sparsely vegetated tan and grey-yellow,
-## and it is the flanking ranges above about 2200 m that carry the forest. The
-## sheet ramp paints the basin floors the darkest green on the block, which is
-## the opposite of what is on the ground.
-##
-## NOTE WHAT THIS COSTS. The ramp was anchored to the regional sheet's elevation
-## limits so that one elevation meant one colour across both figures. Switching
-## the block to "landscape" while the 2-D sheets stay on "sheet" breaks that: the
-## two figures then run their elevation colour in opposite directions. Either the
-## 2-D sheets move to the same ramp, or the shared-key argument is given up and
-## the block is simply a landscape view rather than a second hypsometric map.
+## Three ramps.  "sheet" is the regional 2-D sheet's own, dark green low and
+## cream high.  "landscape" reverses it — pale grey-yellow low, green high —
+## which is the truer picture of these dry-hot valleys, whose floors are
+## sparsely vegetated and whose forest is on the flanks above about 2200 m; but
+## it breaks the shared key with the 2-D sheets, which run the other way.
+## "green" is the settled compromise, defined below.
 palette_mode <- "green"
 
-## DRAPE THE PRINTED MAP.
-##
-## Everything below this line — the ramp stops, the HAND blend, the warm offset,
-## the gain, the contrast, the aspect term — was an attempt to arrive at the 2-D
-## sheet's colours by computing them again on this side. It never quite lands,
-## because the two pipelines differ in one place that matters: the 2-D map bakes
-## its own multi-light hillshade into the HSL lightness channel, and here that
-## was deliberately left out so the path tracer could do the modelling instead.
-## The result is the same palette but not the same picture.
-##
-## With drape_2d = TRUE the block is instead painted with the RGB raster
-## terra_map_2D.R actually prints. That script is sourced for its `shaded` object
-## and nothing else; the raster is reprojected onto this block's grid and used as
-## the albedo verbatim. There is then no second implementation to drift, and the
-## block is literally the map wrapped over its own terrain.
-##
-## Because that raster ALREADY contains a hillshade, the path tracer must not
-## light it hard or the two shadings compound: the key light drops and the baked
-## ray_shade/ambient_shade are backed most of the way off. See drape_* below.
-## The drape belongs to "landscape" mode, whose whole point was to reproduce the
-## printed map exactly. "green" mode computes its own wash instead, precisely so
-## that the albedo can stay flat and the path tracer can do the modelling.
+## With drape_2d = TRUE the block is painted with the RGB raster terra_map_2D.R
+## prints, sourced for its `shaded` object and reprojected onto this grid, so
+## there is no second implementation of the wash to drift.  That raster already
+## contains a hillshade, so the path tracer must not light it hard or the two
+## shadings compound (see drape_* below).  It belongs to "landscape" mode;
+## "green" computes its own flat wash and leaves the modelling to the tracer.
 drape_2d <- identical(palette_mode, "landscape")
 
 hyps_cols_sheet <- c("#4E6B54", "#6B8263", "#889777", "#A3A98B",
@@ -181,11 +85,9 @@ hyps_cols_sheet <- c("#4E6B54", "#6B8263", "#889777", "#A3A98B",
 ## grey-yellow valley floor -> khaki -> olive -> montane green
 hyps_cols_landscape <- c("#CFC49E", "#C6BC93", "#B9B489", "#A6AC80",
                          "#8DA075", "#74936A", "#5C8460", "#46704F")
-## "green": green throughout, with the yellow-green confined to the bottom two
-## stops, and a deliberately SHORT value range — lightness runs 69 % to 46 %
-## against the landscape ramp's 78 % to 44 %. The wash is not meant to model the
-## terrain here; it is a ground colour, and the relief is left to the light, the
-## way rayshader's own `desert` texture leaves it.
+## "green": yellow-green confined to the bottom two stops and a deliberately
+## short value range, 69 % to 46 %.  The wash is a ground colour, not a model
+## of the terrain; the relief is left to the light.
 hyps_cols_green <- c("#C8CB96", "#B6BD86", "#9FAF77", "#8CA46D",
                      "#7C9A66", "#6E9160", "#62885B", "#587F56")
 pick_ramp <- function(mode) switch(mode,
@@ -195,33 +97,17 @@ pick_ramp <- function(mode) switch(mode,
 hyps_cols <- pick_ramp(palette_mode)
 paper_col  <- "#E9E4D8"
 hyps_strength <- 0.95      # as on the regional sheets
-## Gamma bends where the ramp spends its colour. >1 pushes change toward the top
-## of the elevation range, which is what the regional sheets want (their subject
-## is 3.5 km of relief and the summits have to separate). The landscape ramp
-## wants the opposite: the line it has to draw is the one between basin floor and
-## mountain, which here sits around 1800-2000 m, and at gamma 1.30 anchored on
-## 1203-3686 the green does not arrive until about 2700 m — so all the flanks
-## came out khaki and only the top ridges read as mountain. At 0.65 a 2200 m
-## slope lands past the middle of the ramp and is green, while a 1400 m basin
+## Gamma bends where the ramp spends its colour.  >1 pushes change toward the
+## top of the range, which is what the regional sheets want.  Here the line to
+## draw is between basin floor and mountain, around 1800-2000 m, so 0.65: a
+## 2200 m slope lands past the middle of the ramp and is green, a 1400 m basin
 ## floor is still at a fifth of it and stays grey-yellow.
 hyps_gamma <- if (palette_mode %in% c("landscape", "green")) 0.65 else 1.30
 
-## HEIGHT ABOVE NEAREST DRAINAGE, mixed into the ramp.
-##
-## Colouring by absolute elevation alone produces the complaint that ground which
-## is obviously mountainside comes out yellow: a flank at 1800 m sits low on a
-## ramp anchored at 1203 m, so it is painted the same khaki as a basin floor
-## 400 m below it. Elevation above sea level is simply not what the eye reads as
-## "mountain" — height above the local valley bottom is.
-##
-## data/cache/_hand.tif is already that layer, on exactly the dem.tif grid: 0 m
-## along the channels, a median of 104 m and a 95th percentile of 553 m over this
-## frame. Mixing it into the ramp position lets a slope be green because it
-## STANDS above its valley, not because of where sea level happens to be, while
-## the basin floors — which are by definition near their own channels — stay
-## grey-yellow whatever their elevation.
-##
-## relief_mix 0 = pure elevation (the previous behaviour), 1 = pure HAND.
+## Height above nearest drainage, mixed into the ramp position, because what
+## the eye reads as "mountain" is height above the local valley bottom rather
+## than above sea level.  data/cache/_hand.tif is that layer on the dem.tif
+## grid.  relief_mix 0 = pure elevation, 1 = pure HAND.
 relief_mix  <- 0.15
 hand_ref_m  <- 420        # HAND at which ground counts as fully "mountain"
 hand_gamma  <- 0.80
@@ -231,22 +117,15 @@ hand_gamma  <- 0.80
 ramp_mode <- "shared"
 ramp_shared <- c(lo = 1203, hi = 3686)
 
-## how far back toward the old desert block to pull the result. 0 = the 2-D
-## sheet's colours exactly, 1 = the old warm brown. The mean of the desert
-## render, measured over its terrain pixels, is the colour being mixed in.
-## With palette_mode "landscape" the low ground is already grey-yellow, so most
-## of the warmth the offset used to supply is in the ramp itself; a large mix
-## here just muddies the green tops.
+## Warm offset: 0 = the 2-D sheet's colours exactly, 1 = a warm brown block.
+## Under "landscape" and "green" the low ground is already warm, so a large mix
+## here only muddies the green tops.
 warm_mix  <- 0.00
 warm_col  <- "#967B5E"
 
-## ALBEDO IS NOT DISPLAY COLOUR. The wash above is what the 2-D sheets PRINT,
-## but here it is fed to a path tracer as a reflectance and then lit by a key
-## light, a white ambient dome and a bounce off the ground plane. Measured on the
-## first pass, an albedo of mean lightness 48 % rendered at 73 % — a 25-point
-## lift — against a 2-D sheet that sits at 61 %. This gain scales the wash down
-## so that what comes OUT of the renderer matches the sheet, rather than what
-## goes in. Calibrated by rendering and measuring; see the sweep in the header.
+## Albedo is not display colour: the wash is fed to the path tracer as a
+## reflectance and then lit, which lifts it about 25 lightness points.  This
+## gain scales it down so that what comes OUT matches the 2-D sheet.
 albedo_gain <- 0.62
 
 ## Contrast on the wash, applied about mid grey per channel. Deepens the low
@@ -254,29 +133,21 @@ albedo_gain <- 0.62
 ## the channels apart also lifts saturation a little, which is wanted here.
 albedo_contrast <- 1.00
 
-## ASPECT TERM. Dropping sphere_shade() is what cost this block its crispness:
-## an aspect texture gives every slope facing a different way its own tone, and
-## without it slopes of similar orientation merge and the relief has to be
-## carried by cast shadow alone. It is added back as a GREYSCALE MULTIPLIER
-## rather than as a colour blend, so it modulates form without touching hue —
-## which is the whole point of having gone hypsometric in the first place.
-## 0 = pure elevation colour, 0.5 = heavy modelling.
+## Aspect term, added as a greyscale multiplier rather than a colour blend, so
+## that it modulates form without touching hue: without it slopes of similar
+## orientation merge.  0 = pure elevation colour, 0.5 = heavy modelling.
 aspect_mix <- 0.15
 
-## Cast shadow and occlusion, baked lighter than in terra_map_3D.R (0.35/0.05).
-## With no aspect term in the albedo any more, the path tracer is doing more of
-## the modelling, and the old bake on top of it drove the block 20 lightness
-## points below the 2-D sheet.
+## Cast shadow and occlusion, baked light: with no aspect term in the albedo
+## the path tracer does more of the modelling, and a heavier bake on top of it
+## drives the block some 20 lightness points below the 2-D sheet.
 shadow_darken  <- 0.35     # 1 = no bake, 0 = black
 ambient_darken <- 0.10
 
-## Key light. terra_map_3D.R uses 700, and at that strength the path tracer
-## overrides the wash exactly where the wash matters most: a basin floor is FLAT,
-## so it faces the light squarely and burns pale, while the steep mid-slopes above
-## it stay dark. That inverts the hypsometric reading — low ground is supposed to
-## be the DARK end of this ramp. Dropping the key and letting the white ambient
-## dome carry more of the fill lets the elevation colour through; the cost is a
-## little modelling contrast, which the baked ray_shade above partly returns.
+## Key light.  Raise it much and the tracer overrides the wash where it
+## matters: a basin floor is flat, so it faces the light squarely and burns
+## pale while the steep slopes above it stay dark, inverting the hypsometric
+## reading.  The white ambient dome carries more of the fill instead.
 key_intensity <- 700
 
 ## Lighting used when drape_2d is TRUE. The drape carries the relief already, so
@@ -287,47 +158,29 @@ drape_shadow   <- 0.88     # 1 = no bake
 drape_ambient  <- 0.45
 drape_gain     <- 1.00
 
-## Chroma multiplier on the drape, applied about each pixel's own luminance.
-## Needed because gain alone cannot hit both targets: the renderer adds a roughly
-## CONSTANT white fill from the ambient dome, so scaling the albedo down to fix
-## lightness makes that fill a larger share of the result and washes the colour
-## out. Measured — gain 0.58 landed lightness at 67.8 % against a target of 68.8,
-## but saturation at 12.9 % against 20.8. Boosting chroma before the scaling
-## compensates for the dilution that follows it.
+## Chroma multiplier on the drape.  Gain alone cannot hit both targets: the
+## ambient dome adds a roughly constant white fill, so scaling the albedo down
+## to fix lightness washes the colour out.  Boosting chroma first compensates.
 drape_sat      <- 1.00
 
-## BASE SLAB. terra_map_3D.R uses #0B0B0A with a #101010 edge — effectively
-## black, and against a re-coloured block that reads as a hole punched in the
-## page rather than as the side of a model. These are the project's own dark
-## neutrals (#5E5849 is the ground line of the profile figure), so the base now
-## belongs to the same palette as everything else and stops competing with the
-## site markers for the darkest thing on the sheet.
-## The renderer lifts the base the same way it lifts the terrain: measured on
-## three passes, an input lightness of 4 / 23 / 33 % came back as 22 / 51 / 59 %,
-## i.e. roughly output = 18 + 1.25 x input. So a slab that READS dark grey has to
-## be given as near-black. #292826 lands at about 37 %: clearly dark, without
-## going back to the hole-in-the-page black of terra_map_3D.R.
+## BASE SLAB, in the project's own dark neutrals rather than near-black, which
+## against a re-coloured block reads as a hole punched in the page.  The
+## renderer lifts the base as it lifts the terrain — roughly
+## output = 18 + 1.25 x input — so a slab that READS dark grey is given dark.
 slab_col  <- "#171614"
 slab_line <- "#0D0C0B"
 
-## water: the 2-D sheets' slate, not the block model's bright cyan (#7FCFE6),
-## which was the single loudest thing telling the reader these were two figures
-## Water. #86A6BB is the 2-D sheets' slate, and on those maps it reads because it
-## is a thin line on a pale ground. On the block it sits on mid-green of almost
-## the same lightness, so the only separation is hue and the channels disappear.
-## Deepened one step — still the same slate family, but far enough down in value
-## to hold against the green.
+## Water: the 2-D sheets' slate family, deepened one step.  Their own #86A6BB
+## reads as a thin line on a pale ground, but on mid-green of nearly the same
+## lightness the only separation is hue and the channels disappear.
 water_col  <- "#5F87A6"
 lake_col   <- "#6E93AF"
 
-## Channels are drawn in two width classes rather than one. A single width has to
-## be either too heavy for the tributaries or too light for the trunks; splitting
-## at the 60th percentile of upstream area lets the Sangyuan, Liandong and
-## Caifeng read as rivers while the feeder network stays fine.
-##
-## The widths are in TEXTURE pixels, and the texture is the heightmap, so they
-## have to double when cell_m halves or the publication render would draw them at
-## half the on-page weight of the preview.
+## Two width classes, split at the 60th percentile of upstream area, so that
+## the trunks read as rivers while the feeder network stays fine.  The widths
+## are in TEXTURE pixels and the texture is the heightmap, so they double when
+## cell_m halves or the publication render draws them at half the preview's
+## on-page weight.
 river_lw_minor <- if (preview) 2.4 else 4.8
 river_lw_trunk <- if (preview) 5.0 else 10.0
 river_split_q  <- 0.60
@@ -348,10 +201,9 @@ if (length(args) >= 11 && nzchar(args[11])) drape_key   <- as.numeric(args[11])
 if (length(args) >= 12 && nzchar(args[12])) drape_shadow <- as.numeric(args[12])
 if (length(args) >= 13 && nzchar(args[13])) drape_gain  <- as.numeric(args[13])
 if (length(args) >= 14 && nzchar(args[14])) drape_sat   <- as.numeric(args[14])
-## palette_mode may have just arrived on the command line, so everything that
-## was derived from it above has to be derived again — including drape_2d,
-## which otherwise stays TRUE from the default and quietly overrides the wash
-## this mode exists to compute.
+## palette_mode may have just arrived on the command line, so everything
+## derived from it above has to be derived again -- drape_2d included, which
+## otherwise quietly overrides the wash the new mode exists to compute.
 hyps_cols  <- pick_ramp(palette_mode)
 hyps_gamma <- if (palette_mode %in% c("landscape", "green")) 0.65 else 1.30
 drape_2d   <- identical(palette_mode, "landscape")
@@ -362,7 +214,7 @@ message(sprintf(paste("variant '%s': warm %.2f  gain %.2f  key %.0f",
 message(sprintf("           palette '%s'  slab %.0f m  relief_mix %.2f",
                 palette_mode, slab_m, relief_mix))
 
-## ---- DEM (terra_map_3D.R, unchanged: the site extent + 8 km) --------------
+## ---- DEM: the site extent + 8 km ------------------------------------------
 dem0 <- terra::rast(file.path(cache_dir, "dem.tif"))
 dem  <- terra::project(dem0, "EPSG:32647", res = cell_m, method = "bilinear")
 message(sprintf("DEM: %d x %d cells at %d m", nrow(dem), ncol(dem), cell_m))
@@ -412,9 +264,7 @@ if (!is.null(lakes)) {
   if (nrow(lakes) == 0) lakes <- NULL
 }
 
-## ==========================================================================
-## THE HYPSOMETRIC ALBEDO
-## ==========================================================================
+## ---- the hypsometric albedo ------------------------------------------------
 ## Built straight off `elmat`, so it inherits the matrix's orientation and no
 ## transposition can creep in between the colour and the surface it paints.
 zsc <- cell_m / z_exag
@@ -469,7 +319,7 @@ hyps_tex <- local({
   ## compress toward the paper neutral, exactly as the 2-D scripts do
   pap <- as.numeric(grDevices::col2rgb(paper_col)) / 255
   m <- m * hyps_strength + rep(pap, each = length(u)) * (1 - hyps_strength)
-  ## then pull back toward the old block's warmth
+  ## then pull back toward the warm offset
   wc <- as.numeric(grDevices::col2rgb(warm_col)) / 255
   m <- m * (1 - warm_mix) + rep(wc, each = length(u)) * warm_mix
   ## contrast about mid grey, then level. m[] keeps the dim attribute;
@@ -487,11 +337,10 @@ hyps_tex <- local({
 if (aspect_mix > 0) {
   sph <- rayshader::sphere_shade(elmat, texture = "bw", sunangle = sun_az,
                                  zscale = zsc)
-  ## sphere_shade() returns the TRANSPOSE of the heightmap layout — for a
-  ## 265 x 349 elmat it hands back 349 x 265 x 3 — while the wash above was built
-  ## in elmat's own layout. t() puts them in the same frame; without it the two
-  ## are non-conformable and, on a square DEM where they would not be, the
-  ## modulation would land rotated.
+  ## sphere_shade() returns the TRANSPOSE of the heightmap layout while the
+  ## wash was built in elmat's own, so t() puts them in the same frame.  On a
+  ## square DEM, where they would still be conformable, omitting it would land
+  ## the modulation rotated.
   stopifnot(identical(dim(sph)[1:2], rev(dim(hyps_tex)[1:2])))
   f <- t(1 + aspect_mix * (2 * sph[, , 1] - 1))
   for (i in 1:3) hyps_tex[, , i] <- pmin(1, pmax(0, hyps_tex[, , i] * f))
@@ -514,7 +363,7 @@ tex <- hyps_tex |>
                              multicore = TRUE),
     max_darken = ambient_darken)
 
-## ---- overlays: water, then sites (terra_map_3D.R, unchanged) --------------
+## ---- overlays: water, then sites ------------------------------------------
 if (!is.null(lakes)) {
   tex <- tex |> rayshader::add_overlay(
     rayshader::generate_polygon_overlay(
@@ -541,7 +390,7 @@ tex <- tex |> rayshader::add_overlay(
     st_buffer(sites, halo_radius_m), extent = ext_utm, heightmap = elmat,
     linewidth = 0, palette = "white"), alphalayer = 0.85)
 
-## ---- 3-D scene (terra_map_3D.R, unchanged) --------------------------------
+## ---- 3-D scene ------------------------------------------------------------
 message("Building 3-D scene ...")
 rgl::close3d()
 rayshader::plot_3d(
@@ -564,7 +413,7 @@ for (b in levels(sites$basin)) {
     color = basin_cols[[b]], size = 1, clear_previous = FALSE)
 }
 
-## ---- path-traced render (terra_map_3D.R, unchanged) -----------------------
+## ---- path-traced render ---------------------------------------------------
 out_png <- file.path(output_dir,
                      if (preview) paste0("terrain_3d_hyps_", variant, ".png") else "terrain_3d_hyps.png")
 message("Path tracing (", n_samples, " samples) -> ", basename(out_png))

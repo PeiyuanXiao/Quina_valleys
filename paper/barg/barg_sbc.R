@@ -1,85 +1,40 @@
-# ==========================================================================
-# barg_sbc.R -- posterior simulation-based calibration for the reference fit.
+# Posterior simulation-based calibration for the reference fit: the check the
+# convergence diagnostics cannot supply, on the 28 quantities the two research
+# questions rest on (21 landscape slopes, 7 locality ICCs).
 #
-# Convergence diagnostics establish that the sampler explored the posterior of
-# the model that was coded.  They cannot establish that the posterior it
-# returns is calibrated, and the two defects this analysis found in itself
-# (s1's unscaled slope prior, s6's coi estimating an outcome that cannot
-# occur) were both invisible to R-hat, ESS and the divergence count.  This
-# file supplies the check that speaks to calibration instead.
+# Posterior rather than classical SBC, after Sailynoja, Schmitt, Burkner and
+# Vehtari (2026): the intercept priors are deliberately wide, so datasets
+# simulated from them would include assemblages no lithic analyst would
+# recognise, and calibration verified over that range says little about the
+# region the posterior occupies.
 #
-# Why POSTERIOR SBC rather than the classical kind.  Classical SBC draws its
-# parameters from the prior.  The intercept priors here are deliberately wide
-# -- 6 to 100 mm of thickness, 26 to 104 degrees of edge angle before the data
-# are seen -- so datasets simulated from them would include assemblages no
-# lithic analyst would recognise, and calibration verified over that range
-# says little about the narrow region the posterior actually occupies.
-# Sailynoja, Schmitt, Burkner and Vehtari (2026) condition the simulation on
-# the observed data instead.  That checks calibration where the answers live.
-#
-# HOW THE CONSTRUCTION HAS TO BE SET UP, because getting it wrong is easy and
-# silent.  SBC is uniform only when the distribution the parameters are drawn
-# from is the same distribution the refit uses as its prior.  Posterior SBC
-# draws theta from p(theta | y_obs), so p(theta | y_obs) is the prior of the
-# check, and the posterior the rank is taken in must therefore be
+# The construction has to be set up this way, and getting it wrong is silent.
+# SBC is uniform only when the distribution theta is drawn from is the one the
+# refit uses as its prior.  Posterior SBC draws theta from p(theta | y_obs),
+# so the rank must be taken in
 #
 #     p(theta | y_obs, y_sim)  proportional to
-#         p(theta) p(y_obs | theta) p(y_sim | theta)
-#       = p(theta | y_obs) . p(y_sim | theta)
+#         p(theta | y_obs) . p(y_sim | theta)
 #
-# In other words each refit conditions on the observed data AND the simulated
-# data: the two frames are stacked and the reference prior is left untouched.
-#
-# Refitting to the simulated data ALONE under the reference prior is neither
-# check.  Theta then comes from the concentrated posterior while the refit's
-# prior is the wide original, the two do not match, and the ranks are not
-# uniform even for a perfectly calibrated sampler.  A first run here did
-# exactly that and produced 13 of the 28 quantities outside a 95% band, with
-# the rank SD at 0.278 against the uniform 0.289 and several quantities'
-# mean rank displaced from 0.5 -- the signature of the mismatch, not of the
-# model.  The stacking below is what makes the check valid.
-#
-# What is checked.  The 28 quantities the two research questions rest on: the
-# 21 landscape slopes (Q2) and the seven locality ICCs (Q1).  Nuisance
-# parameters are not checked -- no research question is about them, and
-# Modrak, Moon, Kim, et al. (2025) show that the choice of test quantity is
-# what governs an SBC check's sensitivity, so the quantities the report
-# actually reports are the ones worth spending refits on.
-#
-# What it cannot detect.  SBC checks the model as coded against itself.  Two
-# known defects are therefore outside its reach by construction: GMsize
-# contains Thickness in the real data while the coded model gives the seven
-# responses independent residuals, and the simulated datasets inherit that
-# independence; and the discreteness of retouch generations is a property of
-# the measurement, not of the coded likelihood.  Both are stated in the
-# report's limits section, and neither is a calibration failure.
-#
-# Nothing here reads or writes a cache.  _targets.R calls barg_sbc_batch()
-# once per batch of simulations and stores the ranks; the batches exist so
-# that an interrupted run resumes at the last completed batch rather than at
-# the beginning, and so that the compiled Stan program is amortised over the
-# simulations inside a batch.
-# ==========================================================================
+# -- each refit conditions on the observed data AND the simulated data, the
+# two frames stacked, the reference prior untouched.  Refitting to the
+# simulated data alone is neither check: theta then comes from the
+# concentrated posterior while the refit's prior is the wide original, and the
+# ranks are not uniform even for a perfectly calibrated sampler.
 suppressPackageStartupMessages({
   library(dplyr); library(posterior)
 })
 
 # ---- how much sampling one SBC refit needs -------------------------------
-# The reference fit runs 4 chains of 10,000 for 20,000 post-warmup draws
-# because the report quotes three-decimal quantiles of its posterior and the
-# Monte Carlo standard error has to support them (@sec-digits).  A rank needs
-# nothing like that.  The rank of the drawn value among L thinned draws is an
-# integer in 0..L, and L = 200 resolves the ECDF of N ranks far finer than N
-# itself does.  4 chains of 2,000 give 4,000 post-warmup draws, thinned to
-# 200, which is why an SBC refit costs about a fifth of a reference fit.
+# Far less than the reference fit, whose 20,000 draws support the report's
+# three-decimal quantiles: a rank among L thinned draws is an integer in 0..L,
+# and L = 200 resolves the ECDF of N ranks far finer than N itself does.
 BARG_SBC_CHAINS <- 4L
 BARG_SBC_ITER   <- 2000L
 BARG_SBC_L      <- 200L
 
 # ---- the quantities under test -------------------------------------------
-# One row per quantity, in the order the report's figures use.  ICC is placed
-# last per response so that the figure reads as three slope columns and one
-# ICC column.
+# One row per quantity, in the order the report's figures use.
 barg_sbc_quantities <- function(ctx) {
   slopes <- expand.grid(Response = ctx$resps, Predictor = ctx$preds,
                         stringsAsFactors = FALSE)
@@ -92,10 +47,8 @@ barg_sbc_quantities <- function(ctx) {
 }
 
 # ---- the drawn value of every quantity, at one posterior draw -------------
-# The slopes are read straight off the draw.  The ICCs are derived from it by
-# the same icc_draws() the report uses, so a coding error in that derivation
-# is inside what the check can catch rather than outside it.  A one-row
-# draws_df behaves like the full one, so icc_draws() needs no special case.
+# The ICCs are derived by the same icc_draws() the report uses, so a coding
+# error in that derivation is inside what the check can catch.
 barg_sbc_truth <- function(ctx, dr, draw_id) {
   d1 <- dr[dr$.draw == draw_id, , drop = FALSE]
   q  <- barg_sbc_quantities(ctx)
@@ -120,18 +73,12 @@ barg_sbc_posterior <- function(ctx, fit) {
 }
 
 # ---- one simulated dataset ------------------------------------------------
-# The design is held fixed: the same 165 specimens in the same 26 localities
-# with the same basin, height and distance, and only the seven responses
-# replaced.  That is the point of the exercise -- the question is whether the
-# model recovers its own parameters from data this design could have produced,
-# not whether a different design would resolve them better.
-#
-# posterior_predict() at a single draw uses that draw's locality intercepts
-# rather than resampling them, which is what conditioning on theta requires:
-# the drawn parameter vector includes the group-level effects, and the
-# simulated data have to come from the same vector whose rank is then checked.
-# The negative binomial response is cast back to integer because brms returns
-# a numeric matrix and the family requires counts.
+# The design is held fixed and only the seven responses are replaced: the
+# question is whether the model recovers its own parameters from data this
+# design could have produced.  posterior_predict() at a single draw uses that
+# draw's locality intercepts rather than resampling them, which is what
+# conditioning on theta requires.  The negative binomial response is cast back
+# to integer because brms returns a numeric matrix.
 barg_sbc_simulate <- function(ctx, fit, draw_id) {
   new <- fit$data
   for (r in ctx$resps) {
@@ -144,38 +91,28 @@ barg_sbc_simulate <- function(ctx, fit, draw_id) {
 }
 
 # ---- the frame each refit actually sees ----------------------------------
-# The observed rows and the simulated rows stacked, which is how
-# p(theta | y_obs, y_sim) is obtained from a sampler that only knows how to
-# apply the reference prior (see the header).  Both halves carry the same
-# localities and the same basin, height and distance, so the 26 locality
-# intercepts are shared across the 330 rows exactly as the construction
-# requires: y_obs and y_sim are conditionally independent given theta, and
-# theta includes those intercepts.
+# Observed rows and simulated rows stacked: how p(theta | y_obs, y_sim) is
+# obtained from a sampler that only knows how to apply the reference prior.
+# Both halves carry the same localities, so the 26 intercepts are shared
+# across the 330 rows, as the construction requires.
 barg_sbc_augment <- function(ctx, fit, sim) rbind(fit$data, sim)
 
 # ---- the rank of the drawn value within the refit posterior ---------------
 # Thinned to L draws first, so that the rank is an integer in 0..L whatever
-# the refit's iteration count, and so that neighbouring draws do not inflate
-# the resolution beyond what the sampler independently supports.
+# the refit's iteration count.
 barg_sbc_rank <- function(post, truth, L = BARG_SBC_L) {
   idx <- round(seq(1, length(post), length.out = L))
   sum(post[idx] < truth)
 }
 
 # ---- refitting a simulated dataset ---------------------------------------
-# The compiled Stan program of the reference fit cannot be reused.  That fit
-# was produced under cmdstanr 0.9.0.9002 and the CmdStanModel object stored
-# inside it calls an internal function the 0.9.0 release removed, so
-# update(recompile = FALSE) on it fails outright.  The first refit of a batch
-# is therefore a fresh brm() that compiles the same brms-generated Stan
-# program under the cmdstanr in use, and the rest of the batch update()s that
-# in-session fit, which does reuse its compiled program.  One compilation per
-# batch, not one per simulation.
-#
-# The specification is rebuilt from barg_spec(ctx, "ref"), the same call
-# _targets.R makes for the reference fit, so the formula, the four families
-# and the reference prior are the ones the report estimates from rather than a
-# reconstruction of them.
+# The compiled Stan program stored in the reference fit cannot be reused: it
+# calls an internal function the current cmdstanr removed, so
+# update(recompile = FALSE) on it fails.  The first refit of a batch is a
+# fresh brm() and the rest update() that in-session fit, which does reuse its
+# program -- one compilation per batch, not one per simulation.  The
+# specification is rebuilt from barg_spec(ctx, "ref"), the same call
+# _targets.R makes, so it is the reference model rather than a reconstruction.
 barg_sbc_fit_fresh <- function(ctx, dat, seed, chains, iter, cores) {
   s <- barg_spec(ctx, "ref")
   brms::brm(barg_formula(s$rhs, s$fams), data = dat, prior = s$prior,
@@ -207,10 +144,8 @@ barg_sbc_one <- function(ctx, fit_ref, dr_ref, draw_id, seed, base = NULL,
 
   post <- barg_sbc_posterior(ctx, ref)
 
-  # The refit's own convergence is recorded rather than acted on.  A rank from
-  # a refit that did not converge is not evidence about calibration, so the
-  # report needs to be able to say how many such refits there were; dropping
-  # them silently would make a calibration failure look like a clean result.
+  # The refit's own convergence is recorded rather than acted on: dropping bad
+  # refits silently would make a calibration failure look like a clean result.
   s  <- posterior::summarise_draws(posterior::as_draws_df(ref), "rhat", "ess_bulk")
   s  <- s[!is.na(s$rhat) & !startsWith(s$variable, "lp"), ]
   np <- brms::nuts_params(ref)
@@ -230,21 +165,14 @@ barg_sbc_one <- function(ctx, fit_ref, dr_ref, draw_id, seed, base = NULL,
 }
 
 # ---- which posterior draws to use as ground truth ------------------------
-# Spread evenly over the reference posterior rather than taken from its head,
-# so that the N parameter vectors are as close to independent as the chain
-# allows and between them cover the region the posterior occupies.
+# Spread evenly over the reference posterior rather than taken from its head.
 barg_sbc_draw_ids <- function(ndraws, n_sim) round(seq(1, ndraws, length.out = n_sim))
 
 # ---- one batch -----------------------------------------------------------
-# Simulations are dealt round-robin across the batches rather than in blocks,
-# so that a batch that fails or is still running has not taken a contiguous
-# stretch of the reference posterior with it: whatever completes is still
-# spread over the whole posterior and the partial result is interpretable.
-#
-# The environment is recorded on the returned frame because these refits do
-# not run under the environment the eleven reference fits ran under -- the
-# stored compiled model forces a recompilation here (see above) -- and the
-# report has to be able to say so rather than imply one uniform run.
+# Simulations are dealt round-robin rather than in blocks, so that whatever
+# completes is still spread over the whole reference posterior.  The
+# environment is recorded on the returned frame because the recompilation
+# above means these refits need not match the eleven reference fits.
 barg_sbc_batch <- function(ctx, fit_ref, batch, n_sim, n_batch,
                            chains = BARG_SBC_CHAINS, iter = BARG_SBC_ITER,
                            cores = chains, L = BARG_SBC_L) {
@@ -276,36 +204,21 @@ barg_sbc_batch <- function(ctx, fit_ref, batch, n_sim, n_batch,
   res
 }
 
-# ==========================================================================
-# The uniformity check
-# ==========================================================================
-# Under a calibrated posterior the N ranks of a quantity are uniform on
-# 0..L, so the ECDF of the fractional ranks should follow the diagonal and
-# the difference from it should be flat at zero.  The band below is
-# SIMULTANEOUS over the whole ECDF, not pointwise: a pointwise band is
-# crossed somewhere with probability far above its nominal level and invites
-# exactly the over-reading this report avoids elsewhere.
-#
-# It is obtained by simulation rather than from the Kolmogorov distribution
-# because the ranks are discrete.  With L = 200 and N in the low hundreds the
-# discreteness is not negligible, and simulating uniform ranks on the same
-# grid gives the exact null distribution of the supremum at no meaningful
-# cost.
-# The supremum itself is taken from the order statistics rather than off a
-# grid: for sorted u the largest gap between the ECDF and the diagonal can
-# only occur at a data point, so this is the exact supremum and not an
-# approximation to it, and it costs one sort instead of a pass over a grid.
-# The figure still draws the difference on a grid, because a curve needs one.
+# ---- the uniformity check ------------------------------------------------
+# Under a calibrated posterior the N ranks of a quantity are uniform on 0..L,
+# so the ECDF of the fractional ranks should follow the diagonal.  The band is
+# SIMULTANEOUS over the whole ECDF, not pointwise, and is obtained by
+# simulation rather than from the Kolmogorov distribution because the ranks
+# are discrete.  The supremum is taken from the order statistics: for sorted u
+# the largest gap can only occur at a data point, so it is exact.
 barg_sbc_sup <- function(u) {
   u <- sort(u); n <- length(u); i <- seq_len(n)
   max(max(i / n - u), max(u - (i - 1) / n))
 }
 
-# The null ranks are put through exactly the transform the observed ranks get,
-# (rank + 0.5) / (L + 1) with rank in 0..L.  Simulating uniforms on any other
-# grid -- k / (L + 1), say -- offsets the null ECDF from the observed one by
-# half a step and leaves the band about 2.5% too narrow at L = 200, which shows
-# up as calibrated quantities crossing it slightly too often.
+# The null ranks go through exactly the transform the observed ranks get,
+# (rank + 0.5) / (L + 1).  Simulating uniforms on any other grid offsets the
+# null ECDF by half a step and leaves the band about 2.5% too narrow.
 barg_sbc_band <- function(n, L = BARG_SBC_L, alpha = 0.05, nsim = 20000L,
                           seed = 2226L) {
   set.seed(seed)
@@ -315,12 +228,9 @@ barg_sbc_band <- function(n, L = BARG_SBC_L, alpha = 0.05, nsim = 20000L,
 }
 
 # ---- per-quantity uniformity ---------------------------------------------
-# Two summaries, because they fail in different ways.  The supremum of the
-# ECDF difference catches a systematic shift or a squeeze -- the posterior
-# sitting too low, or being too narrow -- and is the statistic the band is
-# built for.  The chi-square on binned ranks catches a pile-up at the extremes
-# that leaves the middle of the ECDF alone, which is what a posterior with the
-# right location and the wrong tails produces.
+# Two summaries, because they fail differently: the supremum of the ECDF
+# difference catches a shift or a squeeze, the chi-square on binned ranks a
+# pile-up at the extremes that leaves the middle of the ECDF alone.
 barg_sbc_uniformity <- function(ranks, alpha = 0.05, nbin = 20L) {
   band <- barg_sbc_band(length(unique(ranks$sim)), unique(ranks$L)[1], alpha)
   ranks |>
@@ -352,23 +262,15 @@ barg_sbc_ecdf <- function(ranks, grid = seq(0, 1, length.out = 201)) {
     ungroup()
 }
 
-# ==========================================================================
-# The figure
-# ==========================================================================
-# A 7 x 4 grid: three slope columns and one ICC column, one row per response,
-# so that the 28 quantities under test appear in the same layout as
-# @fig-main, whose panel A is the ICC column and whose panel B is the three
-# slope columns.  Each panel is the ECDF difference with its simultaneous
-# band; a curve inside the band is a quantity whose posterior is calibrated
-# as far as N simulations can tell.
+# ---- the figure ----------------------------------------------------------
+# A 7 x 4 grid, three slope columns and one ICC column, so that the 28
+# quantities appear in the same layout as the main figure.  Each panel is the
+# ECDF difference with its simultaneous band.
 #
-# The drawing constants come off ctx rather than out of this file's own
-# environment.  fig_theme, save_fig and the palette are defined in
-# barg_theme.R, which barg_context.R sources into a private environment; a
-# function defined here at the top level would not see them.  Taking them from
-# ctx is the same route barg_sbc_one() takes to icc_draws(), and it keeps the
-# expensive rank targets independent of the report context, so that editing a
-# figure cannot invalidate a day of refits.
+# The drawing constants come off ctx: fig_theme, save_fig and the palette live
+# in barg_theme.R, which is sourced into a private environment that a function
+# defined here at the top level would not see.  It also keeps the expensive
+# rank targets independent of the report context.
 barg_sbc_figure <- function(ctx, ranks, dir = ctx$FIGDIR) {
   ec   <- barg_sbc_ecdf(ranks)
   un   <- barg_sbc_uniformity(ranks)
@@ -386,12 +288,8 @@ barg_sbc_figure <- function(ctx, ranks, dir = ctx$FIGDIR) {
   un <- add_facets(un)
   bad <- dplyr::semi_join(ec, dplyr::filter(un, outside), by = c("Row", "Col"))
 
-  # The y range is set from the band rather than from the curves.  When every
-  # curve sits well inside the band the ribbon would otherwise fill the panel
-  # to its edges and read as a background tint, leaving the reader unable to
-  # see where the threshold is; widening the axis past the band and drawing its
-  # edge explicitly keeps "inside the band" a visible statement rather than an
-  # assertion in the caption.
+  # The y range is set from the band, not from the curves: otherwise the
+  # ribbon fills the panel to its edges and reads as a background tint.
   ylim <- band * 1.25
   p <- ggplot2::ggplot(ec, ggplot2::aes(x, diff)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = -band, ymax = band),
@@ -404,10 +302,8 @@ barg_sbc_figure <- function(ctx, ranks, dir = ctx$FIGDIR) {
     ggplot2::facet_grid(Row ~ Col, switch = "y") +
     ggplot2::scale_x_continuous(breaks = c(0, 0.5, 1)) +
     ggplot2::coord_cartesian(ylim = c(-ylim, ylim)) +
-    # Axis labels avoid "rank" and "ECDF": this figure is read by archaeologists
-    # rather than by statisticians, and the report's own text describes the same
-    # quantity as the position of the generating value within its refitted
-    # posterior, and the departure of those positions from an even spread.
+    # Axis labels avoid "rank" and "ECDF": the readership is archaeological,
+    # and the report's own text describes the quantity this way.
     ggplot2::labs(x = "Position of the generating value within its refitted posterior",
                   y = "Departure from an even spread") +
     ctx$fig_theme +
