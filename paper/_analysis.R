@@ -458,6 +458,9 @@ eq_dr0_m <- eq_num0_m / eq_den0_m
 eq_K <- length(variables)
 set.seed(2226)
 eq_dr_b <- matrix(NA_real_, B_BOOT, eq_K + 1)
+# the replicates' centroids in the z-scored space, kept for the sensitivity
+# check on the non-Quina spread below; storing them draws nothing
+eq_zb_sc <- eq_zb_lq <- eq_zb_lo <- matrix(NA_real_, B_BOOT, ncol(eq_Z))
 for (b in seq_len(B_BOOT)) {
   i_sc <- unlist(eq_loc_rows[sample.int(eq_n_loc, eq_n_loc, replace = TRUE)], use.names = FALSE)
   i_lq <- sample.int(eq_n_lq, eq_n_lq, replace = TRUE)
@@ -466,12 +469,29 @@ for (b in seq_len(B_BOOT)) {
   eq_dr_b[b, 1:eq_K] <- abs(msc - mlq) / abs(mlq - mlo)
   zsc <- eq_cm(eq_Zsc, i_sc); zlq <- eq_cm(eq_Zlq, i_lq); zlo <- eq_cm(eq_Zlo, i_lo)
   eq_dr_b[b, eq_K + 1] <- eq_eu(zsc, zlq) / eq_eu(zlq, zlo)
+  eq_zb_sc[b, ] <- zsc; eq_zb_lq[b, ] <- zlq; eq_zb_lo[b, ] <- zlo
 }
 
 eq_qq <- function(x, p) unname(quantile(x, p, na.rm = TRUE))
 eq_UB95 <- apply(eq_dr_b, 2, eq_qq, 0.95)
 eq_UB95_multi <- eq_UB95[eq_K + 1]
 eq_UB95_pct   <- round(eq_UB95_multi * 100)
+
+# ---- sensitivity of DR to the spread of the non-Quina control ----
+eq_sens_c   <- colMeans(eq_Zlo)
+eq_sens_num <- sqrt(rowSums((eq_zb_sc - eq_zb_lq)^2))
+eq_sens_ub  <- function(k) {
+  zlo_k <- sweep(sweep(eq_zb_lo, 2, eq_sens_c) * k, 2, eq_sens_c, "+")
+  eq_qq(eq_sens_num / sqrt(rowSums((eq_zb_lq - zlo_k)^2)), 0.95)
+}
+stopifnot(isTRUE(all.equal(eq_sens_ub(1), eq_UB95_multi)))
+eq_sens_k_ltq <- pd_ltq / pd_lto
+eq_sens_k_sc  <- pd_scq / pd_lto
+eq_sens <- data.frame(k = sort(c(seq(1, 3, by = 0.1), eq_sens_k_ltq, eq_sens_k_sc)))
+eq_sens$dispersion <- eq_sens$k * pd_lto
+eq_sens$UB95       <- vapply(eq_sens$k, eq_sens_ub, numeric(1))
+eq_sens_ub_eqdisp <- range(eq_sens_ub(eq_sens_k_ltq), eq_sens_ub(eq_sens_k_sc))
+eq_sens_ub_k3     <- eq_sens_ub(3)
 
 # p-value curve bootstrap (higher R for finer resolution)
 R_PC <- 20000
