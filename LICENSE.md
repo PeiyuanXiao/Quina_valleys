@@ -32,9 +32,10 @@ indicate if changes were made. The full license is at
 citing the paper:
 
 > Xiao, P.-Y., Ruan, Q.-J., Delpiano, D., Peresani, M., Jia, Z.-X., Yang, L.-J.,
-> Zhang, M., Sun, J., Marwick, B., & Li, H. (in prep.). The Quina Landscape: A
+> Zhang, M., Sun, J., Marwick, B., & Li, H. (2026). The Quina Landscape: A
 > regional Middle Palaeolithic technological system on the southeastern margin
-> of the Tibetan Plateau.
+> of the Tibetan Plateau. *Palaeogeography, Palaeoclimatology, Palaeoecology*,
+> 114354. <https://doi.org/10.1016/j.palaeo.2026.114354>
 
 ------------------------------------------------------------------------
 

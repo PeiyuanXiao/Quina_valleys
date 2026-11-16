@@ -20,16 +20,18 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-7879-4531")),
     person("Hao", "Li", email = "lihao@itpcas.ac.cn", role = "aut",
            comment = c(ORCID = "0009-0008-1504-9401")))
-Description: Research compendium for the manuscript. Holds the data, the
-    analysis code and the Quarto sources for the manuscript, the supplementary
-    material and the Supplementary Bayesian Report. This is not an R package
-    and defines no functions for use elsewhere; the DESCRIPTION records the
-    authorship and the dependencies of the compendium in one machine-readable
-    place. The pipeline is declared in _targets.R and built with
-    targets::tar_make(); the package versions it was built under are pinned in
-    renv.lock.
+Description: Research compendium for the paper published in Palaeogeography,
+    Palaeoclimatology, Palaeoecology <doi:10.1016/j.palaeo.2026.114354>. Holds
+    the data, the analysis code and the Quarto sources for the manuscript, the
+    supplementary material and the Supplementary Bayesian Report. This is not
+    an R package and defines no functions for use elsewhere; the DESCRIPTION
+    records the authorship and the dependencies of the compendium in one
+    machine-readable place. The pipeline is declared in _targets.R and built
+    with targets::tar_make(); the package versions it was built under are
+    pinned in renv.lock.
 License: file LICENSE.md
-URL: https://doi.org/10.17605/OSF.IO/PGWY2,
+URL: https://doi.org/10.1016/j.palaeo.2026.114354,
+    https://doi.org/10.17605/OSF.IO/PGWY2,
     https://github.com/PeiyuanXiao/Quina_valleys
 Encoding: UTF-8
 Depends:

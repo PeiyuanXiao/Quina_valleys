@@ -4,13 +4,13 @@
 
 <hr />
 
-[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) [![Licenses: MIT + CC BY 4.0 + CC0](https://img.shields.io/badge/Licenses-MIT%20%2B%20CC--BY--4.0%20%2B%20CC0-lightgrey.svg)](LICENSE.md) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.1016%2Fj.palaeo.2026.114354-blue.svg)](https://doi.org/10.1016/j.palaeo.2026.114354) [![Compendium DOI](https://img.shields.io/badge/Compendium%20DOI-10.17605%2FOSF.IO%2FPGWY2-blue.svg)](https://doi.org/10.17605/OSF.IO/PGWY2) [![Licenses: MIT + CC BY 4.0 + CC0](https://img.shields.io/badge/Licenses-MIT%20%2B%20CC--BY--4.0%20%2B%20CC0-lightgrey.svg)](LICENSE.md) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
 
-This repository contains the data and code for our manuscript, **in preparation**:
+This repository contains the data and code for our paper, published in *Palaeogeography, Palaeoclimatology, Palaeoecology*:
 
-> **Xiao, PY., Ruan, QJ., Delpiano, D., Peresani, M., Jia, ZX., Yang, LJ., Zhang, M., Sun, J., Marwick, B., & Li, H. (in prep.). The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau.**
+> **Xiao, P.-Y., Ruan, Q.-J., Delpiano, D., Peresani, M., Jia, Z.-X., Yang, L.-J., Zhang, M., Sun, J., Marwick, B., & Li, H. (2026). The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau. *Palaeogeography, Palaeoclimatology, Palaeoecology*, 114354. <https://doi.org/10.1016/j.palaeo.2026.114354>**
 
-The manuscript and its supplementary material are written in Quarto and are in [`paper/`](paper). [`paper/_analysis.R`](paper/_analysis.R) computes every number they report, except for the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
+The paper cites this compendium by its archived copy at OSF, <https://doi.org/10.17605/OSF.IO/PGWY2>. The manuscript and its supplementary material are written in Quarto and are in [`paper/`](paper). [`paper/_analysis.R`](paper/_analysis.R) computes every number they report, except for the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
 
 ------------------------------------------------------------------------
 
@@ -122,6 +122,31 @@ A cold `tar_make()` takes about four and a half hours, of which about three and 
 The store `_targets/` is git-ignored and comes to about 460 MB, most of it the eleven fitted models. It is the object to archive alongside the paper, and what a reader restores to re-render the documents without refitting.
 
 **The Figure 1 maps are outside the pipeline**, and their output is committed as `figures/study_area.png`. See [`paper/map/README.md`](paper/map/README.md).
+
+------------------------------------------------------------------------
+
+### 📖 How to Cite
+
+If you use the data, code or methods from this compendium, please cite the paper given at the top of this page. In BibTeX:
+
+``` bibtex
+@article{xiao2026quina,
+  title   = {The {Quina} Landscape: A regional {Middle Palaeolithic} technological system on the southeastern margin of the {Tibetan Plateau}},
+  author  = {Xiao, Pei-Yuan and Ruan, Qi-Jun and Delpiano, Davide and Peresani, Marco and Jia, Zhen-Xiu and Yang, Li-Jing and Zhang, Ming and Sun, Jian and Marwick, Ben and Li, Hao},
+  journal = {Palaeogeography, Palaeoclimatology, Palaeoecology},
+  pages   = {114354},
+  year    = {2026},
+  issn    = {0031-0182},
+  doi     = {10.1016/j.palaeo.2026.114354},
+  url     = {https://www.sciencedirect.com/science/article/pii/S0031018226008175}
+}
+```
+
+To cite the compendium itself, as the paper does:
+
+> Xiao, P.-Y., Ruan, Q.-J., Marwick, B., & Li, H. (2026). Research compendium for 'The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau'. OSF. <https://doi.org/10.17605/OSF.IO/PGWY2>
+
+The **Cite this repository** button on GitHub, generated from [`CITATION.cff`](CITATION.cff), gives the paper citation in APA and BibTeX.
 
 ------------------------------------------------------------------------
 

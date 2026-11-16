@@ -1,0 +1,69 @@
+cff-version: 1.2.0
+message: "If you use the data, code or methods in this compendium, please cite the paper given under preferred-citation."
+type: software
+title: "Research compendium for 'The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau'"
+authors:
+  - family-names: Xiao
+    given-names: Pei-Yuan
+    orcid: "https://orcid.org/0009-0000-9733-5875"
+  - family-names: Ruan
+    given-names: Qi-Jun
+    orcid: "https://orcid.org/0009-0000-2143-5335"
+  - family-names: Marwick
+    given-names: Ben
+    orcid: "https://orcid.org/0000-0001-7879-4531"
+  - family-names: Li
+    given-names: Hao
+    orcid: "https://orcid.org/0009-0008-1504-9401"
+doi: "10.17605/OSF.IO/PGWY2"
+url: "https://osf.io/pgwy2/"
+repository-code: "https://github.com/PeiyuanXiao/Quina_valleys"
+license:
+  - MIT
+  - CC-BY-4.0
+  - CC0-1.0
+keywords:
+  - Middle Palaeolithic
+  - Southeastern Tibetan Plateau
+  - Quina technology
+  - Quina landscape
+  - research compendium
+  - reproducible research
+preferred-citation:
+  type: article
+  title: "The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau"
+  authors:
+    - family-names: Xiao
+      given-names: Pei-Yuan
+      orcid: "https://orcid.org/0009-0000-9733-5875"
+    - family-names: Ruan
+      given-names: Qi-Jun
+      orcid: "https://orcid.org/0009-0000-2143-5335"
+    - family-names: Delpiano
+      given-names: Davide
+      orcid: "https://orcid.org/0000-0001-8950-1466"
+    - family-names: Peresani
+      given-names: Marco
+      orcid: "https://orcid.org/0000-0001-6562-6336"
+    - family-names: Jia
+      given-names: Zhen-Xiu
+      orcid: "https://orcid.org/0000-0002-7514-4514"
+    - family-names: Yang
+      given-names: Li-Jing
+    - family-names: Zhang
+      given-names: Ming
+    - family-names: Sun
+      given-names: Jian
+    - family-names: Marwick
+      given-names: Ben
+      orcid: "https://orcid.org/0000-0001-7879-4531"
+    - family-names: Li
+      given-names: Hao
+      orcid: "https://orcid.org/0009-0008-1504-9401"
+  journal: "Palaeogeography, Palaeoclimatology, Palaeoecology"
+  year: 2026
+  month: 11
+  start: "114354"
+  issn: "0031-0182"
+  doi: "10.1016/j.palaeo.2026.114354"
+  url: "https://www.sciencedirect.com/science/article/pii/S0031018226008175"
