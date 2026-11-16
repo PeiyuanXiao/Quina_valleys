@@ -2,15 +2,21 @@
 
 <h1><b><i>The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau</i></b></h1>
 
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.1016%2Fj.palaeo.2026.114354-blue.svg)](https://doi.org/10.1016/j.palaeo.2026.114354) [![Compendium DOI](https://img.shields.io/badge/Compendium%20DOI-10.17605%2FOSF.IO%2FPGWY2-blue.svg)](https://doi.org/10.17605/OSF.IO/PGWY2) [![Licenses: MIT + CC BY 4.0 + CC0](https://img.shields.io/badge/Licenses-MIT%20%2B%20CC--BY--4.0%20%2B%20CC0-lightgrey.svg)](LICENSE.md) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
+
 <hr />
 
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.1016%2Fj.palaeo.2026.114354-blue.svg)](https://doi.org/10.1016/j.palaeo.2026.114354) [![Compendium DOI](https://img.shields.io/badge/Compendium%20DOI-10.17605%2FOSF.IO%2FPGWY2-blue.svg)](https://doi.org/10.17605/OSF.IO/PGWY2) [![Licenses: MIT + CC BY 4.0 + CC0](https://img.shields.io/badge/Licenses-MIT%20%2B%20CC--BY--4.0%20%2B%20CC0-lightgrey.svg)](LICENSE.md) [![R 4.6.1](https://img.shields.io/badge/R-4.6.1-blue.svg)](https://www.r-project.org/) [![pipeline](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml/badge.svg)](https://github.com/PeiyuanXiao/Quina_valleys/actions/workflows/pipeline.yaml) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PeiyuanXiao/Quina_valleys/main?urlpath=rstudio)
+<a href="https://doi.org/10.1016/j.palaeo.2026.114354"><img src=".github/readme/journal_cover.png" align="right" width="150" alt="Cover of Palaeogeography, Palaeoclimatology, Palaeoecology" /></a>
+
+### 📄 The Paper
 
 This repository contains the data and code for our paper, published in *Palaeogeography, Palaeoclimatology, Palaeoecology*:
 
 > **Xiao, P.-Y., Ruan, Q.-J., Delpiano, D., Peresani, M., Jia, Z.-X., Yang, L.-J., Zhang, M., Sun, J., Marwick, B., & Li, H. (2026). The Quina Landscape: A regional Middle Palaeolithic technological system on the southeastern margin of the Tibetan Plateau. *Palaeogeography, Palaeoclimatology, Palaeoecology*, 114354. <https://doi.org/10.1016/j.palaeo.2026.114354>**
 
-The paper cites this compendium by its archived copy at OSF, <https://doi.org/10.17605/OSF.IO/PGWY2>. The manuscript and its supplementary material are written in Quarto and are in [`paper/`](paper). [`paper/_analysis.R`](paper/_analysis.R) computes every number they report, except for the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
+The paper cites this compendium by its archived copy at OSF, <https://doi.org/10.17605/OSF.IO/PGWY2>.<br clear="right" />
+
+The manuscript and its supplementary material are written in Quarto and are in [`paper/`](paper). [`paper/_analysis.R`](paper/_analysis.R) computes every number they report, except for the Bayesian landscape analysis, which has a pipeline of its own in [`paper/barg/`](paper/barg).
 
 ------------------------------------------------------------------------
 

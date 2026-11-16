@@ -95,3 +95,4 @@ licenses above:
 | `templates/scholarly-metadata.lua` | Albert Krewinkel, Robert Winkler | ISC-style permissive license, in the file header |
 | `templates/elsevier-harvard.csl` | Citation Style Language project | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | `renv/activate.R` | the renv package, Posit Software, PBC | MIT |
+| `.github/readme/journal_cover.png` | the cover of *Palaeogeography, Palaeoclimatology, Palaeoecology*, Elsevier B.V. | © Elsevier B.V., all rights reserved; shown in the README only to identify the journal |
